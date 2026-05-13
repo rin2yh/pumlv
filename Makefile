@@ -1,7 +1,7 @@
 APP      := pumlv
 FRONTEND := frontend
 
-GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0
+GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing
 
 default: test
 

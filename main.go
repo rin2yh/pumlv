@@ -8,7 +8,7 @@ import (
 	"github.com/rin2yh/pumlv/cmd"
 )
 
-//go:generate go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -w .
+//go:generate go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing -w .
 
 //go:embed CREDITS
 var credits string
