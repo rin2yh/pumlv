@@ -69,10 +69,14 @@ jobs:
         run: pnpm test
 
   e2e:
-    name: E2E
-    runs-on: ubuntu-latest
+    name: E2E (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     needs: [go]
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
