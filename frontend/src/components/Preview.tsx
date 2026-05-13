@@ -1,8 +1,4 @@
-import {
-  TransformComponent,
-  TransformWrapper,
-  useControls,
-} from "react-zoom-pan-pinch";
+import { TransformComponent, TransformWrapper, useControls } from "react-zoom-pan-pinch";
 import type { JSX } from "react";
 
 function ZoomControls(): JSX.Element {
