@@ -32,6 +32,8 @@ jobs:
 
       - name: Generate (frontend build for //go:embed)
         run: make generate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint
         run: make lint-backend
@@ -76,6 +78,8 @@ jobs:
 
       - name: Build
         run: make build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5

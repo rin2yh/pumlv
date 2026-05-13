@@ -51,6 +51,8 @@ jobs:
 
       - name: Generate (frontend build for //go:embed)
         run: make generate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: goreleaser/goreleaser-action@1a80836c5c9d9e5755a25cb59ec6f45a3b5f41a8 # v7.2.1
         with:

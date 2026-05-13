@@ -32,7 +32,12 @@ for (const asset of ASSETS) {
 
   console.log(`downloading ${asset.name} from ${asset.url}`);
   const res = await fetch(asset.url, {
-    headers: { Accept: "application/octet-stream" },
+    headers: {
+      Accept: "application/octet-stream",
+      ...(process.env.GITHUB_TOKEN && {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      }),
+    },
     redirect: "follow",
   });
   if (!res.ok || !res.body) {
