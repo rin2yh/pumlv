@@ -22,6 +22,16 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - uses: ./.github/actions/setup-frontend
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (for //go:embed)
+        working-directory: frontend
+        run: pnpm run build
+
       - name: go vet
         run: go vet ./...
 
