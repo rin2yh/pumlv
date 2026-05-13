@@ -1,4 +1,4 @@
-module github.com/yuukibarns/pumlv
+module github.com/rin2yh/pumlv
 
 go 1.26.2
 

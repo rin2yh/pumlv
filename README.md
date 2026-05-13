@@ -7,6 +7,17 @@ Go 製の PlantUML ローカルプレビューサーバ。`pumlv <path>` を叩�
 - ファイル / ディレクトリ両対応、ディレクトリは再帰
 - シングルバイナリ (`go:embed` でフロントエンド同梱)
 
+## 背景
+
+既存の PlantUML プレビュー手段には以下の課題がありました。
+
+- 大半が特定エディタ (VSCode / IntelliJ / Vim プラグイン等) に依存しており、エディタを変えると使えない
+- ローカル描画には Java や Graphviz、もしくは Docker など別のツールを別途インストールする必要がある
+
+pumlv はエディタに依存せず、シングルバイナリ 1 つでブラウザに描画する (`plantuml-core` を CheerpJ 経由でブラウザ内実行) ことでこれらを解消することを目的としています。
+
+> 本リポジトリは [k1LoW/mo](https://github.com/k1LoW/mo) (Markdown のローカルプレビューサーバ) からインスパイアを受けて作成されています。
+
 ## インストール
 
 ビルド済みバイナリを使う場合:
@@ -112,6 +123,24 @@ pnpm test           # vitest
 pnpm build          # ルートから `go generate ./...` でも代替可能
 ```
 
+### レンダリングテスト (E2E)
+
+Playwright 駆動の実描画テストを `frontend/tests/e2e/` に用意しています。実 Chrome を立ち上げて `pumlv` バイナリをサーバとして spawn し、ブラウザ内 CheerpJ + plantuml-core が `examples/` を本当に描画できることを確認します。CheerpJ ランタイムは初回ロード時に `cjrtnc.leaningtech.com` から取得されるため、E2E 実行時はネットワークが必要です。
+
+```sh
+make build          # ルートに pumlv バイナリを生成
+make e2e            # frontend で pnpm test:e2e (Playwright)
+make screenshot     # README 用画像を ./images/ に保存
+```
+
+Playwright 本体と Chrome は別途インストールが必要です:
+
+```sh
+cd frontend
+pnpm install
+pnpm exec playwright install --with-deps chrome
+```
+
 ## PlantUML 描画について
 
 ブラウザ内で完結させるため、PlantUML 公式の [plantuml-core](https://github.com/plantuml/plantuml-core) の CheerpJ ビルド (`plantuml-core.jar.js`, 約 17 MB) を同梱しています。`frontend/scripts/fetch-plantuml-core.mjs` が GitHub Releases API から取得し、Vite が `static/dist/` にコピーして `go:embed` で最終バイナリに格納されます。
@@ -132,6 +161,12 @@ pnpm build          # ルートから `go generate ./...` でも代替可能
 | [React](https://github.com/facebook/react) (`react`, `react-dom`) | MIT | バンドル |
 | [Shiki](https://github.com/shikijs/shiki) | MIT | バンドル |
 | [Tailwind CSS](https://tailwindcss.com/) | MIT | バンドル |
+
+開発専用 (DevDependencies、最終バイナリには含まれない):
+
+| コンポーネント | ライセンス | 備考 |
+|---|---|---|
+| [Playwright](https://playwright.dev/) (`@playwright/test`) | Apache-2.0 | E2E レンダリングテスト用 (`frontend/tests/e2e/`, `frontend/scripts/screenshots.mjs`) |
 
 #### 実行時に CDN から取得 (ブラウザ側)
 
