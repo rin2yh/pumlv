@@ -18,6 +18,9 @@ jobs:
     name: Backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -35,6 +38,9 @@ jobs:
 
       - name: Test
         run: make test-backend
+
+      - name: Run octocov
+        uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1.5.1
 
   frontend:
     name: Frontend

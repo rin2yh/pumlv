@@ -35,6 +35,7 @@ go.work.sum
 /pumlv
 /static/dist/
 /images/
+/dist/
 /frontend/test-results/
 /frontend/playwright-report/
 /frontend/.playwright/

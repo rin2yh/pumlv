@@ -11,6 +11,7 @@ import (
 	"github.com/muesli/termenv"
 	"github.com/pkg/browser"
 	"github.com/rin2yh/pumlv/server"
+	"github.com/rin2yh/pumlv/version"
 	"github.com/spf13/cobra"
 )
 
@@ -84,6 +85,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.Version = version.Version + " (" + version.Revision + ")"
 	rootCmd.Flags().IntVar(&flagPort, "port", 0, "TCP port to listen on (0 = pick a free port)")
 	rootCmd.Flags().StringVar(&flagHost, "host", "127.0.0.1", "Host to bind")
 	rootCmd.Flags().BoolVar(&flagNoOpen, "no-open", false, "Do not open the browser automatically")

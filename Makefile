@@ -24,7 +24,7 @@ test-frontend: $(FRONTEND)/node_modules
 	cd $(FRONTEND) && pnpm test
 
 test-backend:
-	go test -race ./...
+	go test -race -coverprofile=coverage.out -covermode=atomic ./...
 
 e2e: build
 	cd $(FRONTEND) && pnpm test:e2e
@@ -63,10 +63,17 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 credits:
 	$(GOCREDITS) -w .
 
+prerelease_for_tagpr: credits
+	git add CREDITS go.sum
+
+release-snapshot: generate
+	goreleaser release --snapshot --clean
+
 clean:
 	rm -f $(APP)
 	rm -rf static/dist
 	rm -rf images
+	rm -rf dist
 
 .PHONY: default ci generate build dev \
 	test test-frontend test-backend \
@@ -74,4 +81,4 @@ clean:
 	lint lint-frontend lint-backend \
 	fmt fmt-frontend fmt-backend \
 	fmt-check fmt-check-frontend fmt-check-backend \
-	credits clean
+	credits prerelease_for_tagpr release-snapshot clean
