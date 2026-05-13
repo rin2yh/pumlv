@@ -44,6 +44,9 @@ jobs:
       - name: go test
         run: go test -race ./...
 
+      - name: Verify CREDITS is up to date
+        run: make check-credits
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

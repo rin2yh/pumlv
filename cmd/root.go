@@ -21,6 +21,18 @@ var (
 	flagExt    []string
 )
 
+// Credits は main から注入される CREDITS ファイルの内容（第三者ライブラリのライセンス全文）。
+var Credits string
+
+var creditsCmd = &cobra.Command{
+	Use:   "credits",
+	Short: "Print third-party license credits bundled in this binary",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		_, err := fmt.Fprint(cmd.OutOrStdout(), Credits)
+		return err
+	},
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "pumlv [paths...]",
 	Short: "Local PlantUML preview server",
@@ -76,6 +88,7 @@ func init() {
 	rootCmd.Flags().StringVar(&flagHost, "host", "127.0.0.1", "Host to bind")
 	rootCmd.Flags().BoolVar(&flagNoOpen, "no-open", false, "Do not open the browser automatically")
 	rootCmd.Flags().StringSliceVar(&flagExt, "ext", []string{".puml", ".plantuml", ".iuml", ".wsd"}, "File extensions to watch")
+	rootCmd.AddCommand(creditsCmd)
 }
 
 // Execute runs the root command.
