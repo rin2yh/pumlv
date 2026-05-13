@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  go:
-    name: Go
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -71,7 +71,6 @@ jobs:
   e2e:
     name: E2E (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [go]
     timeout-minutes: 20
     strategy:
       fail-fast: false
