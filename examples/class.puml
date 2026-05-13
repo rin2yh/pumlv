@@ -1,0 +1,19 @@
+@startuml
+class Server {
+  +registry: Registry
+  +watcher: Watcher
+  +hub: Hub
+  +Start(ctx): string
+}
+class Registry {
+  +Refresh()
+  +List(): []FileEntry
+  +Allowed(path): bool
+}
+class Watcher
+class Hub
+Server --> Registry
+Server --> Watcher
+Server --> Hub
+Watcher --> Hub
+@enduml

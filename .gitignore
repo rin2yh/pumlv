@@ -1,0 +1,10 @@
+/pumlv
+/node_modules
+/frontend/node_modules
+/frontend/.pnpm-store
+/frontend/public/plantuml-core.jar
+/frontend/public/plantuml-core.jar.js
+/static/dist/*
+!/static/dist/.gitkeep
+.DS_Store
+*.log

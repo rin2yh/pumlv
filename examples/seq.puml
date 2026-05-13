@@ -1,0 +1,15 @@
+@startuml
+title sample sequence
+actor User
+participant Browser
+participant pumlv
+participant Watcher
+
+User -> Browser: open localhost
+Browser -> pumlv: GET /api/files
+pumlv --> Browser: 200 (file list)
+Browser -> pumlv: GET /api/events (SSE)
+pumlv -> Watcher: subscribe
+Watcher --> pumlv: changed
+pumlv --> Browser: event: changed
+@enduml
