@@ -1,118 +1,118 @@
 # pumlv
 
-Go 製の PlantUML ローカルプレビューサーバ。`pumlv <path>` を叩くだけでブラウザに図が出て、ファイルを保存するたびに自動で再描画されます。Java も Docker も外部サーバも不要です。
+A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the diagram opens in your browser, re-rendering automatically whenever you save the file. No Java, no Docker, no external server required.
 
-- 完全ローカル描画 (`plantuml-core.jar.js` をブラウザで実行)
-- ファイル変更検知 → SSE で自動再描画
-- ファイル / ディレクトリ両対応、ディレクトリは再帰
-- シングルバイナリ (`go:embed` でフロントエンド同梱)
+- Fully local rendering (runs `plantuml-core.jar.js` in the browser)
+- File-change detection → automatic re-render over SSE
+- Works with both files and directories (directories are walked recursively)
+- Single binary (frontend assets bundled via `go:embed`)
 
-## 背景
+## Background
 
-既存の PlantUML プレビュー手段には以下の課題がありました。
+Existing PlantUML preview options have a few rough edges:
 
-- 大半が特定エディタ (VSCode / IntelliJ / Vim プラグイン等) に依存しており、エディタを変えると使えない
-- ローカル描画には Java や Graphviz、もしくは Docker など別のツールを別途インストールする必要がある
+- Most depend on a specific editor (VSCode / IntelliJ / Vim plugins, etc.) and stop working the moment you switch editors.
+- Local rendering typically requires installing Java and Graphviz, or running Docker, as separate tooling.
 
-pumlv はエディタに依存せず、シングルバイナリ 1 つでブラウザに描画する (`plantuml-core` を CheerpJ 経由でブラウザ内実行) ことでこれらを解消することを目的としています。
+pumlv aims to remove both pain points: it is editor-agnostic, and it ships as a single binary that renders directly in the browser by running `plantuml-core` through CheerpJ.
 
-> 本リポジトリは [k1LoW/mo](https://github.com/k1LoW/mo) (Markdown のローカルプレビューサーバ) からインスパイアを受けて作成されています。
+> This repository is inspired by [k1LoW/mo](https://github.com/k1LoW/mo) (a local preview server for Markdown).
 
-## インストール
+## Installation
 
-ビルド済みバイナリを使う場合:
+To use a pre-built binary:
 
 ```sh
 go install github.com/yuukibarns/pumlv@latest
 ```
 
-ソースからビルドする場合は下記の「開発」を参照してください。
+To build from source, see the "Development" section below.
 
-## 使い方
+## Usage
 
 ```sh
-pumlv ./docs                      # ディレクトリを再帰的に監視
-pumlv ./design/seq.puml           # 単一ファイル
-pumlv ./docs ./design/seq.puml    # 複数指定可
+pumlv ./docs                      # watch a directory recursively
+pumlv ./design/seq.puml           # a single file
+pumlv ./docs ./design/seq.puml    # multiple arguments are allowed
 ```
 
-### フラグ
+### Flags
 
-| フラグ | 既定値 | 説明 |
-|--------|--------|------|
-| `--port` | `0` (空きポートを自動選択) | TCP ポート |
-| `--host` | `127.0.0.1` | バインド先ホスト |
-| `--no-open` | `false` | ブラウザを自動起動しない |
-| `--ext` | `.puml,.plantuml,.iuml,.wsd` | 監視対象の拡張子 |
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--port` | `0` (pick a free port) | TCP port |
+| `--host` | `127.0.0.1` | Bind host |
+| `--no-open` | `false` | Do not launch the browser automatically |
+| `--ext` | `.puml,.plantuml,.iuml,.wsd` | File extensions to watch |
 
-起動すると `pumlv listening on http://127.0.0.1:<port>` と表示され、既定ブラウザが該当 URL を開きます。`Ctrl+C` で graceful shutdown します。
+On startup pumlv prints `pumlv listening on http://127.0.0.1:<port>` and opens the URL in your default browser. Press `Ctrl+C` for a graceful shutdown.
 
 ## HTTP API
 
-ブラウザ向けに以下のエンドポイントを提供します。`/api/file` は起動時に列挙したパスのホワイトリストでディレクトリトラバーサルを防いでいます。
+The server exposes the following endpoints to the browser. `/api/file` enforces a whitelist built from the paths enumerated at startup to prevent directory traversal.
 
-| Method | Path | 用途 |
-|--------|------|------|
-| GET | `/` | 埋め込み SPA を配信 (未知パスは `index.html` にフォールバック) |
-| GET | `/api/files` | 監視対象ファイル一覧 (`[{path, rel, name, source}]`) |
-| GET | `/api/file?path=...` | 指定ファイルのソース (text/plain) |
-| GET | `/api/events` | SSE。イベント名は `hello` / `changed` / `tree` |
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/` | Serves the embedded SPA (unknown paths fall back to `index.html`) |
+| GET | `/api/files` | List of watched files (`[{path, rel, name, source}]`) |
+| GET | `/api/file?path=...` | Source of the specified file (text/plain) |
+| GET | `/api/events` | SSE stream. Event names are `hello` / `changed` / `tree` |
 
-## アーキテクチャ
+## Architecture
 
 ```
 pumlv
-├── main.go / cmd/root.go        # cobra エントリポイント
+├── main.go / cmd/root.go        # cobra entry point
 ├── server/
-│   ├── server.go                # net.Listen → http.Server、donegroup 配下で起動
-│   ├── handlers.go              # /api/files /api/file /api/events と SPA 配信
-│   ├── files.go                 # 対象ファイル列挙とホワイトリスト管理 (Registry)
-│   ├── watcher.go               # fsnotify + 100ms デバウンス → Hub に broadcast
+│   ├── server.go                # net.Listen → http.Server, started under donegroup
+│   ├── handlers.go              # /api/files /api/file /api/events and SPA serving
+│   ├── files.go                 # target file enumeration and whitelist (Registry)
+│   ├── watcher.go               # fsnotify + 100ms debounce → broadcast to Hub
 │   └── hub.go                   # SSE pub/sub
 ├── static/
 │   ├── embed.go                 # //go:embed all:dist
-│   └── dist/                    # frontend のビルド成果物 (pnpm build 出力)
-└── frontend/                    # Vite + React19 + Tailwind v4
-    ├── scripts/fetch-plantuml-core.mjs  # plantuml-core.jar.js を Releases から取得
+│   └── dist/                    # frontend build output (from pnpm build)
+└── frontend/                    # Vite + React 19 + Tailwind v4
+    ├── scripts/fetch-plantuml-core.mjs  # downloads plantuml-core.jar.js from Releases
     └── src/
         ├── App.tsx / components/
         ├── api/{files,events}.ts
-        └── plantuml/renderer.ts # CheerpJ + plantuml-core.jar による SVG 生成
+        └── plantuml/renderer.ts # SVG generation via CheerpJ + plantuml-core.jar
 ```
 
-## 開発
+## Development
 
-### 前提
+### Prerequisites
 
-- Go 1.25 以上
-- Node.js 22 以上 + pnpm 9
+- Go 1.25 or newer
+- Node.js 22 or newer + pnpm 9
 
-### セットアップ
+### Setup
 
 ```sh
-go generate ./...   # frontend の pnpm install & build を実行し static/dist を生成
+go generate ./...   # runs pnpm install & build for the frontend, producing static/dist
 go build -o pumlv .
 ./pumlv ./examples
 ```
 
-`go generate` は `go build` では自動実行されないため、フロントエンド資産を再生成したいときは明示的に実行してください。
+`go generate` is not invoked automatically by `go build`, so run it explicitly whenever you need to regenerate the frontend assets.
 
-開発時はフロントエンドの dev server を別途立てると HMR が効きます。
+During development you can run the frontend dev server separately to get HMR:
 
 ```sh
-# ターミナル 1
+# Terminal 1
 ./pumlv --no-open --port 8765 ./examples
 
-# ターミナル 2
-cd frontend && pnpm dev   # http://localhost:5173 (`/api` は :8765 にプロキシ)
+# Terminal 2
+cd frontend && pnpm dev   # http://localhost:5173 (`/api` is proxied to :8765)
 ```
 
-### CI 用コマンド
+### CI commands
 
 ```sh
 # Go
 go vet ./...
-gofmt -l .          # 出力が空なら OK
+gofmt -l .          # OK when the output is empty
 go test ./...
 
 # Frontend
@@ -120,20 +120,20 @@ cd frontend
 pnpm lint           # oxlint
 pnpm fmt:check      # oxfmt
 pnpm test           # vitest
-pnpm build          # ルートから `go generate ./...` でも代替可能
+pnpm build          # equivalent to `go generate ./...` from the repo root
 ```
 
-### レンダリングテスト (E2E)
+### Rendering tests (E2E)
 
-Playwright 駆動の実描画テストを `frontend/tests/e2e/` に用意しています。実 Chrome を立ち上げて `pumlv` バイナリをサーバとして spawn し、ブラウザ内 CheerpJ + plantuml-core が `examples/` を本当に描画できることを確認します。CheerpJ ランタイムは初回ロード時に `cjrtnc.leaningtech.com` から取得されるため、E2E 実行時はネットワークが必要です。
+Playwright-driven real-rendering tests live under `frontend/tests/e2e/`. They launch a real Chrome, spawn the `pumlv` binary as the server, and verify that the in-browser CheerpJ + plantuml-core combination actually renders the diagrams in `examples/`. The CheerpJ runtime is fetched from `cjrtnc.leaningtech.com` on first load, so network access is required when running the E2E suite.
 
 ```sh
-make build          # ルートに pumlv バイナリを生成
-make e2e            # frontend で pnpm test:e2e (Playwright)
-make screenshot     # README 用画像を ./images/ に保存
+make build          # produces the pumlv binary at the repo root
+make e2e            # runs `pnpm test:e2e` (Playwright) in frontend
+make screenshot     # writes README screenshots to ./images/
 ```
 
-Playwright 本体と Chrome は別途インストールが必要です:
+Playwright and Chrome must be installed separately:
 
 ```sh
 cd frontend
@@ -141,42 +141,42 @@ pnpm install
 pnpm exec playwright install --with-deps chrome
 ```
 
-## PlantUML 描画について
+## About PlantUML rendering
 
-ブラウザ内で完結させるため、PlantUML 公式の [plantuml-core](https://github.com/plantuml/plantuml-core) の CheerpJ ビルド (`plantuml-core.jar.js`, 約 17 MB) を同梱しています。`frontend/scripts/fetch-plantuml-core.mjs` が GitHub Releases API から取得し、Vite が `static/dist/` にコピーして `go:embed` で最終バイナリに格納されます。
+To keep everything in the browser, this project bundles the CheerpJ build of PlantUML's official [plantuml-core](https://github.com/plantuml/plantuml-core) (`plantuml-core.jar.js`, ~17 MB). `frontend/scripts/fetch-plantuml-core.mjs` downloads it via the GitHub Releases API, Vite copies it into `static/dist/`, and `go:embed` then bundles it into the final binary.
 
-> ⚠️ 注意: CheerpJ ランタイム本体 (`cjrtnc.leaningtech.com/2.3/loader.js`) は初回ロード時に CDN から取得されます。以後はブラウザキャッシュで動作し、PlantUML ソースが外部に送信されることはありません。
+> ⚠️ Note: The CheerpJ runtime itself (`cjrtnc.leaningtech.com/2.3/loader.js`) is fetched from a CDN on first load. After that the browser cache serves it, and PlantUML source is never sent to any external service.
 
-## ライセンス
+## License
 
-本リポジトリのソースコードは [MIT License](./LICENSE) です。
+The source code in this repository is released under the [MIT License](./LICENSE).
 
-### 同梱・実行時取得される第三者コンポーネント
+### Third-party components (bundled or fetched at runtime)
 
-#### バイナリ / フロントエンド成果物に同梱
+#### Bundled in the binary / frontend output
 
-| コンポーネント | ライセンス | 備考 |
+| Component | License | Notes |
 |---|---|---|
-| [plantuml/plantuml-core](https://github.com/plantuml/plantuml-core) (`plantuml-core.jar`, `plantuml-core.jar.js`) | MIT | `frontend/scripts/fetch-plantuml-core.mjs` で取得し `static/dist/` に同梱 |
-| [React](https://github.com/facebook/react) (`react`, `react-dom`) | MIT | バンドル |
-| [Shiki](https://github.com/shikijs/shiki) | MIT | バンドル |
-| [Tailwind CSS](https://tailwindcss.com/) | MIT | バンドル |
+| [plantuml/plantuml-core](https://github.com/plantuml/plantuml-core) (`plantuml-core.jar`, `plantuml-core.jar.js`) | MIT | Fetched by `frontend/scripts/fetch-plantuml-core.mjs` and bundled into `static/dist/` |
+| [React](https://github.com/facebook/react) (`react`, `react-dom`) | MIT | Bundled |
+| [Shiki](https://github.com/shikijs/shiki) | MIT | Bundled |
+| [Tailwind CSS](https://tailwindcss.com/) | MIT | Bundled |
 
-開発専用 (DevDependencies、最終バイナリには含まれない):
+Development-only (DevDependencies; not included in the final binary):
 
-| コンポーネント | ライセンス | 備考 |
+| Component | License | Notes |
 |---|---|---|
-| [Playwright](https://playwright.dev/) (`@playwright/test`) | Apache-2.0 | E2E レンダリングテスト用 (`frontend/tests/e2e/`, `frontend/scripts/screenshots.mjs`) |
+| [Playwright](https://playwright.dev/) (`@playwright/test`) | Apache-2.0 | E2E rendering tests (`frontend/tests/e2e/`, `frontend/scripts/screenshots.mjs`) |
 
-#### 実行時に CDN から取得 (ブラウザ側)
+#### Fetched from a CDN at runtime (browser side)
 
-| コンポーネント | ライセンス | 備考 |
+| Component | License | Notes |
 |---|---|---|
-| [CheerpJ Runtime 2.3](https://cheerpj.com/) (`cjrtnc.leaningtech.com/2.3/loader.js`) | CheerpJ Community License | OSS / 非商用利用は無償 (`cjrtnc.leaningtech.com` ドメインからの利用に限る)。商用の社内利用等は別途 Commercial License が必要 |
+| [CheerpJ Runtime 2.3](https://cheerpj.com/) (`cjrtnc.leaningtech.com/2.3/loader.js`) | CheerpJ Community License | Free for OSS / non-commercial use (limited to usage from the `cjrtnc.leaningtech.com` domain). Commercial internal use requires a separate Commercial License |
 
-#### Go バイナリにリンクされる主な依存
+#### Main dependencies linked into the Go binary
 
-| モジュール | ライセンス |
+| Module | License |
 |---|---|
 | `github.com/spf13/cobra` | Apache-2.0 |
 | `github.com/spf13/pflag` | BSD-3-Clause |
@@ -191,5 +191,4 @@ pnpm exec playwright install --with-deps chrome
 | `github.com/inconshreveable/mousetrap` | Apache-2.0 |
 | `golang.org/x/sys` | BSD-3-Clause |
 
-各ライセンスの全文は各リポジトリの `LICENSE` を参照してください。
-
+See each upstream repository's `LICENSE` file for the full license text.
