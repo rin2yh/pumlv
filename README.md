@@ -112,7 +112,7 @@ cd frontend && pnpm dev   # http://localhost:5173 (`/api` is proxied to :8765)
 ```sh
 # Go
 go vet ./...
-gofmt -l .          # OK when the output is empty
+go fmt ./...        # OK when the output is empty
 go test ./...
 
 # Frontend

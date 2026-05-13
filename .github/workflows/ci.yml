@@ -27,8 +27,8 @@ jobs:
       - name: go vet
         run: go vet ./...
 
-      - name: gofmt
-        run: test -z "$(gofmt -l . | tee /dev/stderr)"
+      - name: go fmt
+        run: test -z "$(go fmt ./... | tee /dev/stderr)"
 
       - name: go test
         run: go test -race ./...
