@@ -120,4 +120,41 @@ pnpm build          # ルートから `go generate ./...` でも代替可能
 
 ## ライセンス
 
-MIT (`plantuml-core.jar.js` 同梱物のライセンスはアップストリームに従います)
+本リポジトリのソースコードは [MIT License](./LICENSE) です。
+
+### 同梱・実行時取得される第三者コンポーネント
+
+#### バイナリ / フロントエンド成果物に同梱
+
+| コンポーネント | ライセンス | 備考 |
+|---|---|---|
+| [plantuml/plantuml-core](https://github.com/plantuml/plantuml-core) (`plantuml-core.jar`, `plantuml-core.jar.js`) | MIT | `frontend/scripts/fetch-plantuml-core.mjs` で取得し `static/dist/` に同梱 |
+| [React](https://github.com/facebook/react) (`react`, `react-dom`) | MIT | バンドル |
+| [Shiki](https://github.com/shikijs/shiki) | MIT | バンドル |
+| [Tailwind CSS](https://tailwindcss.com/) | MIT | バンドル |
+
+#### 実行時に CDN から取得 (ブラウザ側)
+
+| コンポーネント | ライセンス | 備考 |
+|---|---|---|
+| [CheerpJ Runtime 2.3](https://cheerpj.com/) (`cjrtnc.leaningtech.com/2.3/loader.js`) | CheerpJ Community License | OSS / 非商用利用は無償 (`cjrtnc.leaningtech.com` ドメインからの利用に限る)。商用の社内利用等は別途 Commercial License が必要 |
+
+#### Go バイナリにリンクされる主な依存
+
+| モジュール | ライセンス |
+|---|---|
+| `github.com/spf13/cobra` | Apache-2.0 |
+| `github.com/spf13/pflag` | BSD-3-Clause |
+| `github.com/fsnotify/fsnotify` | BSD-3-Clause |
+| `github.com/k1LoW/donegroup` | MIT |
+| `github.com/muesli/termenv` | MIT |
+| `github.com/pkg/browser` | BSD-2-Clause |
+| `github.com/aymanbagabas/go-osc52/v2` | MIT |
+| `github.com/mattn/go-isatty` | MIT |
+| `github.com/rivo/uniseg` | MIT |
+| `github.com/lucasb-eyer/go-colorful` | MIT |
+| `github.com/inconshreveable/mousetrap` | Apache-2.0 |
+| `golang.org/x/sys` | BSD-3-Clause |
+
+各ライセンスの全文は各リポジトリの `LICENSE` を参照してください。
+
