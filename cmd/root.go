@@ -64,7 +64,7 @@ var rootCmd = &cobra.Command{
 
 		p := termenv.ColorProfile()
 		url := fmt.Sprintf("http://%s", addr)
-		out := termenv.String("pumlv").Foreground(p.Color("#7c3aed")).Bold().String()
+		out := termenv.String(version.Name).Foreground(p.Color("#7c3aed")).Bold().String()
 		linkText := termenv.String(url).Foreground(p.Color("#2563eb")).Underline().String()
 		fmt.Fprintf(os.Stderr, "%s listening on %s\n", out, linkText)
 
