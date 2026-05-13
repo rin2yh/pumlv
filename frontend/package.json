@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.0.8",
   "scripts": {
     "dev": "vite",
     "fetch:plantuml": "node scripts/fetch-plantuml-core.mjs",

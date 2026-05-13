@@ -23,7 +23,7 @@ pumlv aims to remove both pain points: it is editor-agnostic, and it ships as a 
 To use a pre-built binary:
 
 ```sh
-go install github.com/yuukibarns/pumlv@latest
+go install github.com/rin2yh/pumlv@latest
 ```
 
 To build from source, see the "Development" section below.

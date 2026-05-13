@@ -10,8 +10,8 @@ import (
 	"github.com/k1LoW/donegroup"
 	"github.com/muesli/termenv"
 	"github.com/pkg/browser"
+	"github.com/rin2yh/pumlv/server"
 	"github.com/spf13/cobra"
-	"github.com/yuukibarns/pumlv/server"
 )
 
 var (

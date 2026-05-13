@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yuukibarns/pumlv/cmd"
+	"github.com/rin2yh/pumlv/cmd"
 )
 
 func main() {
