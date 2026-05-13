@@ -1,40 +1,77 @@
-APP := pumlv
-FRONTEND_DIR := frontend
+APP      := pumlv
+FRONTEND := frontend
+
 GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0
 
-.PHONY: build dev generate credits check-credits clean e2e screenshot
+default: test
 
-build: generate credits
-	go build -o $(APP) .
-
-dev: generate credits
-	@trap 'kill 0' EXIT; \
-	go run . --no-open --port 8765 ./examples & \
-	cd $(FRONTEND_DIR) && pnpm dev
+ci: generate lint test
 
 generate:
 	go generate ./...
 
-credits:
-	$(GOCREDITS) -w .
+build: generate
+	go build -trimpath -o $(APP) .
 
-check-credits:
-	@cp CREDITS CREDITS.bak
-	@$(GOCREDITS) -w .
-	@if ! diff -q CREDITS.bak CREDITS >/dev/null; then \
-		mv CREDITS.bak CREDITS; \
-		echo "CREDITS is out of date. Run 'make credits' and commit the result." >&2; \
-		exit 1; \
-	fi
-	@rm CREDITS.bak
+dev: generate
+	@trap 'kill 0' EXIT; \
+	go run . --no-open --port 8765 ./examples & \
+	cd $(FRONTEND) && pnpm dev
+
+test: test-frontend test-backend
+
+test-frontend: $(FRONTEND)/node_modules
+	cd $(FRONTEND) && pnpm test
+
+test-backend:
+	go test -race ./...
 
 e2e: build
-	cd $(FRONTEND_DIR) && pnpm test:e2e
+	cd $(FRONTEND) && pnpm test:e2e
 
 screenshot: build
-	cd $(FRONTEND_DIR) && pnpm screenshots
+	cd $(FRONTEND) && pnpm screenshots
+
+lint: lint-frontend lint-backend
+
+lint-frontend: fmt-check-frontend
+	cd $(FRONTEND) && pnpm lint
+
+lint-backend: fmt-check-backend
+	go vet ./...
+
+fmt: fmt-frontend fmt-backend
+
+fmt-frontend: $(FRONTEND)/node_modules
+	cd $(FRONTEND) && pnpm fmt
+
+fmt-backend:
+	go fmt ./...
+
+fmt-check: fmt-check-frontend fmt-check-backend
+
+fmt-check-frontend: $(FRONTEND)/node_modules
+	cd $(FRONTEND) && pnpm fmt:check
+
+fmt-check-backend:
+	test -z "$$(go fmt ./... | tee /dev/stderr)"
+
+$(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
+	cd $(FRONTEND) && pnpm install --frozen-lockfile
+	@touch $@
+
+credits:
+	$(GOCREDITS) -w .
 
 clean:
 	rm -f $(APP)
 	rm -rf static/dist
 	rm -rf images
+
+.PHONY: default ci generate build dev \
+	test test-frontend test-backend \
+	e2e screenshot \
+	lint lint-frontend lint-backend \
+	fmt fmt-frontend fmt-backend \
+	fmt-check fmt-check-frontend fmt-check-backend \
+	credits clean

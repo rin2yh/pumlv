@@ -27,49 +27,29 @@ jobs:
 
       - uses: ./.github/actions/setup-frontend
 
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
+      - name: Generate (frontend build for //go:embed)
+        run: make generate
 
-      - name: Build frontend (for //go:embed)
-        working-directory: frontend
-        run: pnpm run build
+      - name: Lint
+        run: make lint-backend
 
-      - name: go vet
-        run: go vet ./...
-
-      - name: go fmt
-        run: test -z "$(go fmt ./... | tee /dev/stderr)"
-
-      - name: go test
-        run: go test -race ./...
-
-      - name: Verify CREDITS is up to date
-        run: make check-credits
+      - name: Test
+        run: make test-backend
 
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - uses: ./.github/actions/setup-frontend
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Lint
-        run: pnpm lint
+        run: make lint-frontend
 
-      - name: Format check
-        run: pnpm fmt:check
-
-      - name: Unit tests
-        run: pnpm test
+      - name: Test
+        run: make test-frontend
 
   e2e:
     name: E2E (${{ matrix.os }})
@@ -88,7 +68,7 @@ jobs:
 
       - uses: ./.github/actions/setup-frontend
 
-      - name: Build (go generate + go build)
+      - name: Build
         run: make build
 
       - name: Cache Playwright browsers
@@ -101,9 +81,8 @@ jobs:
         working-directory: frontend
         run: pnpm exec playwright install --with-deps chrome
 
-      - name: Playwright tests
-        working-directory: frontend
-        run: pnpm test:e2e
+      - name: E2E tests
+        run: make e2e
 
       - name: Upload Playwright report
         if: failure()
