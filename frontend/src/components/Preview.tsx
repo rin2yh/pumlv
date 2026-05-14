@@ -1,6 +1,9 @@
 import { TransformComponent, TransformWrapper, useControls } from "react-zoom-pan-pinch";
 import type { JSX } from "react";
 
+const MIN_SCALE = 0.1;
+const MAX_SCALE = 10;
+
 const BASE_BTN =
   "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 active:bg-slate-100";
 
@@ -39,7 +42,7 @@ function ZoomControls(): JSX.Element {
 export function Preview({ svg }: { svg: string }): JSX.Element {
   return (
     <div className="relative h-full overflow-hidden">
-      <TransformWrapper centerOnInit minScale={0.1} maxScale={10}>
+      <TransformWrapper centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
         <ZoomControls />
         <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
           <img src={svg} alt="preview" />

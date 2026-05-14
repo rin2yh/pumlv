@@ -1,7 +1,21 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { act, type ReactElement } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, type ReactElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Preview } from "./Preview";
+
+const mockZoomIn = vi.fn();
+const mockZoomOut = vi.fn();
+const mockResetTransform = vi.fn();
+
+vi.mock("react-zoom-pan-pinch", () => ({
+  TransformWrapper: ({ children }: { children: ReactNode }) => children,
+  TransformComponent: ({ children }: { children: ReactNode }) => children,
+  useControls: () => ({
+    zoomIn: mockZoomIn,
+    zoomOut: mockZoomOut,
+    resetTransform: mockResetTransform,
+  }),
+}));
 
 let container: HTMLDivElement;
 let root: Root;
@@ -16,6 +30,7 @@ function render(node: ReactElement): void {
 beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
+  vi.clearAllMocks();
 });
 
 afterEach(() => {
@@ -47,5 +62,38 @@ describe("Preview", () => {
     });
     const img = container.querySelector("img");
     expect(img!.getAttribute("src")).toBe("data:image/png;base64,BBB2");
+  });
+
+  describe("zoom controls", () => {
+    it("renders zoom in, zoom out, and reset buttons", () => {
+      render(<Preview svg="data:image/png;base64,AAAA" />);
+      expect(container.querySelector('[aria-label="Zoom in"]')).not.toBeNull();
+      expect(container.querySelector('[aria-label="Zoom out"]')).not.toBeNull();
+      expect(container.querySelector('[aria-label="Reset zoom"]')).not.toBeNull();
+    });
+
+    it("calls zoomIn when zoom in button is clicked", () => {
+      render(<Preview svg="data:image/png;base64,AAAA" />);
+      act(() => {
+        container.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!.click();
+      });
+      expect(mockZoomIn).toHaveBeenCalledOnce();
+    });
+
+    it("calls zoomOut when zoom out button is clicked", () => {
+      render(<Preview svg="data:image/png;base64,AAAA" />);
+      act(() => {
+        container.querySelector<HTMLButtonElement>('[aria-label="Zoom out"]')!.click();
+      });
+      expect(mockZoomOut).toHaveBeenCalledOnce();
+    });
+
+    it("calls resetTransform when reset button is clicked", () => {
+      render(<Preview svg="data:image/png;base64,AAAA" />);
+      act(() => {
+        container.querySelector<HTMLButtonElement>('[aria-label="Reset zoom"]')!.click();
+      });
+      expect(mockResetTransform).toHaveBeenCalledOnce();
+    });
   });
 });
