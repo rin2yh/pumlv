@@ -41,59 +41,48 @@ afterEach(() => {
 });
 
 describe("Preview", () => {
-  it("renders an img with the provided data URL as src", () => {
-    const svg = "data:image/png;base64,AAAA";
-    render(<Preview svg={svg} />);
-    const img = container.querySelector("img");
-    expect(img).not.toBeNull();
-    expect(img!.getAttribute("src")).toBe(svg);
-  });
+  it.each([{ svg: "data:image/png;base64,AAAA" }, { svg: "data:image/png;base64,ZZZZ" }])(
+    "renders an img with src=$svg",
+    ({ svg }) => {
+      render(<Preview svg={svg} />);
+      const img = container.querySelector("img");
+      expect(img).not.toBeNull();
+      expect(img!.getAttribute("src")).toBe(svg);
+    },
+  );
 
   it("uses 'preview' as the alt text", () => {
     render(<Preview svg="data:image/png;base64,AAAA" />);
-    const img = container.querySelector("img");
-    expect(img!.getAttribute("alt")).toBe("preview");
+    expect(container.querySelector("img")!.getAttribute("alt")).toBe("preview");
   });
 
-  it("updates the src when svg prop changes", () => {
-    render(<Preview svg="data:image/png;base64,AAA1" />);
+  it.each([
+    { from: "data:image/png;base64,AAA1", to: "data:image/png;base64,BBB2" },
+    { from: "data:image/png;base64,CCC3", to: "data:image/png;base64,DDD4" },
+  ])("updates src from $from to $to when svg prop changes", ({ from, to }) => {
+    render(<Preview svg={from} />);
     act(() => {
-      root.render(<Preview svg="data:image/png;base64,BBB2" />);
+      root.render(<Preview svg={to} />);
     });
-    const img = container.querySelector("img");
-    expect(img!.getAttribute("src")).toBe("data:image/png;base64,BBB2");
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(to);
   });
 
   describe("zoom controls", () => {
-    it("renders zoom in, zoom out, and reset buttons", () => {
+    it.each(["Zoom in", "Zoom out", "Reset zoom"])("renders the '%s' button", (label) => {
       render(<Preview svg="data:image/png;base64,AAAA" />);
-      expect(container.querySelector('[aria-label="Zoom in"]')).not.toBeNull();
-      expect(container.querySelector('[aria-label="Zoom out"]')).not.toBeNull();
-      expect(container.querySelector('[aria-label="Reset zoom"]')).not.toBeNull();
+      expect(container.querySelector(`[aria-label="${label}"]`)).not.toBeNull();
     });
 
-    it("calls zoomIn when zoom in button is clicked", () => {
+    it.each([
+      { label: "Zoom in", mock: () => mockZoomIn },
+      { label: "Zoom out", mock: () => mockZoomOut },
+      { label: "Reset zoom", mock: () => mockResetTransform },
+    ])("clicking '$label' button calls its handler", ({ label, mock }) => {
       render(<Preview svg="data:image/png;base64,AAAA" />);
       act(() => {
-        container.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!.click();
+        container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
       });
-      expect(mockZoomIn).toHaveBeenCalledOnce();
-    });
-
-    it("calls zoomOut when zoom out button is clicked", () => {
-      render(<Preview svg="data:image/png;base64,AAAA" />);
-      act(() => {
-        container.querySelector<HTMLButtonElement>('[aria-label="Zoom out"]')!.click();
-      });
-      expect(mockZoomOut).toHaveBeenCalledOnce();
-    });
-
-    it("calls resetTransform when reset button is clicked", () => {
-      render(<Preview svg="data:image/png;base64,AAAA" />);
-      act(() => {
-        container.querySelector<HTMLButtonElement>('[aria-label="Reset zoom"]')!.click();
-      });
-      expect(mockResetTransform).toHaveBeenCalledOnce();
+      expect(mock()).toHaveBeenCalledOnce();
     });
   });
 });
