@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- Go 1.25 or newer
-- Node.js 22 or newer + pnpm 9
+- Go 1.25+
+- Node.js 22+ / pnpm 9+
 
 ## Getting Started
 
