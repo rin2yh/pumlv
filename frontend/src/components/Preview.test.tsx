@@ -17,6 +17,8 @@ vi.mock("react-zoom-pan-pinch", () => ({
   }),
 }));
 
+const SAMPLE_SVG = "data:image/png;base64,AAAA";
+
 let container: HTMLDivElement;
 let root: Root;
 
@@ -41,7 +43,7 @@ afterEach(() => {
 });
 
 describe("Preview", () => {
-  it.each([{ svg: "data:image/png;base64,AAAA" }, { svg: "data:image/png;base64,ZZZZ" }])(
+  it.each([{ svg: SAMPLE_SVG }, { svg: "data:image/png;base64,ZZZZ" }])(
     "renders an img with src=$svg",
     ({ svg }) => {
       render(<Preview svg={svg} />);
@@ -52,7 +54,7 @@ describe("Preview", () => {
   );
 
   it("uses 'preview' as the alt text", () => {
-    render(<Preview svg="data:image/png;base64,AAAA" />);
+    render(<Preview svg={SAMPLE_SVG} />);
     expect(container.querySelector("img")!.getAttribute("alt")).toBe("preview");
   });
 
@@ -69,20 +71,20 @@ describe("Preview", () => {
 
   describe("zoom controls", () => {
     it.each(["Zoom in", "Zoom out", "Reset zoom"])("renders the '%s' button", (label) => {
-      render(<Preview svg="data:image/png;base64,AAAA" />);
+      render(<Preview svg={SAMPLE_SVG} />);
       expect(container.querySelector(`[aria-label="${label}"]`)).not.toBeNull();
     });
 
     it.each([
-      { label: "Zoom in", mock: () => mockZoomIn },
-      { label: "Zoom out", mock: () => mockZoomOut },
-      { label: "Reset zoom", mock: () => mockResetTransform },
+      { label: "Zoom in", mock: mockZoomIn },
+      { label: "Zoom out", mock: mockZoomOut },
+      { label: "Reset zoom", mock: mockResetTransform },
     ])("clicking '$label' button calls its handler", ({ label, mock }) => {
-      render(<Preview svg="data:image/png;base64,AAAA" />);
+      render(<Preview svg={SAMPLE_SVG} />);
       act(() => {
         container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
       });
-      expect(mock()).toHaveBeenCalledOnce();
+      expect(mock).toHaveBeenCalledOnce();
     });
   });
 });
