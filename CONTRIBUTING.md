@@ -1,11 +1,13 @@
 # Contributing to pumlv
 
-## Prerequisites
+## Getting Started
+
+### Prerequisites
 
 - Go 1.25+
 - Node.js 22+ / pnpm 9+
 
-## Getting Started
+### Setup
 
 ```sh
 make build
