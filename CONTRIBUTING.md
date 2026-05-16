@@ -1,4 +1,48 @@
-# pumlv
+# Contributing to pumlv
+
+## Prerequisites
+
+- Go 1.25 or newer
+- Node.js 22 or newer + pnpm 9
+
+## Getting Started
+
+```sh
+make build
+./pumlv ./examples
+```
+
+For HMR during frontend development:
+
+```sh
+make dev   # starts pumlv on :8765 and pnpm dev on :5173 (/api proxied to :8765)
+```
+
+## Testing
+
+```sh
+make lint   # go vet + oxlint + format checks (Go and frontend)
+make test   # go test + vitest
+```
+
+### E2E (rendering tests)
+
+Playwright-driven tests live under `frontend/tests/e2e/`. They launch a real Chrome, spawn the `pumlv` binary, and verify that CheerpJ + plantuml-core actually renders the diagrams in `examples/`. Network access is required (CheerpJ runtime is fetched from a CDN on first run).
+
+Install Playwright once:
+
+```sh
+cd frontend
+pnpm install
+pnpm exec playwright install --with-deps chrome
+```
+
+Then run:
+
+```sh
+make e2e         # Playwright tests
+make screenshot  # writes screenshots to ./images/
+```
 
 ## Architecture
 
@@ -22,7 +66,7 @@ pumlv
         └── plantuml/renderer.ts # SVG generation via CheerpJ + plantuml-core.jar
 ```
 
-## HTTP API
+### HTTP API
 
 The server exposes the following endpoints to the browser. `/api/file` enforces a whitelist built from the paths enumerated at startup to prevent directory traversal.
 
@@ -32,48 +76,3 @@ The server exposes the following endpoints to the browser. `/api/file` enforces 
 | GET | `/api/files` | List of watched files (`[{path, rel, name, source}]`) |
 | GET | `/api/file?path=...` | Source of the specified file (text/plain) |
 | GET | `/api/events` | SSE stream. Event names are `hello` / `changed` / `tree` |
-
-## Local Development
-
-### Prerequisites
-
-- Go 1.25 or newer
-- Node.js 22 or newer + pnpm 9
-
-### Setup
-
-```sh
-make build
-./pumlv ./examples
-```
-
-For HMR during frontend development:
-
-```sh
-make dev   # starts pumlv on :8765 and pnpm dev on :5173 (/api proxied to :8765)
-```
-
-### CI commands
-
-```sh
-make lint   # go vet + oxlint + format checks (Go and frontend)
-make test   # go test + vitest
-```
-
-### Rendering tests (E2E)
-
-Playwright-driven real-rendering tests live under `frontend/tests/e2e/`. They launch a real Chrome, spawn the `pumlv` binary as the server, and verify that the in-browser CheerpJ + plantuml-core combination actually renders the diagrams in `examples/`. The CheerpJ runtime is fetched from `cjrtnc.leaningtech.com` on first load, so network access is required when running the E2E suite.
-
-```sh
-make build          # produces the pumlv binary at the repo root
-make e2e            # runs `pnpm test:e2e` (Playwright) in frontend
-make screenshot     # writes README screenshots to ./images/
-```
-
-Playwright and Chrome must be installed separately:
-
-```sh
-cd frontend
-pnpm install
-pnpm exec playwright install --with-deps chrome
-```
