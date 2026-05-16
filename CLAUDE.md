@@ -43,37 +43,21 @@ The server exposes the following endpoints to the browser. `/api/file` enforces 
 ### Setup
 
 ```sh
-go generate ./...   # runs pnpm install & build for the frontend, producing static/dist
-go build -o pumlv .
+make build
 ./pumlv ./examples
 ```
 
-`go generate` is not invoked automatically by `go build`, so run it explicitly whenever you need to regenerate the frontend assets.
-
-During development you can run the frontend dev server separately to get HMR:
+For HMR during frontend development:
 
 ```sh
-# Terminal 1
-./pumlv --no-open --port 8765 ./examples
-
-# Terminal 2
-cd frontend && pnpm dev   # http://localhost:5173 (`/api` is proxied to :8765)
+make dev   # starts pumlv on :8765 and pnpm dev on :5173 (/api proxied to :8765)
 ```
 
 ### CI commands
 
 ```sh
-# Go
-go vet ./...
-go fmt ./...        # OK when the output is empty
-go test ./...
-
-# Frontend
-cd frontend
-pnpm lint           # oxlint
-pnpm fmt:check      # oxfmt
-pnpm test           # vitest
-pnpm build          # equivalent to `go generate ./...` from the repo root
+make lint   # go vet + oxlint + format checks (Go and frontend)
+make test   # go test + vitest
 ```
 
 ### Rendering tests (E2E)
