@@ -28,7 +28,7 @@ To use a pre-built binary:
 go install github.com/rin2yh/pumlv@latest
 ```
 
-To build from source, see [CLAUDE.md](./CLAUDE.md).
+To build from source, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Usage
 
