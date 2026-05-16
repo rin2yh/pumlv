@@ -11,10 +11,12 @@ A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the di
 
 Existing PlantUML preview options have a few rough edges:
 
-- Most depend on a specific editor (VSCode / IntelliJ / Vim plugins, etc.) and stop working the moment you switch editors.
-- Local rendering typically requires installing Java and Graphviz, or running Docker, as separate tooling.
+- Most tools are editor plugins (VSCode / IntelliJ / Vim, etc.) that stop working the moment you switch editors. pumlv runs as a standalone process, independent of any editor.
+- Local rendering typically requires installing Java and Graphviz, or running Docker as separate infrastructure. pumlv has no runtime dependencies beyond the binary itself.
+- Web-based tools (e.g. plantuml.com) send your diagram source to an external server. pumlv renders entirely in the browser via CheerpJ; your source never leaves your machine.
+- Editor plugins can only preview the file currently open in that editor. pumlv accepts any file or directory path on the command line, regardless of what you have open.
 
-pumlv aims to remove both pain points: it is editor-agnostic, and it ships as a single binary that renders directly in the browser by running `plantuml-core` through CheerpJ.
+pumlv aims to remove all of these pain points.
 
 > This repository is inspired by [k1LoW/mo](https://github.com/k1LoW/mo) (a local preview server for Markdown).
 
