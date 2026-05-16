@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   tagpr:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
       tag: ${{ steps.tagpr.outputs.tag }}
@@ -35,7 +35,7 @@ jobs:
   release:
     needs: tagpr
     if: needs.tagpr.outputs.tag != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
