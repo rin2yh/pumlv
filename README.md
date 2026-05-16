@@ -2,10 +2,12 @@
 
 A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the diagram opens in your browser, re-rendering automatically whenever you save the file. No Java, no Docker, no external server required.
 
-- Fully local rendering (runs `plantuml-core.jar.js` in the browser)
+- Fully local rendering via CheerpJ + plantuml-core — your source never leaves your machine
 - File-change detection → automatic re-render over SSE
-- Works with both files and directories (directories are walked recursively)
-- Single binary (frontend assets bundled via `go:embed`)
+- Browser UI with file tree, SVG preview, and syntax-highlighted source view
+- Works with files and directories (recursive); multiple arguments allowed
+- Configurable file extensions (`.puml`, `.plantuml`, `.iuml`, `.wsd` by default)
+- Single binary — frontend assets embedded via `go:embed`
 
 ## Background
 
@@ -22,7 +24,7 @@ pumlv aims to remove all of these pain points.
 
 ## Installation
 
-To use a pre-built binary:
+Download a pre-built binary from the [releases page](https://github.com/rin2yh/pumlv/releases), or install with Go:
 
 ```sh
 go install github.com/rin2yh/pumlv@latest
