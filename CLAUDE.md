@@ -15,12 +15,7 @@ Go module: `github.com/rin2yh/pumlv`
 
 ## Build & Development Commands
 
-- `make build` — frontend build (via `go generate`) + Go binary
-- `make dev` — development mode (pumlv on :8765, pnpm dev on :5173 with `/api` proxied)
-- `make test` — run all tests (go test + vitest)
-- `make lint` — linters for Go and frontend (go vet + oxlint + format checks)
-- `make e2e` — Playwright E2E tests (requires Chrome)
-- `make screenshot` — writes screenshots to `./images/`
+@Makefile
 
 ## Architecture
 
