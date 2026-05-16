@@ -11,7 +11,8 @@ Go module: `github.com/rin2yh/pumlv`
 ## Key Requirements
 
 - Go 1.25+
-- Node.js 22+, pnpm 9+
+- Node.js 22+
+- pnpm 9+
 
 ## Build & Development Commands
 
