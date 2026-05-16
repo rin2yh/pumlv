@@ -1,4 +1,4 @@
-# pumlv — Developer Notes
+# pumlv
 
 ## Architecture
 
@@ -33,7 +33,7 @@ The server exposes the following endpoints to the browser. `/api/file` enforces 
 | GET | `/api/file?path=...` | Source of the specified file (text/plain) |
 | GET | `/api/events` | SSE stream. Event names are `hello` / `changed` / `tree` |
 
-## Development
+## Local Development
 
 ### Prerequisites
 
