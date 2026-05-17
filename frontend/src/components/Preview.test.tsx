@@ -7,6 +7,8 @@ const mockZoomIn = vi.fn();
 const mockZoomOut = vi.fn();
 const mockResetTransform = vi.fn();
 
+let mockScale = 1;
+
 vi.mock("react-zoom-pan-pinch", () => ({
   TransformWrapper: ({ children }: { children: ReactNode }) => children,
   TransformComponent: ({ children }: { children: ReactNode }) => children,
@@ -15,6 +17,7 @@ vi.mock("react-zoom-pan-pinch", () => ({
     zoomOut: mockZoomOut,
     resetTransform: mockResetTransform,
   }),
+  useTransformContext: () => ({ transformState: { scale: mockScale } }),
 }));
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
@@ -32,6 +35,7 @@ function render(node: ReactElement): void {
 beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
+  mockScale = 1;
   vi.clearAllMocks();
 });
 
@@ -85,6 +89,16 @@ describe("Preview", () => {
         container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
       });
       expect(mock).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+      { scale: 1, expected: "100%" },
+      { scale: 0.5, expected: "50%" },
+      { scale: 2.5, expected: "250%" },
+    ])("displays zoom level as $expected when scale is $scale", ({ scale, expected }) => {
+      mockScale = scale;
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(container.querySelector('[aria-label="Zoom level"]')!.textContent).toBe(expected);
     });
   });
 });

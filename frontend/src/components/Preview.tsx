@@ -1,4 +1,9 @@
-import { TransformComponent, TransformWrapper, useControls } from "react-zoom-pan-pinch";
+import {
+  TransformComponent,
+  TransformWrapper,
+  useControls,
+  useTransformContext,
+} from "react-zoom-pan-pinch";
 import type { JSX } from "react";
 
 const MIN_SCALE = 0.1;
@@ -9,16 +14,12 @@ const BASE_BTN =
 
 function ZoomControls(): JSX.Element {
   const { zoomIn, zoomOut, resetTransform } = useControls();
+  const {
+    transformState: { scale },
+  } = useTransformContext();
+
   return (
     <div className="absolute bottom-3 right-3 z-10 flex gap-1">
-      <button
-        type="button"
-        onClick={zoomIn}
-        className={`${BASE_BTN} w-8 justify-center`}
-        aria-label="Zoom in"
-      >
-        +
-      </button>
       <button
         type="button"
         onClick={zoomOut}
@@ -26,6 +27,20 @@ function ZoomControls(): JSX.Element {
         aria-label="Zoom out"
       >
         −
+      </button>
+      <span
+        className="flex h-8 w-14 items-center justify-center rounded border border-slate-200 bg-white text-xs tabular-nums text-slate-600 shadow-sm"
+        aria-label="Zoom level"
+      >
+        {Math.round(scale * 100)}%
+      </span>
+      <button
+        type="button"
+        onClick={zoomIn}
+        className={`${BASE_BTN} w-8 justify-center`}
+        aria-label="Zoom in"
+      >
+        +
       </button>
       <button
         type="button"
