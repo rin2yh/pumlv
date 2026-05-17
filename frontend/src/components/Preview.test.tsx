@@ -100,5 +100,17 @@ describe("Preview", () => {
       render(<Preview svg={SAMPLE_SVG} />);
       expect(container.querySelector('[aria-label="Zoom level"]')!.textContent).toBe(expected);
     });
+
+    it("resets zoom display to 100% when svg prop changes", () => {
+      mockScale = 2;
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(container.querySelector('[aria-label="Zoom level"]')!.textContent).toBe("200%");
+
+      mockScale = 1;
+      act(() => {
+        root.render(<Preview svg="data:image/png;base64,BBBB" />);
+      });
+      expect(container.querySelector('[aria-label="Zoom level"]')!.textContent).toBe("100%");
+    });
   });
 });

@@ -57,7 +57,8 @@ function ZoomControls(): JSX.Element {
 export function Preview({ svg }: { svg: string }): JSX.Element {
   return (
     <div className="relative h-full overflow-hidden">
-      <TransformWrapper centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
+      {/* key remounts the wrapper on file change, resetting zoom/pan state */}
+      <TransformWrapper key={svg} centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
         <ZoomControls />
         <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
           <img src={svg} alt="preview" />
