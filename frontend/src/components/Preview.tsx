@@ -13,7 +13,7 @@ function ZoomControls(): JSX.Element {
     <div className="absolute bottom-3 right-3 z-10 flex gap-1">
       <button
         type="button"
-        onClick={() => zoomIn()}
+        onClick={zoomIn}
         className={`${BASE_BTN} w-8 justify-center`}
         aria-label="Zoom in"
       >
@@ -21,7 +21,7 @@ function ZoomControls(): JSX.Element {
       </button>
       <button
         type="button"
-        onClick={() => zoomOut()}
+        onClick={zoomOut}
         className={`${BASE_BTN} w-8 justify-center`}
         aria-label="Zoom out"
       >
@@ -29,7 +29,7 @@ function ZoomControls(): JSX.Element {
       </button>
       <button
         type="button"
-        onClick={() => resetTransform()}
+        onClick={resetTransform}
         className={`${BASE_BTN} px-2 text-xs`}
         aria-label="Reset zoom"
       >
