@@ -36,13 +36,18 @@ async function bootstrap(): Promise<unknown> {
     if (!window.cheerpjInit) {
       await loadLoaderScript();
     }
-    if (!window.cheerpjInit || !window.cheerpjRunLibrary) {
+    if (!window.cheerpjInit) {
       throw new Error("CheerpJ API missing after loader.js");
     }
 
     await fetch(JAR_PATH);
 
+    // CheerpJ 4.x exposes cheerpjRunLibrary only after cheerpjInit resolves.
     await window.cheerpjInit({ status: "none" });
+
+    if (!window.cheerpjRunLibrary) {
+      throw new Error("cheerpjRunLibrary missing after cheerpjInit");
+    }
 
     const lib = await window.cheerpjRunLibrary(CLASSPATH);
 

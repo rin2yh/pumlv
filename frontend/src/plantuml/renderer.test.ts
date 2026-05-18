@@ -112,10 +112,15 @@ describe("renderPlantUML", () => {
     await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/PlantUML render failed/);
   });
 
-  it("throws if cheerpjRunLibrary is missing on the window after bootstrap", async () => {
-    delete window.cheerpjRunLibrary;
+  it("throws if cheerpjRunLibrary is not available after cheerpjInit", async () => {
+    // Simulate CheerpJ 4.x not exposing cheerpjRunLibrary after init
+    cheerpjInit.mockImplementationOnce(async () => {
+      delete window.cheerpjRunLibrary;
+    });
     const { renderPlantUML } = await import("./renderer");
-    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/CheerpJ API missing/);
+    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(
+      /cheerpjRunLibrary missing/,
+    );
   });
 
   it("throws if cheerpjInit disappears between loader and bootstrap", async () => {
