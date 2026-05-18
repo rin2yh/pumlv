@@ -15,10 +15,11 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     channel: "chrome",
+    // Block service worker registration so CheerpJ falls back to direct CDN
+    // fetches instead of waiting for its CDN-origin service worker to activate
+    // (which can hang indefinitely in headless Chrome CI environments).
+    serviceWorkers: "block",
     launchOptions: {
-      // --disable-dev-shm-usage prevents Chrome from using /dev/shm (which is
-      // small in Docker/CI containers) for shared memory; CheerpJ 4.x allocates
-      // large SharedArrayBuffers for the JVM, so this avoids OOM hangs.
       args: ["--disable-dev-shm-usage"],
     },
   },

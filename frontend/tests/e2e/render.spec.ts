@@ -4,16 +4,14 @@ const MIN_SVG_CHARS = 100;
 
 test.describe("PlantUML rendering", () => {
   test("renders the initially selected file as an SVG data URL", async ({ page }) => {
-    const consoleErrors: string[] = [];
+    const consoleLogs: string[] = [];
     const networkRequests: string[] = [];
     const networkFailures: string[] = [];
     const workers: string[] = [];
     // Track requests whose body download has not yet completed.
     const pendingRequests = new Set<string>();
-    page.on("console", (msg) => {
-      if (msg.type() === "error") consoleErrors.push(msg.text());
-    });
-    page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`));
+    page.on("console", (msg) => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
+    page.on("pageerror", (err) => consoleLogs.push(`[pageerror] ${err.message}`));
     page.on("request", (req) => {
       pendingRequests.add(req.url());
       const url = req.url();
@@ -70,7 +68,7 @@ test.describe("PlantUML rendering", () => {
           `Pending (stalled) requests:\n${[...pendingRequests].join("\n")}\n` +
           `Network requests (CheerpJ/PlantUML):\n${networkRequests.join("\n")}\n` +
           `Network failures:\n${networkFailures.join("\n")}\n` +
-          `Console errors:\n${consoleErrors.join("\n")}`,
+          `Console (last 50):\n${consoleLogs.slice(-50).join("\n")}`,
       );
     }
 
