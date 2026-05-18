@@ -8,11 +8,6 @@ import { fileURLToPath } from "node:url";
 
 const ASSETS = [
   {
-    name: "plantuml-core.jar.js",
-    url: "https://api.github.com/repos/plantuml/plantuml-core/releases/assets/98017576",
-    size: 17765741,
-  },
-  {
     name: "plantuml-core.jar",
     url: "https://api.github.com/repos/plantuml/plantuml-core/releases/assets/98017508",
     size: 4386892,

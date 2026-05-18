@@ -3,27 +3,43 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 declare global {
   interface Window {
     cheerpjInit?: (opts?: Record<string, unknown>) => Promise<void>;
-    cheerpjRunMain?: (main: string, classpath: string, ...args: string[]) => Promise<number>;
-    cjCall?: <T = unknown>(className: string, method: string, ...args: unknown[]) => Promise<T>;
+    cheerpjRunLibrary?: (classpath: string) => Promise<unknown>;
   }
 }
 
 const originalFetch = globalThis.fetch;
 
 let cheerpjInit: ReturnType<typeof vi.fn>;
-let cheerpjRunMain: ReturnType<typeof vi.fn>;
-let cjCall: ReturnType<typeof vi.fn>;
+let cheerpjRunLibrary: ReturnType<typeof vi.fn>;
+let svgConvert: ReturnType<typeof vi.fn>;
+let runInitMain: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.resetModules();
 
+  svgConvert = vi.fn(async () => "<svg>fake</svg>");
+  runInitMain = vi.fn(async () => undefined);
+
+  const lib = {
+    com: {
+      plantuml: {
+        api: {
+          cheerpj: {
+            v1: {
+              Svg: { convert: svgConvert },
+              RunInit: { main: runInitMain },
+            },
+          },
+        },
+      },
+    },
+  };
+
   cheerpjInit = vi.fn(async () => undefined);
-  cheerpjRunMain = vi.fn(async () => 0);
-  cjCall = vi.fn(async () => "ZmFrZQ==");
+  cheerpjRunLibrary = vi.fn(async () => lib);
 
   window.cheerpjInit = cheerpjInit as unknown as Window["cheerpjInit"];
-  window.cheerpjRunMain = cheerpjRunMain as unknown as Window["cheerpjRunMain"];
-  window.cjCall = cjCall as unknown as Window["cjCall"];
+  window.cheerpjRunLibrary = cheerpjRunLibrary as unknown as Window["cheerpjRunLibrary"];
 
   globalThis.fetch = vi.fn(async () => new Response("")) as unknown as typeof fetch;
 });
@@ -31,26 +47,23 @@ beforeEach(() => {
 afterEach(() => {
   globalThis.fetch = originalFetch;
   delete window.cheerpjInit;
-  delete window.cheerpjRunMain;
-  delete window.cjCall;
+  delete window.cheerpjRunLibrary;
 });
 
 describe("renderPlantUML", () => {
-  it("returns a data:image/png URL using the base64 string from cjCall", async () => {
+  it("returns a data:image/svg+xml URL from Svg.convert", async () => {
     const { renderPlantUML } = await import("./renderer");
     const url = await renderPlantUML("@startuml\nA -> B\n@enduml");
-    expect(url).toBe("data:image/png;base64,ZmFrZQ==");
+    expect(url).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    expect(decodeURIComponent(url.replace("data:image/svg+xml;charset=utf-8,", ""))).toBe(
+      "<svg>fake</svg>",
+    );
   });
 
-  it("invokes cjCall with the PlantUML cheerpj API signature", async () => {
+  it("invokes Svg.convert with the correct signature", async () => {
     const { renderPlantUML } = await import("./renderer");
     await renderPlantUML("@startuml\n@enduml");
-    expect(cjCall).toHaveBeenCalledWith(
-      "com.plantuml.api.cheerpj.v1.Png",
-      "convertToBase64",
-      "light",
-      "@startuml\n@enduml",
-    );
+    expect(svgConvert).toHaveBeenCalledWith("light", "@startuml\n@enduml");
   });
 
   it("bootstraps CheerpJ exactly once across multiple renders", async () => {
@@ -59,44 +72,55 @@ describe("renderPlantUML", () => {
     await renderPlantUML("b");
     await renderPlantUML("c");
     expect(cheerpjInit).toHaveBeenCalledTimes(1);
-    expect(cheerpjRunMain).toHaveBeenCalledTimes(1);
-    expect(cjCall).toHaveBeenCalledTimes(3);
+    expect(cheerpjRunLibrary).toHaveBeenCalledTimes(1);
+    expect(svgConvert).toHaveBeenCalledTimes(3);
   });
 
-  it("preloads the .jar and .jar.js before initializing CheerpJ", async () => {
+  it("preloads the .jar before initializing CheerpJ", async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const { renderPlantUML } = await import("./renderer");
     await renderPlantUML("@startuml\n@enduml");
 
     const calls = fetchMock.mock.calls.map((c) => c[0]);
     expect(calls).toContain("/plantuml-core.jar");
-    expect(calls).toContain("/plantuml-core.jar.js");
   });
 
-  it("runs RunInit with the /app classpath", async () => {
+  it("does not fetch the .jar.js AOT bundle", async () => {
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const { renderPlantUML } = await import("./renderer");
     await renderPlantUML("@startuml\n@enduml");
-    expect(cheerpjRunMain).toHaveBeenCalledWith(
-      "com.plantuml.api.cheerpj.v1.RunInit",
-      "/app/plantuml-core.jar",
-    );
+
+    const calls = fetchMock.mock.calls.map((c) => c[0]);
+    expect(calls).not.toContain("/plantuml-core.jar.js");
   });
 
-  it("throws when cjCall returns a non-string value", async () => {
-    cjCall.mockResolvedValueOnce(undefined);
+  it("runs RunInit.main to initialize PlantUML", async () => {
+    const { renderPlantUML } = await import("./renderer");
+    await renderPlantUML("@startuml\n@enduml");
+    expect(runInitMain).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads the library with the /app classpath", async () => {
+    const { renderPlantUML } = await import("./renderer");
+    await renderPlantUML("@startuml\n@enduml");
+    expect(cheerpjRunLibrary).toHaveBeenCalledWith("/app/plantuml-core.jar");
+  });
+
+  it("throws when Svg.convert returns a non-string value", async () => {
+    svgConvert.mockResolvedValueOnce(undefined);
     const { renderPlantUML } = await import("./renderer");
     await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/PlantUML render failed/);
   });
 
-  it("throws if cjCall is missing on the window after bootstrap", async () => {
-    delete window.cjCall;
+  it("throws if cheerpjRunLibrary is missing on the window after bootstrap", async () => {
+    delete window.cheerpjRunLibrary;
     const { renderPlantUML } = await import("./renderer");
-    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/cjCall missing/);
+    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/CheerpJ API missing/);
   });
 
   it("throws if cheerpjInit disappears between loader and bootstrap", async () => {
     delete window.cheerpjInit;
-    delete window.cheerpjRunMain;
+    delete window.cheerpjRunLibrary;
 
     const appendChild = vi
       .spyOn(document.head, "appendChild")
@@ -111,5 +135,12 @@ describe("renderPlantUML", () => {
     const { renderPlantUML } = await import("./renderer");
     await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/CheerpJ API missing/);
     appendChild.mockRestore();
+  });
+
+  it("passes large source to Svg.convert without truncation", async () => {
+    const largeSource = "@startuml\n" + "A -> B : message\n".repeat(1000) + "@enduml";
+    const { renderPlantUML } = await import("./renderer");
+    await renderPlantUML(largeSource);
+    expect(svgConvert).toHaveBeenCalledWith("light", largeSource);
   });
 });
