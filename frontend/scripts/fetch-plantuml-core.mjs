@@ -37,7 +37,7 @@ const entries = unzipSync(buf, {
   filter: (file) => wanted.has(basename(file.name)),
 });
 
-const extracted = new Set(Object.keys(entries).map(basename));
+const extracted = new Set(Object.keys(entries).map((name) => basename(name)));
 const missing = REQUIRED_FILES.filter((f) => !extracted.has(f));
 if (missing.length > 0) {
   console.error(`zip did not contain: ${missing.join(", ")}`);
