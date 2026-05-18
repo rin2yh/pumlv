@@ -4,10 +4,32 @@ const MIN_SVG_CHARS = 100;
 
 test.describe("PlantUML rendering", () => {
   test("renders the initially selected file as an SVG data URL", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
+    page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`));
+
     await page.goto("/");
 
+    // Wait for either the preview image or the error panel to appear
     const preview = page.getByAltText("preview");
-    await expect(preview).toBeVisible({ timeout: 90_000 });
+    const errorPanel = page.locator("pre").filter({ hasText: /error|failed|missing/i });
+
+    const which = await Promise.race([
+      preview.waitFor({ state: "visible", timeout: 90_000 }).then(() => "ok" as const),
+      errorPanel.first().waitFor({ state: "visible", timeout: 90_000 }).then(() => "err" as const),
+    ]).catch(() => "timeout" as const);
+
+    if (which !== "ok") {
+      const errText = which === "err" ? await errorPanel.first().textContent() : "(timeout)";
+      throw new Error(
+        `Rendering did not produce preview image.\n` +
+          `State: ${which}\n` +
+          `Error panel: ${errText}\n` +
+          `Console errors:\n${consoleErrors.join("\n")}`,
+      );
+    }
 
     const src = await preview.getAttribute("src");
     expect(src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
