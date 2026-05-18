@@ -17,7 +17,6 @@
     "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
-    "@hpcc-js/wasm": "^2.20.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-zoom-pan-pinch": "^3.7.0",
