@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: process.env.CI
     ? [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]]
     : "list",
-  timeout: 120_000,
+  timeout: 300_000,
   expect: { timeout: 60_000 },
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,

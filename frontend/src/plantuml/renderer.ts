@@ -61,13 +61,17 @@ async function bootstrap(): Promise<unknown> {
     }
 
     // CheerpJ 4.x exposes cheerpjRunLibrary only after cheerpjInit resolves.
-    await withTimeout(window.cheerpjInit({ status: "none" }), 60_000, "cheerpjInit");
+    await withTimeout(window.cheerpjInit({ status: "none" }), 120_000, "cheerpjInit");
 
     if (!window.cheerpjRunLibrary) {
       throw new Error("cheerpjRunLibrary missing after cheerpjInit");
     }
 
-    const lib = await withTimeout(window.cheerpjRunLibrary(CLASSPATH), 60_000, "cheerpjRunLibrary");
+    const lib = await withTimeout(
+      window.cheerpjRunLibrary(CLASSPATH),
+      120_000,
+      "cheerpjRunLibrary",
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const RunInit = await (lib as any).com.plantuml.api.cheerpj.v1.RunInit;
