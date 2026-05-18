@@ -15,6 +15,12 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     channel: "chrome",
+    launchOptions: {
+      // --disable-dev-shm-usage prevents Chrome from using /dev/shm (which is
+      // small in Docker/CI containers) for shared memory; CheerpJ 4.x allocates
+      // large SharedArrayBuffers for the JVM, so this avoids OOM hangs.
+      args: ["--disable-dev-shm-usage"],
+    },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
