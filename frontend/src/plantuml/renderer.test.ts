@@ -1,20 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setPlantUMLModuleForTests, renderPlantUML } from "./renderer";
+import { loadPlantUMLModule } from "./bootstrap";
+import { renderPlantUML } from "./renderer";
+
+vi.mock("./bootstrap", () => ({
+  loadPlantUMLModule: vi.fn(),
+}));
 
 let renderToString: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  vi.clearAllMocks();
   renderToString = vi.fn(
     (_lines: string[], onSuccess: (svg: string) => void, _onError: (msg: string) => void) => {
       onSuccess("<svg>fake</svg>");
     },
   );
-  setPlantUMLModuleForTests({ renderToString });
-});
-
-afterEach(() => {
-  setPlantUMLModuleForTests(null);
+  vi.mocked(loadPlantUMLModule).mockResolvedValue({ renderToString });
 });
 
 describe("renderPlantUML", () => {
@@ -48,10 +50,11 @@ describe("renderPlantUML", () => {
     expect(lines).toHaveLength(largeSource.split("\n").length);
   });
 
-  it("reuses the bootstrapped module across multiple renders", async () => {
+  it("delegates module loading to loadPlantUMLModule on every render", async () => {
     await renderPlantUML("a");
     await renderPlantUML("b");
     await renderPlantUML("c");
+    expect(vi.mocked(loadPlantUMLModule)).toHaveBeenCalledTimes(3);
     expect(renderToString).toHaveBeenCalledTimes(3);
   });
 });
