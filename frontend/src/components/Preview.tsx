@@ -10,7 +10,7 @@ const MIN_SCALE = 0.1;
 const MAX_SCALE = 10;
 
 const BASE_BTN =
-  "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 active:bg-slate-100";
+  "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur-sm hover:bg-white active:bg-slate-100";
 
 function ZoomControls(): JSX.Element {
   const { zoomIn, zoomOut, resetTransform } = useControls();
@@ -19,7 +19,7 @@ function ZoomControls(): JSX.Element {
   const scale = useTransformComponent(({ state }) => state.scale);
 
   return (
-    <div className="absolute bottom-3 right-3 z-10 flex gap-1">
+    <div className="absolute right-3 top-3 z-20 flex gap-1">
       <button
         type="button"
         onClick={() => zoomOut()}
@@ -29,7 +29,7 @@ function ZoomControls(): JSX.Element {
         −
       </button>
       <span
-        className="flex h-8 w-14 items-center justify-center rounded border border-slate-200 bg-white text-xs tabular-nums text-slate-600 shadow-sm"
+        className="flex h-8 w-14 items-center justify-center rounded border border-slate-200 bg-white/90 text-xs tabular-nums text-slate-600 shadow-sm backdrop-blur-sm"
         aria-label="Zoom level"
       >
         {Math.round(scale * 100)}%
