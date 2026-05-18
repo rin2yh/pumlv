@@ -9,16 +9,12 @@ export default defineConfig({
   reporter: process.env.CI
     ? [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]]
     : "list",
-  timeout: 300_000,
-  expect: { timeout: 60_000 },
+  timeout: 60_000,
+  expect: { timeout: 30_000 },
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     channel: "chrome",
-    // Block service worker registration so CheerpJ falls back to direct CDN
-    // fetches instead of waiting for its CDN-origin service worker to activate
-    // (which can hang indefinitely in headless Chrome CI environments).
-    serviceWorkers: "block",
     launchOptions: {
       args: ["--disable-dev-shm-usage"],
     },
