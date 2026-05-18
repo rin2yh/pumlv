@@ -118,9 +118,7 @@ describe("renderPlantUML", () => {
       delete window.cheerpjRunLibrary;
     });
     const { renderPlantUML } = await import("./renderer");
-    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(
-      /cheerpjRunLibrary missing/,
-    );
+    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/cheerpjRunLibrary missing/);
   });
 
   it("throws if cheerpjInit disappears between loader and bootstrap", async () => {
