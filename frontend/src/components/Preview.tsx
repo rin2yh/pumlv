@@ -2,7 +2,7 @@ import {
   TransformComponent,
   TransformWrapper,
   useControls,
-  useTransformContext,
+  useTransformComponent,
 } from "react-zoom-pan-pinch";
 import type { JSX } from "react";
 
@@ -14,9 +14,9 @@ const BASE_BTN =
 
 function ZoomControls(): JSX.Element {
   const { zoomIn, zoomOut, resetTransform } = useControls();
-  const {
-    transformState: { scale },
-  } = useTransformContext();
+  // useTransformComponent re-renders on every transform change (wheel/pinch
+  // included), unlike useTransformContext which only exposes a ref.
+  const scale = useTransformComponent(({ state }) => state.scale);
 
   return (
     <div className="absolute bottom-3 right-3 z-10 flex gap-1">

@@ -17,7 +17,8 @@ vi.mock("react-zoom-pan-pinch", () => ({
     zoomOut: mockZoomOut,
     resetTransform: mockResetTransform,
   }),
-  useTransformContext: () => ({ transformState: { scale: mockScale } }),
+  useTransformComponent: (cb: (s: { state: { scale: number } }) => unknown) =>
+    cb({ state: { scale: mockScale } }),
 }));
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
