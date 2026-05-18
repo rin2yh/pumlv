@@ -142,6 +142,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# PlantUML core assets fetched by scripts/
-public/plantuml-core.jar
-public/plantuml-core.jar.js
+# PlantUML TeaVM assets fetched by scripts/fetch-plantuml-core.mjs
+public/plantuml/

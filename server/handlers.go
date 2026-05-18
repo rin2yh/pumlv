@@ -16,17 +16,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/files", s.handleFiles)
 	mux.HandleFunc("/api/file", s.handleFile)
 	mux.HandleFunc("/api/events", s.handleEvents)
-	mux.Handle("/", coopCoep(s.handleStatic()))
-}
-
-// coopCoep enables cross-origin isolation (required for SharedArrayBuffer / CheerpJ 4.x).
-// credentialless allows CDN resources to load without requiring CORP headers on them.
-func coopCoep(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
-		w.Header().Set("Cross-Origin-Embedder-Policy", "credentialless")
-		next.ServeHTTP(w, r)
-	})
+	mux.Handle("/", s.handleStatic())
 }
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
@@ -112,8 +102,10 @@ func (s *Server) handleStatic() http.Handler {
 				fileServer.ServeHTTP(w, r)
 				return
 			}
-			// Asset extensions must 404 so CheerpJ can detect missing classpath
-			// entries instead of receiving index.html as a JAR / class file.
+			// Asset-like requests (anything with an extension) must 404
+			// instead of falling through to the SPA's index.html — otherwise
+			// the browser would parse HTML as JS / SVG / image and produce
+			// confusing failures downstream.
 			if filepath.Ext(path) != "" {
 				http.NotFound(w, r)
 				return

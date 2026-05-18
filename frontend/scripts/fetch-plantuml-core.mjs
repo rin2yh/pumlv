@@ -1,54 +1,51 @@
-// Downloads plantuml-core release assets (jar.js AOT bundle + raw jar) into
-// frontend/public/ so Vite copies them into static/dist/. CheerpJ needs both:
-// the raw .jar gives it a real classpath entry, and the .jar.js next to it
-// provides the AOT-compiled JS that CheerpJ auto-loads.
-import { createWriteStream, existsSync, mkdirSync, statSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+// Downloads the TeaVM-compiled PlantUML build (plantuml.js + viz-global.js)
+// from the upstream plantuml/plantuml release "snapshot" zip and places the
+// two required files into frontend/public/plantuml/ so Vite copies them into
+// static/dist/.
+import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { unzipSync } from "fflate";
 
-const ASSETS = [
-  {
-    name: "plantuml-core.jar",
-    url: "https://api.github.com/repos/plantuml/plantuml-core/releases/assets/98017508",
-    size: 4386892,
-  },
-];
+const SNAPSHOT_ZIP =
+  "https://github.com/plantuml/plantuml/releases/download/snapshot/js-plantuml-SNAPSHOT.zip";
+const REQUIRED_FILES = ["plantuml.js", "viz-global.js"];
 
 const here = dirname(fileURLToPath(import.meta.url));
-const publicDir = resolve(here, "..", "public");
-if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
+const dest = resolve(here, "..", "public", "plantuml");
+mkdirSync(dest, { recursive: true });
 
-for (const asset of ASSETS) {
-  const dest = resolve(publicDir, asset.name);
-  if (existsSync(dest) && statSync(dest).size === asset.size) {
-    console.log(`${asset.name} already present (${asset.size} bytes)`);
-    continue;
-  }
+const haveAll = REQUIRED_FILES.every((f) => {
+  const p = resolve(dest, f);
+  if (!existsSync(p)) return false;
+  console.log(`${f} already present (${statSync(p).size} bytes)`);
+  return true;
+});
+if (haveAll) process.exit(0);
 
-  console.log(`downloading ${asset.name} from ${asset.url}`);
-  const res = await fetch(asset.url, {
-    headers: {
-      Accept: "application/octet-stream",
-      ...(process.env.GITHUB_TOKEN && {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-      }),
-    },
-    redirect: "follow",
-  });
-  if (!res.ok || !res.body) {
-    console.error(`fetch failed: HTTP ${res.status} ${res.statusText}`);
-    process.exit(1);
-  }
+console.log(`downloading ${SNAPSHOT_ZIP}`);
+const res = await fetch(SNAPSHOT_ZIP, { redirect: "follow" });
+if (!res.ok) {
+  console.error(`fetch failed: HTTP ${res.status} ${res.statusText}`);
+  process.exit(1);
+}
+const buf = new Uint8Array(await res.arrayBuffer());
+console.log(`downloaded ${buf.length} bytes`);
 
-  const sink = createWriteStream(dest);
-  const reader = res.body.getReader();
-  let written = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    written += value.byteLength;
-    sink.write(value);
-  }
-  await new Promise((r) => sink.end(r));
-  console.log(`wrote ${written} bytes to ${dest}`);
+const wanted = new Set(REQUIRED_FILES);
+const entries = unzipSync(buf, {
+  filter: (file) => wanted.has(basename(file.name)),
+});
+
+const extracted = new Set(Object.keys(entries).map(basename));
+const missing = REQUIRED_FILES.filter((f) => !extracted.has(f));
+if (missing.length > 0) {
+  console.error(`zip did not contain: ${missing.join(", ")}`);
+  process.exit(1);
+}
+
+for (const [name, data] of Object.entries(entries)) {
+  const base = basename(name);
+  writeFileSync(resolve(dest, base), data);
+  console.log(`extracted ${base} (${data.length} bytes)`);
 }
