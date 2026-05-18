@@ -57,6 +57,6 @@ export async function renderPlantUML(source: string): Promise<string> {
 
 // Test seam: lets unit tests substitute a fake module without going through
 // the real dynamic import (which jsdom can't resolve against frontend/public).
-export function __setPlantUMLModuleForTests(mod: PlantUMLModule | null): void {
+export function setPlantUMLModuleForTests(mod: PlantUMLModule | null): void {
   ready = mod ? Promise.resolve(mod) : null;
 }

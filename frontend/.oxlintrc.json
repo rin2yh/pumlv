@@ -5,10 +5,6 @@
     "suspicious": "warn"
   },
   "rules": {
-    "no-unused-vars": "warn",
-    "no-underscore-dangle": [
-      "warn",
-      { "allow": ["__setPlantUMLModuleForTests"] }
-    ]
+    "no-unused-vars": "warn"
   }
 }

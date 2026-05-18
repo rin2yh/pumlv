@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { __setPlantUMLModuleForTests, renderPlantUML } from "./renderer";
+import { setPlantUMLModuleForTests, renderPlantUML } from "./renderer";
 
 let renderToString: ReturnType<typeof vi.fn>;
 
@@ -10,11 +10,11 @@ beforeEach(() => {
       onSuccess("<svg>fake</svg>");
     },
   );
-  __setPlantUMLModuleForTests({ renderToString });
+  setPlantUMLModuleForTests({ renderToString });
 });
 
 afterEach(() => {
-  __setPlantUMLModuleForTests(null);
+  setPlantUMLModuleForTests(null);
 });
 
 describe("renderPlantUML", () => {
