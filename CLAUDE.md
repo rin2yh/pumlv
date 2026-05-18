@@ -4,7 +4,7 @@ This document provides instructions for Claude Code when working with the **puml
 
 ## Project Overview
 
-pumlv is a Go HTTP server with an embedded React SPA, compiled into a single binary. Rendering runs entirely in the browser via CheerpJ + plantuml-core.jar — no Java, no external server required.
+pumlv is a Go HTTP server with an embedded React SPA, compiled into a single binary. Rendering runs entirely in the browser via plantuml/plantuml's TeaVM build (`plantuml.js` + `viz-global.js`) — no Java, no CheerpJ, no external server required.
 
 Go module: `github.com/rin2yh/pumlv`
 
@@ -31,8 +31,8 @@ Go module: `github.com/rin2yh/pumlv`
 
 **Frontend (Vite + React 19 + Tailwind v4):**
 
-- `frontend/src/plantuml/renderer.ts` — SVG generation via CheerpJ + plantuml-core.jar
-- `frontend/scripts/fetch-plantuml-core.mjs` — downloads plantuml-core.jar.js from GitHub Releases
+- `frontend/src/plantuml/renderer.ts` — SVG generation via plantuml.js (TeaVM) + viz-global.js (Graphviz/Viz.js)
+- `frontend/scripts/fetch-plantuml-core.mjs` — downloads `js-plantuml-SNAPSHOT.zip` from plantuml/plantuml releases and extracts `plantuml.js` + `viz-global.js`
 - `static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
 
 ## HTTP API

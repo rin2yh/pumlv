@@ -102,8 +102,10 @@ func (s *Server) handleStatic() http.Handler {
 				fileServer.ServeHTTP(w, r)
 				return
 			}
-			// Asset extensions must 404 so CheerpJ can detect missing classpath
-			// entries instead of receiving index.html as a JAR / class file.
+			// Asset-like requests (anything with an extension) must 404
+			// instead of falling through to the SPA's index.html — otherwise
+			// the browser would parse HTML as JS / SVG / image and produce
+			// confusing failures downstream.
 			if filepath.Ext(path) != "" {
 				http.NotFound(w, r)
 				return

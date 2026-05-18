@@ -1,115 +1,60 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-declare global {
-  interface Window {
-    cheerpjInit?: (opts?: Record<string, unknown>) => Promise<void>;
-    cheerpjRunMain?: (main: string, classpath: string, ...args: string[]) => Promise<number>;
-    cjCall?: <T = unknown>(className: string, method: string, ...args: unknown[]) => Promise<T>;
-  }
-}
+import { loadPlantUMLModule } from "./bootstrap";
+import { renderPlantUML } from "./renderer";
 
-const originalFetch = globalThis.fetch;
+vi.mock("./bootstrap", () => ({
+  loadPlantUMLModule: vi.fn(),
+}));
 
-let cheerpjInit: ReturnType<typeof vi.fn>;
-let cheerpjRunMain: ReturnType<typeof vi.fn>;
-let cjCall: ReturnType<typeof vi.fn>;
+let renderToString: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-  vi.resetModules();
-
-  cheerpjInit = vi.fn(async () => undefined);
-  cheerpjRunMain = vi.fn(async () => 0);
-  cjCall = vi.fn(async () => "ZmFrZQ==");
-
-  window.cheerpjInit = cheerpjInit as unknown as Window["cheerpjInit"];
-  window.cheerpjRunMain = cheerpjRunMain as unknown as Window["cheerpjRunMain"];
-  window.cjCall = cjCall as unknown as Window["cjCall"];
-
-  globalThis.fetch = vi.fn(async () => new Response("")) as unknown as typeof fetch;
-});
-
-afterEach(() => {
-  globalThis.fetch = originalFetch;
-  delete window.cheerpjInit;
-  delete window.cheerpjRunMain;
-  delete window.cjCall;
+  vi.clearAllMocks();
+  renderToString = vi.fn(
+    (_lines: string[], onSuccess: (svg: string) => void, _onError: (msg: string) => void) => {
+      onSuccess("<svg>fake</svg>");
+    },
+  );
+  vi.mocked(loadPlantUMLModule).mockResolvedValue({ renderToString });
 });
 
 describe("renderPlantUML", () => {
-  it("returns a data:image/png URL using the base64 string from cjCall", async () => {
-    const { renderPlantUML } = await import("./renderer");
+  it("returns a data:image/svg+xml URL produced by renderToString", async () => {
     const url = await renderPlantUML("@startuml\nA -> B\n@enduml");
-    expect(url).toBe("data:image/png;base64,ZmFrZQ==");
-  });
-
-  it("invokes cjCall with the PlantUML cheerpj API signature", async () => {
-    const { renderPlantUML } = await import("./renderer");
-    await renderPlantUML("@startuml\n@enduml");
-    expect(cjCall).toHaveBeenCalledWith(
-      "com.plantuml.api.cheerpj.v1.Png",
-      "convertToBase64",
-      "light",
-      "@startuml\n@enduml",
+    expect(url).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    expect(decodeURIComponent(url.replace("data:image/svg+xml;charset=utf-8,", ""))).toBe(
+      "<svg>fake</svg>",
     );
   });
 
-  it("bootstraps CheerpJ exactly once across multiple renders", async () => {
-    const { renderPlantUML } = await import("./renderer");
+  it("invokes renderToString with the source split into lines", async () => {
+    await renderPlantUML("@startuml\nA -> B\n@enduml");
+    expect(renderToString).toHaveBeenCalledTimes(1);
+    expect(renderToString.mock.calls[0][0]).toEqual(["@startuml", "A -> B", "@enduml"]);
+  });
+
+  it("rejects when renderToString reports an error", async () => {
+    renderToString.mockImplementationOnce(
+      (_lines: string[], _onSuccess: (svg: string) => void, onError: (msg: string) => void) => {
+        onError("parse error at line 2");
+      },
+    );
+    await expect(renderPlantUML("bad")).rejects.toThrow(/parse error at line 2/);
+  });
+
+  it("passes large source to renderToString without truncation", async () => {
+    const largeSource = "@startuml\n" + "A -> B : message\n".repeat(1000) + "@enduml";
+    await renderPlantUML(largeSource);
+    const lines: string[] = renderToString.mock.calls[0][0];
+    expect(lines).toHaveLength(largeSource.split("\n").length);
+  });
+
+  it("delegates module loading to loadPlantUMLModule on every render", async () => {
     await renderPlantUML("a");
     await renderPlantUML("b");
     await renderPlantUML("c");
-    expect(cheerpjInit).toHaveBeenCalledTimes(1);
-    expect(cheerpjRunMain).toHaveBeenCalledTimes(1);
-    expect(cjCall).toHaveBeenCalledTimes(3);
-  });
-
-  it("preloads the .jar and .jar.js before initializing CheerpJ", async () => {
-    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
-    const { renderPlantUML } = await import("./renderer");
-    await renderPlantUML("@startuml\n@enduml");
-
-    const calls = fetchMock.mock.calls.map((c) => c[0]);
-    expect(calls).toContain("/plantuml-core.jar");
-    expect(calls).toContain("/plantuml-core.jar.js");
-  });
-
-  it("runs RunInit with the /app classpath", async () => {
-    const { renderPlantUML } = await import("./renderer");
-    await renderPlantUML("@startuml\n@enduml");
-    expect(cheerpjRunMain).toHaveBeenCalledWith(
-      "com.plantuml.api.cheerpj.v1.RunInit",
-      "/app/plantuml-core.jar",
-    );
-  });
-
-  it("throws when cjCall returns a non-string value", async () => {
-    cjCall.mockResolvedValueOnce(undefined);
-    const { renderPlantUML } = await import("./renderer");
-    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/PlantUML render failed/);
-  });
-
-  it("throws if cjCall is missing on the window after bootstrap", async () => {
-    delete window.cjCall;
-    const { renderPlantUML } = await import("./renderer");
-    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/cjCall missing/);
-  });
-
-  it("throws if cheerpjInit disappears between loader and bootstrap", async () => {
-    delete window.cheerpjInit;
-    delete window.cheerpjRunMain;
-
-    const appendChild = vi
-      .spyOn(document.head, "appendChild")
-      .mockImplementation((node: Node): Node => {
-        queueMicrotask(() => {
-          const ev = new Event("load");
-          (node as HTMLScriptElement).onload?.(ev as unknown as Event);
-        });
-        return node;
-      });
-
-    const { renderPlantUML } = await import("./renderer");
-    await expect(renderPlantUML("@startuml\n@enduml")).rejects.toThrow(/CheerpJ API missing/);
-    appendChild.mockRestore();
+    expect(vi.mocked(loadPlantUMLModule)).toHaveBeenCalledTimes(3);
+    expect(renderToString).toHaveBeenCalledTimes(3);
   });
 });

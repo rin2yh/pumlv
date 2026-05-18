@@ -1,5 +1,5 @@
 // Generates README artwork by rendering every examples/*.puml through the
-// real pumlv binary + CheerpJ pipeline. Doubles as an end-to-end smoke check.
+// real pumlv binary + PlantUML TeaVM pipeline. Doubles as an end-to-end smoke check.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
