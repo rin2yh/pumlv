@@ -16,7 +16,17 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/files", s.handleFiles)
 	mux.HandleFunc("/api/file", s.handleFile)
 	mux.HandleFunc("/api/events", s.handleEvents)
-	mux.Handle("/", s.handleStatic())
+	mux.Handle("/", coopCoep(s.handleStatic()))
+}
+
+// coopCoep enables cross-origin isolation (required for SharedArrayBuffer / CheerpJ 4.x).
+// credentialless allows CDN resources to load without requiring CORP headers on them.
+func coopCoep(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+		w.Header().Set("Cross-Origin-Embedder-Policy", "credentialless")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
