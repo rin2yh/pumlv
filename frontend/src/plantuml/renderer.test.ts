@@ -65,11 +65,9 @@ describe("renderPlantUML", () => {
           onError("Diagram too large for browser rendering: 654 x 56057 (max 4096)");
         },
       )
-      .mockImplementationOnce(
-        (_lines: string[], onSuccess: (svg: string) => void) => {
-          onSuccess("<svg>scaled</svg>");
-        },
-      );
+      .mockImplementationOnce((_lines: string[], onSuccess: (svg: string) => void) => {
+        onSuccess("<svg>scaled</svg>");
+      });
 
     const url = await renderPlantUML("@startuml\nA -> B\n@enduml");
     expect(url).toContain(encodeURIComponent("<svg>scaled</svg>"));
@@ -89,9 +87,7 @@ describe("renderPlantUML", () => {
         onError("Diagram too large for browser rendering: 654 x 56057 (max 4096)");
       },
     );
-    await expect(renderPlantUML("@startuml\nA -> B\n@enduml")).rejects.toThrow(
-      /Diagram too large/,
-    );
+    await expect(renderPlantUML("@startuml\nA -> B\n@enduml")).rejects.toThrow(/Diagram too large/);
   });
 });
 
