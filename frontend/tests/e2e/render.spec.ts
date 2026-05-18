@@ -1,18 +1,18 @@
 import { expect, test } from "@playwright/test";
 
-const MIN_PNG_BYTES = 1024;
+const MIN_SVG_CHARS = 100;
 
 test.describe("PlantUML rendering", () => {
-  test("renders the initially selected file as a PNG data URL", async ({ page }) => {
+  test("renders the initially selected file as an SVG data URL", async ({ page }) => {
     await page.goto("/");
 
     const preview = page.getByAltText("preview");
     await expect(preview).toBeVisible({ timeout: 90_000 });
 
     const src = await preview.getAttribute("src");
-    expect(src).toMatch(/^data:image\/png;base64,/);
-    const base64 = (src ?? "").split(",", 2)[1] ?? "";
-    expect(base64.length).toBeGreaterThan(MIN_PNG_BYTES);
+    expect(src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    const svgText = decodeURIComponent((src ?? "").split(",").slice(1).join(","));
+    expect(svgText.length).toBeGreaterThan(MIN_SVG_CHARS);
   });
 
   test("re-renders when another file is selected", async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe("PlantUML rendering", () => {
     const preview = page.getByAltText("preview");
     await expect(preview).toBeVisible({ timeout: 90_000 });
     const firstSrc = await preview.getAttribute("src");
-    expect(firstSrc).toMatch(/^data:image\/png;base64,/);
+    expect(firstSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
 
     await buttons.nth(1).click();
 
@@ -33,6 +33,6 @@ test.describe("PlantUML rendering", () => {
       .not.toBe(firstSrc);
 
     const nextSrc = await preview.getAttribute("src");
-    expect(nextSrc).toMatch(/^data:image\/png;base64,/);
+    expect(nextSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
   });
 });
