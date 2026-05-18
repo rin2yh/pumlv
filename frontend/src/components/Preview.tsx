@@ -19,7 +19,7 @@ function ZoomControls(): JSX.Element {
   const scale = useTransformComponent(({ state }) => state.scale);
 
   return (
-    <div className="absolute right-3 top-3 z-20 flex gap-1">
+    <div className="absolute bottom-3 right-3 z-20 flex gap-1">
       <button
         type="button"
         onClick={() => zoomOut()}
