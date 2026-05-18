@@ -231,3 +231,23 @@ func TestHandleStaticSpaFallback(t *testing.T) {
 		t.Fatalf("expected 200 (SPA fallback), got %d", resp.StatusCode)
 	}
 }
+
+func TestStaticResponseHasCrossOriginIsolationHeaders(t *testing.T) {
+	dir := t.TempDir()
+	_, ts := newTestServer(t, []string{dir}, []string{".puml"})
+
+	for _, path := range []string{"/", "/some/spa/route"} {
+		resp, err := http.Get(ts.URL + path)
+		if err != nil {
+			t.Fatalf("GET %s: %v", path, err)
+		}
+		resp.Body.Close()
+
+		if got := resp.Header.Get("Cross-Origin-Opener-Policy"); got != "same-origin" {
+			t.Errorf("GET %s: COOP = %q, want same-origin", path, got)
+		}
+		if got := resp.Header.Get("Cross-Origin-Embedder-Policy"); got != "credentialless" {
+			t.Errorf("GET %s: COEP = %q, want credentialless", path, got)
+		}
+	}
+}
