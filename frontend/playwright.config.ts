@@ -9,12 +9,15 @@ export default defineConfig({
   reporter: process.env.CI
     ? [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]]
     : "list",
-  timeout: 120_000,
-  expect: { timeout: 60_000 },
+  timeout: 60_000,
+  expect: { timeout: 30_000 },
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     channel: "chrome",
+    launchOptions: {
+      args: ["--disable-dev-shm-usage"],
+    },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
