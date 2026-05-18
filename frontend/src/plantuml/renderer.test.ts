@@ -41,6 +41,9 @@ beforeEach(() => {
   window.cheerpjInit = cheerpjInit as unknown as Window["cheerpjInit"];
   window.cheerpjRunLibrary = cheerpjRunLibrary as unknown as Window["cheerpjRunLibrary"];
 
+  // renderer.ts checks self.crossOriginIsolated before calling cheerpjInit.
+  Object.defineProperty(self, "crossOriginIsolated", { value: true, configurable: true });
+
   globalThis.fetch = vi.fn(async () => new Response("")) as unknown as typeof fetch;
 });
 
@@ -48,6 +51,7 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
   delete window.cheerpjInit;
   delete window.cheerpjRunLibrary;
+  Object.defineProperty(self, "crossOriginIsolated", { value: false, configurable: true });
 });
 
 describe("renderPlantUML", () => {

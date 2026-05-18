@@ -29,12 +29,21 @@ function loadLoaderScript(): Promise<void> {
   });
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} failed: timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 async function bootstrap(): Promise<unknown> {
   if (ready) return ready;
 
   ready = (async () => {
     if (!window.cheerpjInit) {
-      await loadLoaderScript();
+      await withTimeout(loadLoaderScript(), 30_000, "CheerpJ loader");
     }
     if (!window.cheerpjInit) {
       throw new Error("CheerpJ API missing after loader.js");
@@ -42,14 +51,23 @@ async function bootstrap(): Promise<unknown> {
 
     await fetch(JAR_PATH);
 
+    // crossOriginIsolated is required for SharedArrayBuffer (CheerpJ 4.x threading).
+    if (!self.crossOriginIsolated) {
+      throw new Error(
+        `CheerpJ failed: page is not cross-origin isolated ` +
+          `(crossOriginIsolated=${self.crossOriginIsolated}, ` +
+          `hasSharedArrayBuffer=${typeof SharedArrayBuffer !== "undefined"})`,
+      );
+    }
+
     // CheerpJ 4.x exposes cheerpjRunLibrary only after cheerpjInit resolves.
-    await window.cheerpjInit({ status: "none" });
+    await withTimeout(window.cheerpjInit({ status: "none" }), 60_000, "cheerpjInit");
 
     if (!window.cheerpjRunLibrary) {
       throw new Error("cheerpjRunLibrary missing after cheerpjInit");
     }
 
-    const lib = await window.cheerpjRunLibrary(CLASSPATH);
+    const lib = await withTimeout(window.cheerpjRunLibrary(CLASSPATH), 60_000, "cheerpjRunLibrary");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const RunInit = await (lib as any).com.plantuml.api.cheerpj.v1.RunInit;
