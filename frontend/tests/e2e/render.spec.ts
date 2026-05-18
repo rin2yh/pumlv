@@ -23,10 +23,20 @@ test.describe("PlantUML rendering", () => {
 
     if (which !== "ok") {
       const errText = which === "err" ? await errorPanel.first().textContent() : "(timeout)";
+      const diag = await page.evaluate(() => ({
+        crossOriginIsolated: (self as Window & typeof globalThis).crossOriginIsolated,
+        hasSharedArrayBuffer: typeof SharedArrayBuffer !== "undefined",
+        cheerpjInit: typeof (window as Record<string, unknown>).cheerpjInit,
+        cheerpjRunLibrary: typeof (window as Record<string, unknown>).cheerpjRunLibrary,
+        preTexts: Array.from(document.querySelectorAll("pre")).map((el) =>
+          el.textContent?.slice(0, 200),
+        ),
+      }));
       throw new Error(
         `Rendering did not produce preview image.\n` +
           `State: ${which}\n` +
           `Error panel: ${errText}\n` +
+          `Diagnostics: ${JSON.stringify(diag)}\n` +
           `Console errors:\n${consoleErrors.join("\n")}`,
       );
     }
