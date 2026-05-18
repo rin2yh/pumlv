@@ -92,8 +92,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chrome
 
       - name: E2E tests
-        working-directory: frontend
-        run: pnpm test:e2e
+        run: make e2e
 
       - name: Upload Playwright report
         if: failure()
