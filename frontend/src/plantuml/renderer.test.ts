@@ -34,15 +34,6 @@ describe("renderPlantUML", () => {
     expect(renderToString.mock.calls[0][0]).toEqual(["@startuml", "A -> B", "@enduml"]);
   });
 
-  it("rejects when renderToString reports a non-size error", async () => {
-    renderToString.mockImplementationOnce(
-      (_lines: string[], _onSuccess: (svg: string) => void, onError: (msg: string) => void) => {
-        onError("parse error at line 2");
-      },
-    );
-    await expect(renderPlantUML("bad")).rejects.toThrow(/parse error at line 2/);
-  });
-
   it("passes large source to renderToString without truncation", async () => {
     const largeSource = "@startuml\n" + "A -> B : message\n".repeat(1000) + "@enduml";
     await renderPlantUML(largeSource);
@@ -56,6 +47,19 @@ describe("renderPlantUML", () => {
     await renderPlantUML("c");
     expect(vi.mocked(loadPlantUMLModule)).toHaveBeenCalledTimes(3);
     expect(renderToString).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    { error: "parse error at line 2" },
+    { error: "syntax error" },
+    { error: "unknown diagram type" },
+  ])("re-throws non-size errors as-is ($error)", async ({ error }) => {
+    renderToString.mockImplementationOnce(
+      (_lines: string[], _onSuccess: (svg: string) => void, onError: (msg: string) => void) => {
+        onError(error);
+      },
+    );
+    await expect(renderPlantUML("bad")).rejects.toThrow(error);
   });
 
   it("retries with an auto-calculated scale pragma when the diagram is too large", async () => {
@@ -92,20 +96,38 @@ describe("renderPlantUML", () => {
 });
 
 describe("withScale", () => {
-  it("inserts the scale line immediately after @startuml", () => {
-    const result = withScale(["@startuml", "A -> B", "@enduml"], 0.5);
-    expect(result).toEqual(["@startuml", "scale 0.5000", "A -> B", "@enduml"]);
-  });
-
-  it("inserts at position 0 when no @start line is found", () => {
-    const result = withScale(["A -> B"], 0.25);
-    expect(result[0]).toBe("scale 0.2500");
-    expect(result[1]).toBe("A -> B");
-  });
-
-  it("handles @startmindmap and other @start variants", () => {
-    const result = withScale(["@startmindmap", "* root", "@endmindmap"], 0.8);
-    expect(result[0]).toBe("@startmindmap");
-    expect(result[1]).toMatch(/^scale 0\.8000/);
+  it.each([
+    {
+      name: "inserts after @startuml",
+      lines: ["@startuml", "A -> B", "@enduml"],
+      scale: 0.5,
+      expected: ["@startuml", "scale 0.5000", "A -> B", "@enduml"],
+    },
+    {
+      name: "inserts at position 0 when no @start line is found",
+      lines: ["A -> B"],
+      scale: 0.25,
+      expected: ["scale 0.2500", "A -> B"],
+    },
+    {
+      name: "handles @startmindmap",
+      lines: ["@startmindmap", "* root", "@endmindmap"],
+      scale: 0.8,
+      expected: ["@startmindmap", "scale 0.8000", "* root", "@endmindmap"],
+    },
+    {
+      name: "handles @startwbs",
+      lines: ["@startwbs", "* root", "@endwbs"],
+      scale: 0.3,
+      expected: ["@startwbs", "scale 0.3000", "* root", "@endwbs"],
+    },
+    {
+      name: "floor-rounds to avoid exceeding the limit",
+      lines: ["@startuml", "@enduml"],
+      scale: 4000 / 56057,
+      expected: ["@startuml", "scale 0.0713", "@enduml"],
+    },
+  ])("$name", ({ lines, scale, expected }) => {
+    expect(withScale(lines, scale)).toEqual(expected);
   });
 });
