@@ -1,26 +1,62 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+type Label = "hide source" | "show source";
+
+const scenarios: Array<{
+  name: string;
+  clicks: number;
+  expectedButton: Label;
+  expectedPanel: "visible" | "hidden";
+}> = [
+  {
+    name: "shows the source panel by default",
+    clicks: 0,
+    expectedButton: "hide source",
+    expectedPanel: "visible",
+  },
+  {
+    name: "hides the source panel after one toggle",
+    clicks: 1,
+    expectedButton: "show source",
+    expectedPanel: "hidden",
+  },
+  {
+    name: "re-shows the source panel after toggling back",
+    clicks: 2,
+    expectedButton: "hide source",
+    expectedPanel: "visible",
+  },
+];
+
+async function clickToggle(page: Page, times: number): Promise<void> {
+  for (let i = 0; i < times; i++) {
+    const label: Label = i % 2 === 0 ? "hide source" : "show source";
+    await page.getByRole("button", { name: label }).click();
+  }
+}
 
 test.describe("source panel toggle", () => {
-  test("hides and shows the source panel via the header button", async ({ page }) => {
-    await page.goto("/");
+  for (const { name, clicks, expectedButton, expectedPanel } of scenarios) {
+    test(name, async ({ page }) => {
+      await page.goto("/");
 
-    const preview = page.getByAltText("preview");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
+      const preview = page.getByAltText("preview");
+      await expect(preview).toBeVisible({ timeout: 60_000 });
 
-    const toggle = page.getByRole("button", { name: "hide source" });
-    const sourcePanel = page.locator("main > div > section").nth(1);
-    await expect(sourcePanel).toBeVisible();
+      await clickToggle(page, clicks);
 
-    await toggle.click();
-    await expect(page.getByRole("button", { name: "show source" })).toBeVisible();
-    await expect(sourcePanel).toBeHidden();
+      await expect(page.getByRole("button", { name: expectedButton })).toBeVisible();
 
-    await expect(preview).toBeVisible();
-    const src = await preview.getAttribute("src");
-    expect(src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+      const sourcePanel = page.locator("main > div > section").nth(1);
+      if (expectedPanel === "visible") {
+        await expect(sourcePanel).toBeVisible();
+      } else {
+        await expect(sourcePanel).toBeHidden();
+      }
 
-    await page.getByRole("button", { name: "show source" }).click();
-    await expect(toggle).toBeVisible();
-    await expect(sourcePanel).toBeVisible();
-  });
+      await expect(preview).toBeVisible();
+      const src = await preview.getAttribute("src");
+      expect(src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    });
+  }
 });
