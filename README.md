@@ -30,20 +30,10 @@ Download a pre-built binary from the [releases page](https://github.com/rin2yh/p
 go install github.com/rin2yh/pumlv@latest
 ```
 
-### Using mise (GitHub backend)
-
-[mise](https://mise.jdx.dev/) can install pumlv directly from GitHub releases via its [GitHub backend](https://mise.jdx.dev/dev-tools/backends/github.html):
+Or with [mise](https://mise.jdx.dev/) ([GitHub backend](https://mise.jdx.dev/dev-tools/backends/github.html)):
 
 ```sh
-mise use -g github:rin2yh/pumlv         # latest release
-mise use -g github:rin2yh/pumlv@0.1.0   # pin a specific version
-```
-
-Or declare it in your project's `mise.toml`:
-
-```toml
-[tools]
-"github:rin2yh/pumlv" = "latest"
+mise use -g github:rin2yh/pumlv
 ```
 
 
