@@ -1,4 +1,4 @@
-import type { FileEntry } from "../../api/files";
+import type { FileEntry } from "../../../api/files";
 
 export const flatFiles: FileEntry[] = [
   { path: "/a/x.puml", rel: "x.puml", name: "x.puml", source: "/a" },
