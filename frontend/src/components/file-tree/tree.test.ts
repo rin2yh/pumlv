@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FileEntry } from "../../api/files";
-import { flatFiles, nestedFiles } from "./fixtures";
+import { flatFiles, nestedFiles } from "./__test__/fixtures";
 import { buildTree, flatten } from "./tree";
 
 describe("buildTree", () => {

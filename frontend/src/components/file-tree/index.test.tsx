@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, type ReactElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { FileTree } from ".";
-import { flatFiles, nestedFiles } from "./fixtures";
+import { flatFiles, nestedFiles } from "./__test__/fixtures";
 
 let container: HTMLDivElement;
 let root: Root;
