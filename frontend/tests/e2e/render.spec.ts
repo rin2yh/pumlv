@@ -10,71 +10,91 @@ test.describe("PlantUML rendering", () => {
       if (msg.type() === "error") errors.push(msg.text());
     });
 
-    await page.goto("/");
-
     const preview = page.getByAltText("preview");
     const errorPanel = page.locator("pre").filter({ hasText: /error|failed|missing/i });
 
-    const which = await Promise.race([
-      preview.waitFor({ state: "visible", timeout: 60_000 }).then(() => "ok" as const),
-      errorPanel.first().waitFor({ state: "visible", timeout: 60_000 }).then(() => "err" as const),
-    ]).catch(() => "timeout" as const);
+    await test.step("loads the SPA", async () => {
+      await page.goto("/");
+    });
 
-    if (which !== "ok") {
-      const errText = which === "err" ? await errorPanel.first().textContent() : "(timeout)";
-      throw new Error(
-        `Rendering did not produce preview image.\n` +
-          `State: ${which}\n` +
-          `Error: ${errText}\n` +
-          `Console errors:\n${errors.join("\n")}`,
-      );
-    }
+    await test.step("preview appears before the error panel", async () => {
+      const which = await Promise.race([
+        preview.waitFor({ state: "visible", timeout: 60_000 }).then(() => "ok" as const),
+        errorPanel
+          .first()
+          .waitFor({ state: "visible", timeout: 60_000 })
+          .then(() => "err" as const),
+      ]).catch(() => "timeout" as const);
 
-    const src = await preview.getAttribute("src");
-    expect(src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
-    const svgText = decodeURIComponent((src ?? "").split(",").slice(1).join(","));
-    expect(svgText.length).toBeGreaterThan(MIN_SVG_CHARS);
+      if (which !== "ok") {
+        const errText = which === "err" ? await errorPanel.first().textContent() : "(timeout)";
+        throw new Error(
+          `Rendering did not produce preview image.\n` +
+            `State: ${which}\n` +
+            `Error: ${errText}\n` +
+            `Console errors:\n${errors.join("\n")}`,
+        );
+      }
+    });
+
+    await test.step("preview src is a non-trivial SVG data URL", async () => {
+      const src = await preview.getAttribute("src");
+      expect(src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+      const svgText = decodeURIComponent((src ?? "").split(",").slice(1).join(","));
+      expect(svgText.length).toBeGreaterThan(MIN_SVG_CHARS);
+    });
   });
 
   test("re-renders when another file is selected", async ({ page }) => {
-    await page.goto("/");
-
     const fileButtons = page.locator("aside nav button:not([aria-expanded])");
-    await expect.poll(async () => fileButtons.count(), { timeout: 60_000 }).toBeGreaterThan(1);
-
     const preview = page.getByAltText("preview");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
-    const firstSrc = await preview.getAttribute("src");
-    expect(firstSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
 
-    await fileButtons.last().click();
+    await test.step("loads the SPA with the initial preview", async () => {
+      await page.goto("/");
+      await expect.poll(async () => fileButtons.count(), { timeout: 60_000 }).toBeGreaterThan(1);
+      await expect(preview).toBeVisible({ timeout: 60_000 });
+    });
 
-    await expect
-      .poll(async () => await preview.getAttribute("src"), { timeout: 60_000 })
-      .not.toBe(firstSrc);
+    let firstSrc: string | null = null;
+    await test.step("initial preview is an SVG data URL", async () => {
+      firstSrc = await preview.getAttribute("src");
+      expect(firstSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    });
 
-    const nextSrc = await preview.getAttribute("src");
-    expect(nextSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    await test.step("clicking another file replaces the preview", async () => {
+      await fileButtons.last().click();
+      await expect
+        .poll(async () => await preview.getAttribute("src"), { timeout: 60_000 })
+        .not.toBe(firstSrc);
+
+      const nextSrc = await preview.getAttribute("src");
+      expect(nextSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    });
   });
 
   test("collapses and re-expands a directory from its toggle header", async ({ page }) => {
-    await page.goto("/");
-
     const dirToggles = page.locator("aside nav button[aria-expanded]");
     const fileButtons = page.locator("aside nav button:not([aria-expanded])");
-
-    await expect.poll(async () => fileButtons.count(), { timeout: 60_000 }).toBeGreaterThan(0);
-    const initialCount = await fileButtons.count();
-
     const rootToggle = dirToggles.first();
-    await expect(rootToggle).toHaveAttribute("aria-expanded", "true");
 
-    await rootToggle.click();
-    await expect(rootToggle).toHaveAttribute("aria-expanded", "false");
-    await expect(fileButtons).toHaveCount(0);
+    let initialCount = 0;
+    await test.step("tree loads with the root expanded", async () => {
+      await page.goto("/");
+      await expect.poll(async () => fileButtons.count(), { timeout: 60_000 }).toBeGreaterThan(0);
+      initialCount = await fileButtons.count();
+      await expect(rootToggle).toHaveAttribute("aria-expanded", "true");
+    });
 
-    await rootToggle.click();
-    await expect(rootToggle).toHaveAttribute("aria-expanded", "true");
-    await expect(fileButtons).toHaveCount(initialCount);
+    await test.step("clicking the root toggle collapses every file", async () => {
+      await rootToggle.click();
+      await expect(rootToggle).toHaveAttribute("aria-expanded", "false");
+      await expect(fileButtons).toHaveCount(0);
+    });
+
+    await test.step("clicking the root toggle again restores the file list", async () => {
+      await rootToggle.click();
+      await expect(rootToggle).toHaveAttribute("aria-expanded", "true");
+      await expect(fileButtons).toHaveCount(initialCount);
+    });
   });
 });
