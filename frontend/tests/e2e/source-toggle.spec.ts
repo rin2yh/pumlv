@@ -1,45 +1,41 @@
 import { expect, test, type Page } from "@playwright/test";
-import {
-  SOURCE_TOGGLE_LABEL,
-  type SourceToggleLabel,
-} from "../../src/components/sourcePanel";
+import { SOURCE_TOGGLE_LABEL, type SourceToggleLabel } from "../../src/sourcePanel";
 
 const scenarios: Array<{
   name: string;
   clicks: number;
-  expectedButton: SourceToggleLabel;
+  expectedLabel: SourceToggleLabel;
   expectedPanel: "visible" | "hidden";
 }> = [
   {
     name: "shows the source panel by default",
     clicks: 0,
-    expectedButton: SOURCE_TOGGLE_LABEL.open,
+    expectedLabel: SOURCE_TOGGLE_LABEL.open,
     expectedPanel: "visible",
   },
   {
     name: "hides the source panel after one toggle",
     clicks: 1,
-    expectedButton: SOURCE_TOGGLE_LABEL.closed,
+    expectedLabel: SOURCE_TOGGLE_LABEL.closed,
     expectedPanel: "hidden",
   },
   {
     name: "re-shows the source panel after toggling back",
     clicks: 2,
-    expectedButton: SOURCE_TOGGLE_LABEL.open,
+    expectedLabel: SOURCE_TOGGLE_LABEL.open,
     expectedPanel: "visible",
   },
 ];
 
 async function clickToggle(page: Page, times: number): Promise<void> {
+  const toggle = page.getByTestId("source-toggle");
   for (let i = 0; i < times; i++) {
-    const label: SourceToggleLabel =
-      i % 2 === 0 ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
-    await page.getByRole("button", { name: label }).click();
+    await toggle.click();
   }
 }
 
 test.describe("source panel toggle", () => {
-  for (const { name, clicks, expectedButton, expectedPanel } of scenarios) {
+  for (const { name, clicks, expectedLabel, expectedPanel } of scenarios) {
     test(name, async ({ page }) => {
       await page.goto("/");
 
@@ -48,9 +44,9 @@ test.describe("source panel toggle", () => {
 
       await clickToggle(page, clicks);
 
-      await expect(page.getByRole("button", { name: expectedButton })).toBeVisible();
+      await expect(page.getByTestId("source-toggle")).toHaveText(expectedLabel);
 
-      const sourcePanel = page.locator("main > div > section").nth(1);
+      const sourcePanel = page.getByTestId("source-panel");
       if (expectedPanel === "visible") {
         await expect(sourcePanel).toBeVisible();
       } else {
