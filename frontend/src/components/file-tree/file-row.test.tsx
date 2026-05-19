@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { FileRow } from "./file-row";
 import type { FileEntry } from "../../api/files";
-import { setupRenderHarness } from "../../test/harness";
+import { setupRender } from "../../test/render";
 
-const harness = setupRenderHarness();
+const view = setupRender();
 
 function button(): HTMLButtonElement {
-  const b = harness.container.querySelector("button");
+  const b = view.container.querySelector("button");
   if (!b) throw new Error("FileRow button not found");
   return b;
 }
@@ -20,25 +20,25 @@ const entry: FileEntry = {
 
 describe("FileRow", () => {
   it("shows the file's basename as the label and rel as the title", () => {
-    harness.render(<FileRow entry={entry} depth={1} isSelected={false} onSelect={() => {}} />);
+    view.render(<FileRow entry={entry} depth={1} isSelected={false} onSelect={() => {}} />);
     expect(button().textContent).toBe("x.puml");
     expect(button().getAttribute("title")).toBe("x.puml");
   });
 
   it("applies the active highlight when isSelected is true", () => {
-    harness.render(<FileRow entry={entry} depth={1} isSelected onSelect={() => {}} />);
+    view.render(<FileRow entry={entry} depth={1} isSelected onSelect={() => {}} />);
     expect(button().className).toMatch(/violet/);
   });
 
   it("uses the inactive style when isSelected is false", () => {
-    harness.render(<FileRow entry={entry} depth={1} isSelected={false} onSelect={() => {}} />);
+    view.render(<FileRow entry={entry} depth={1} isSelected={false} onSelect={() => {}} />);
     expect(button().className).not.toMatch(/violet/);
   });
 
   it("calls onSelect with the file's absolute path when clicked", () => {
     const onSelect = vi.fn();
-    harness.render(<FileRow entry={entry} depth={1} isSelected={false} onSelect={onSelect} />);
-    harness.click(button());
+    view.render(<FileRow entry={entry} depth={1} isSelected={false} onSelect={onSelect} />);
+    view.click(button());
     expect(onSelect).toHaveBeenCalledWith("/a/x.puml");
   });
 });

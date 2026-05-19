@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import { setupRenderHarness } from "../test/harness";
+import { setupRender } from "../test/render";
 
 let codeToHtmlMock: ReturnType<typeof vi.fn>;
 
@@ -18,7 +18,7 @@ vi.mock("shiki/themes/github-light.mjs", () => ({ default: {} }));
 vi.mock("shiki/langs/yaml.mjs", () => ({ default: {} }));
 vi.mock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
 
-const harness = setupRenderHarness();
+const view = setupRender();
 
 async function flushAsync(): Promise<void> {
   await act(async () => {
@@ -39,21 +39,21 @@ afterEach(() => {
 describe("SourceView", () => {
   it("shows 'no source' for an empty string", async () => {
     const { SourceView } = await import("./source-view");
-    harness.render(<SourceView source="" />);
-    expect(harness.container.textContent).toContain("no source");
-    expect(harness.container.querySelector("pre")).toBeNull();
+    view.render(<SourceView source="" />);
+    expect(view.container.textContent).toContain("no source");
+    expect(view.container.querySelector("pre")).toBeNull();
   });
 
   it("renders the highlighter output for a non-empty source", async () => {
     const { SourceView } = await import("./source-view");
-    harness.render(<SourceView source={"@startuml\n@enduml\n"} />);
+    view.render(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
     expect(codeToHtmlMock).toHaveBeenCalledWith("@startuml\n@enduml\n", {
       lang: "yaml",
       theme: "github-light",
     });
-    expect(harness.container.innerHTML).toContain("highlighted");
+    expect(view.container.innerHTML).toContain("highlighted");
   });
 
   it("falls back to escaped <pre> when the highlighter throws", async () => {
@@ -61,10 +61,10 @@ describe("SourceView", () => {
       throw new Error("boom");
     });
     const { SourceView } = await import("./source-view");
-    harness.render(<SourceView source={"<script>alert(1)</script>"} />);
+    view.render(<SourceView source={"<script>alert(1)</script>"} />);
     await flushAsync();
 
-    const pre = harness.container.querySelector("pre");
+    const pre = view.container.querySelector("pre");
     expect(pre).not.toBeNull();
     expect(pre!.innerHTML).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
   });
@@ -74,20 +74,20 @@ describe("SourceView", () => {
       throw new Error("nope");
     });
     const { SourceView } = await import("./source-view");
-    harness.render(<SourceView source="a & b < c > d" />);
+    view.render(<SourceView source="a & b < c > d" />);
     await flushAsync();
 
-    const pre = harness.container.querySelector("pre");
+    const pre = view.container.querySelector("pre");
     expect(pre!.innerHTML).toBe("a &amp; b &lt; c &gt; d");
   });
 
   it("clears highlighted html when source becomes empty", async () => {
     const { SourceView } = await import("./source-view");
-    harness.render(<SourceView source="hello" />);
+    view.render(<SourceView source="hello" />);
     await flushAsync();
-    expect(harness.container.innerHTML).toContain("highlighted");
+    expect(view.container.innerHTML).toContain("highlighted");
 
-    harness.render(<SourceView source="" />);
-    expect(harness.container.textContent).toContain("no source");
+    view.render(<SourceView source="" />);
+    expect(view.container.textContent).toContain("no source");
   });
 });

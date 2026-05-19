@@ -2,13 +2,13 @@ import { act, type ReactElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach } from "vitest";
 
-export interface RenderHarness {
+export interface RenderContext {
   readonly container: HTMLDivElement;
   render(node: ReactElement): void;
   click(el: HTMLElement): void;
 }
 
-export function setupRenderHarness(): RenderHarness {
+export function setupRender(): RenderContext {
   let container: HTMLDivElement;
   let root: Root | undefined;
 
