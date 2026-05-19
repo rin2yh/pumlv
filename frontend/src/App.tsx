@@ -156,15 +156,14 @@ export default function App(): JSX.Element {
             )}
           </section>
 
-          {sourceOpen && (
-            <section
-              id={SOURCE_PANEL_ID}
-              aria-label={SOURCE_PANEL_NAME}
-              className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white"
-            >
-              <SourceView source={source} />
-            </section>
-          )}
+          <section
+            id={SOURCE_PANEL_ID}
+            aria-label={SOURCE_PANEL_NAME}
+            hidden={!sourceOpen}
+            className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white"
+          >
+            <SourceView source={source} />
+          </section>
         </div>
       </main>
     </div>

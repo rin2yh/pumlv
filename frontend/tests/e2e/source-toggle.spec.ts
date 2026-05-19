@@ -54,11 +54,14 @@ test.describe("source panel toggle", () => {
 
       await expect(page.getByRole("button", { name: expectedLabel })).toBeVisible();
 
-      const sourcePanel = page.getByRole("region", { name: SOURCE_PANEL_NAME });
+      const sourcePanel = page.getByRole("region", {
+        name: SOURCE_PANEL_NAME,
+        includeHidden: true,
+      });
       if (expectedPanel === "visible") {
         await expect(sourcePanel).toBeVisible();
       } else {
-        await expect(sourcePanel).toHaveCount(0);
+        await expect(sourcePanel).toBeHidden();
       }
 
       await expect(preview).toBeVisible();
