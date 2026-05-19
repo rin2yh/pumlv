@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, type ReactElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { FileTree } from "./FileTree";
+import { FileTree } from "./file-tree";
 import type { FileEntry } from "../api/files";
 
 let container: HTMLDivElement;

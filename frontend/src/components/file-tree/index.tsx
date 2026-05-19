@@ -1,8 +1,8 @@
 import { useMemo, useState, type JSX } from "react";
 import type { FileEntry } from "../../api/files";
 import { buildTree, flatten } from "./tree";
-import { DirectoryRow } from "./DirectoryRow";
-import { FileRow } from "./FileRow";
+import { DirectoryRow } from "./directory-row";
+import { FileRow } from "./file-row";
 
 interface Props {
   files: FileEntry[];
