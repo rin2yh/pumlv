@@ -1,5 +1,4 @@
 export const SOURCE_PANEL_NAME = "Source";
-export const SOURCE_TOGGLE_NAME = "Toggle source panel";
 
 export const SOURCE_TOGGLE_LABEL = {
   open: "hide source",

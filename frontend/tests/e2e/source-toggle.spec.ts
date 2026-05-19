@@ -2,9 +2,12 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   SOURCE_PANEL_NAME,
   SOURCE_TOGGLE_LABEL,
-  SOURCE_TOGGLE_NAME,
   type SourceToggleLabel,
 } from "../../src/sourcePanel";
+
+const TOGGLE_NAME_PATTERN = new RegExp(
+  `^(?:${SOURCE_TOGGLE_LABEL.open}|${SOURCE_TOGGLE_LABEL.closed})$`,
+);
 
 const scenarios: Array<{
   name: string;
@@ -33,7 +36,7 @@ const scenarios: Array<{
 ];
 
 async function clickToggle(page: Page, times: number): Promise<void> {
-  const toggle = page.getByRole("button", { name: SOURCE_TOGGLE_NAME });
+  const toggle = page.getByRole("button", { name: TOGGLE_NAME_PATTERN });
   for (let i = 0; i < times; i++) {
     await toggle.click();
   }
@@ -49,8 +52,7 @@ test.describe("source panel toggle", () => {
 
       await clickToggle(page, clicks);
 
-      const toggle = page.getByRole("button", { name: SOURCE_TOGGLE_NAME });
-      await expect(toggle).toHaveText(expectedLabel);
+      await expect(page.getByRole("button", { name: expectedLabel })).toBeVisible();
 
       const sourcePanel = page.getByRole("region", {
         name: SOURCE_PANEL_NAME,
