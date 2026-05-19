@@ -1,7 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { act, type ReactElement } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, type ReactElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Preview } from "./Preview";
+
+const mockZoomIn = vi.fn();
+const mockZoomOut = vi.fn();
+const mockResetTransform = vi.fn();
+
+let mockScale = 1;
+
+vi.mock("react-zoom-pan-pinch", () => ({
+  TransformWrapper: ({ children }: { children: ReactNode }) => children,
+  TransformComponent: ({ children }: { children: ReactNode }) => children,
+  useControls: () => ({
+    zoomIn: mockZoomIn,
+    zoomOut: mockZoomOut,
+    resetTransform: mockResetTransform,
+  }),
+  useTransformComponent: (cb: (s: { state: { scale: number } }) => unknown) =>
+    cb({ state: { scale: mockScale } }),
+}));
+
+const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -16,6 +36,8 @@ function render(node: ReactElement): void {
 beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
+  mockScale = 1;
+  vi.clearAllMocks();
 });
 
 afterEach(() => {
@@ -26,26 +48,72 @@ afterEach(() => {
 });
 
 describe("Preview", () => {
-  it("renders an img with the provided data URL as src", () => {
-    const svg = "data:image/png;base64,AAAA";
-    render(<Preview svg={svg} />);
-    const img = container.querySelector("img");
-    expect(img).not.toBeNull();
-    expect(img!.getAttribute("src")).toBe(svg);
-  });
+  it.each([{ svg: SAMPLE_SVG }, { svg: "data:image/png;base64,ZZZZ" }])(
+    "renders an img with src=$svg",
+    ({ svg }) => {
+      render(<Preview svg={svg} />);
+      const img = container.querySelector("img");
+      expect(img).not.toBeNull();
+      expect(img!.getAttribute("src")).toBe(svg);
+    },
+  );
 
   it("uses 'preview' as the alt text", () => {
-    render(<Preview svg="data:image/png;base64,AAAA" />);
-    const img = container.querySelector("img");
-    expect(img!.getAttribute("alt")).toBe("preview");
+    render(<Preview svg={SAMPLE_SVG} />);
+    expect(container.querySelector("img")!.getAttribute("alt")).toBe("preview");
   });
 
-  it("updates the src when svg prop changes", () => {
-    render(<Preview svg="data:image/png;base64,AAA1" />);
+  it.each([
+    { from: "data:image/png;base64,AAA1", to: "data:image/png;base64,BBB2" },
+    { from: "data:image/png;base64,CCC3", to: "data:image/png;base64,DDD4" },
+  ])("updates src from $from to $to when svg prop changes", ({ from, to }) => {
+    render(<Preview svg={from} />);
     act(() => {
-      root.render(<Preview svg="data:image/png;base64,BBB2" />);
+      root.render(<Preview svg={to} />);
     });
-    const img = container.querySelector("img");
-    expect(img!.getAttribute("src")).toBe("data:image/png;base64,BBB2");
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(to);
+  });
+
+  describe("zoom controls", () => {
+    it.each(["Zoom in", "Zoom out", "Reset zoom"])("renders the '%s' button", (label) => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(container.querySelector(`[aria-label="${label}"]`)).not.toBeNull();
+    });
+
+    it.each([
+      { label: "Zoom in", mock: mockZoomIn },
+      { label: "Zoom out", mock: mockZoomOut },
+      { label: "Reset zoom", mock: mockResetTransform },
+    ])("clicking '$label' button calls its handler", ({ label, mock }) => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      act(() => {
+        container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
+      });
+      expect(mock).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+      { scale: 1, expected: "100%" },
+      { scale: 0.5, expected: "50%" },
+      { scale: 2.5, expected: "250%" },
+    ])("displays zoom level as $expected when scale is $scale", ({ scale, expected }) => {
+      mockScale = scale;
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(container.querySelector('[aria-label="Zoom level"]')!.textContent).toBe(expected);
+    });
+
+    it("resets zoom display to 100% when svg prop changes", () => {
+      const zoomLevel = () => container.querySelector('[aria-label="Zoom level"]')!.textContent;
+
+      mockScale = 2;
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(zoomLevel()).toBe("200%");
+
+      mockScale = 1;
+      act(() => {
+        root.render(<Preview svg="data:image/png;base64,BBBB" />);
+      });
+      expect(zoomLevel()).toBe("100%");
+    });
   });
 });
