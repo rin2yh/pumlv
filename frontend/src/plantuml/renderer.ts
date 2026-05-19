@@ -20,13 +20,11 @@ export async function renderPlantUML(source: string): Promise<string> {
     const match = TOO_LARGE_RE.exec(msg);
     if (!match) throw e;
 
-    // Auto-scale: compute the factor that brings the larger axis within
-    // MAX_RENDER_PX, then retry with a "scale X" pragma injected into the source.
     const w = Number(match[1]);
     const h = Number(match[2]);
     const scale = MAX_RENDER_PX / Math.max(w, h);
-    const svg = await renderLines(mod, withScale(lines, scale));
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    const scaledSvg = await renderLines(mod, withScale(lines, scale));
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(scaledSvg)}`;
   }
 }
 
