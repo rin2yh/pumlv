@@ -5,7 +5,7 @@ import { renderPlantUML } from "./plantuml/renderer";
 import { FileTree } from "./components/FileTree";
 import { Preview } from "./components/Preview";
 import { SourceView } from "./components/SourceView";
-import { SOURCE_TOGGLE_LABEL } from "./sourcePanel";
+import { SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL, SOURCE_TOGGLE_NAME } from "./sourcePanel";
 
 type RenderState =
   | { kind: "idle" }
@@ -124,7 +124,7 @@ export default function App(): JSX.Element {
 
           <button
             type="button"
-            data-testid="source-toggle"
+            aria-label={SOURCE_TOGGLE_NAME}
             aria-pressed={sourceOpen}
             onClick={() => setSourceOpen((v) => !v)}
             className="shrink-0 rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
@@ -157,7 +157,7 @@ export default function App(): JSX.Element {
           </section>
 
           <section
-            data-testid="source-panel"
+            aria-label={SOURCE_PANEL_NAME}
             hidden={!sourceOpen}
             className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white"
           >

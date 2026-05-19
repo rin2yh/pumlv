@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { SOURCE_TOGGLE_LABEL, type SourceToggleLabel } from "../../src/sourcePanel";
+import {
+  SOURCE_PANEL_NAME,
+  SOURCE_TOGGLE_LABEL,
+  SOURCE_TOGGLE_NAME,
+  type SourceToggleLabel,
+} from "../../src/sourcePanel";
 
 const scenarios: Array<{
   name: string;
@@ -28,7 +33,7 @@ const scenarios: Array<{
 ];
 
 async function clickToggle(page: Page, times: number): Promise<void> {
-  const toggle = page.getByTestId("source-toggle");
+  const toggle = page.getByRole("button", { name: SOURCE_TOGGLE_NAME });
   for (let i = 0; i < times; i++) {
     await toggle.click();
   }
@@ -44,9 +49,13 @@ test.describe("source panel toggle", () => {
 
       await clickToggle(page, clicks);
 
-      await expect(page.getByTestId("source-toggle")).toHaveText(expectedLabel);
+      const toggle = page.getByRole("button", { name: SOURCE_TOGGLE_NAME });
+      await expect(toggle).toHaveText(expectedLabel);
 
-      const sourcePanel = page.getByTestId("source-panel");
+      const sourcePanel = page.getByRole("region", {
+        name: SOURCE_PANEL_NAME,
+        includeHidden: true,
+      });
       if (expectedPanel === "visible") {
         await expect(sourcePanel).toBeVisible();
       } else {
