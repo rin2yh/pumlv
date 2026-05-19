@@ -1,17 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import { SourceView } from "./source-view";
 import { setupRender } from "../test/render";
 
 let codeToHtmlMock: ReturnType<typeof vi.fn>;
 
 vi.mock("shiki/core", () => ({
   createHighlighterCore: vi.fn(async () => ({
-    // Read codeToHtmlMock dynamically so the module-level highlighter
-    // cache in source-view.tsx doesn't pin a stale mock between tests.
-    get codeToHtml() {
-      return codeToHtmlMock;
-    },
+    codeToHtml: codeToHtmlMock,
   })),
 }));
 
@@ -23,7 +18,7 @@ vi.mock("shiki/themes/github-light.mjs", () => ({ default: {} }));
 vi.mock("shiki/langs/yaml.mjs", () => ({ default: {} }));
 vi.mock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
 
-const view = setupRender(SourceView);
+const view = setupRender();
 
 async function flushAsync(): Promise<void> {
   await act(async () => {
@@ -37,15 +32,21 @@ beforeEach(() => {
   codeToHtmlMock = vi.fn(() => "<pre class='shiki'>highlighted</pre>");
 });
 
+afterEach(() => {
+  vi.resetModules();
+});
+
 describe("SourceView", () => {
-  it("shows 'no source' for an empty string", () => {
-    view.render({ source: "" });
+  it("shows 'no source' for an empty string", async () => {
+    const { SourceView } = await import("./source-view");
+    view.render(<SourceView source="" />);
     expect(view.container.textContent).toContain("no source");
     expect(view.container.querySelector("pre")).toBeNull();
   });
 
   it("renders the highlighter output for a non-empty source", async () => {
-    view.render({ source: "@startuml\n@enduml\n" });
+    const { SourceView } = await import("./source-view");
+    view.render(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
     expect(codeToHtmlMock).toHaveBeenCalledWith("@startuml\n@enduml\n", {
@@ -59,7 +60,8 @@ describe("SourceView", () => {
     codeToHtmlMock.mockImplementation(() => {
       throw new Error("boom");
     });
-    view.render({ source: "<script>alert(1)</script>" });
+    const { SourceView } = await import("./source-view");
+    view.render(<SourceView source={"<script>alert(1)</script>"} />);
     await flushAsync();
 
     const pre = view.container.querySelector("pre");
@@ -71,7 +73,8 @@ describe("SourceView", () => {
     codeToHtmlMock.mockImplementation(() => {
       throw new Error("nope");
     });
-    view.render({ source: "a & b < c > d" });
+    const { SourceView } = await import("./source-view");
+    view.render(<SourceView source="a & b < c > d" />);
     await flushAsync();
 
     const pre = view.container.querySelector("pre");
@@ -79,11 +82,12 @@ describe("SourceView", () => {
   });
 
   it("clears highlighted html when source becomes empty", async () => {
-    view.render({ source: "hello" });
+    const { SourceView } = await import("./source-view");
+    view.render(<SourceView source="hello" />);
     await flushAsync();
     expect(view.container.innerHTML).toContain("highlighted");
 
-    view.render({ source: "" });
+    view.render(<SourceView source="" />);
     expect(view.container.textContent).toContain("no source");
   });
 });
