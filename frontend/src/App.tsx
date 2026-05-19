@@ -104,6 +104,7 @@ export default function App(): JSX.Element {
   }, [reloadActive, reloadFiles]);
 
   const activeName = files.find((f) => f.path === active)?.rel ?? "";
+  const toggleLabel = sourceOpen ? "hide source" : "show source";
 
   return (
     <div className="flex h-full">
@@ -123,11 +124,10 @@ export default function App(): JSX.Element {
           <button
             type="button"
             aria-pressed={sourceOpen}
-            aria-label={sourceOpen ? "hide source" : "show source"}
             onClick={() => setSourceOpen((v) => !v)}
             className="shrink-0 rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
           >
-            {sourceOpen ? "hide source" : "show source"}
+            {toggleLabel}
           </button>
         </header>
 
@@ -154,11 +154,12 @@ export default function App(): JSX.Element {
             )}
           </section>
 
-          {sourceOpen && (
-            <section className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white">
-              <SourceView source={source} />
-            </section>
-          )}
+          <section
+            hidden={!sourceOpen}
+            className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white"
+          >
+            <SourceView source={source} />
+          </section>
         </div>
       </main>
     </div>
