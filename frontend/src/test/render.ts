@@ -10,18 +10,21 @@ export interface RenderContext<P> {
 
 export function setupRender<P extends object>(Component: ComponentType<P>): RenderContext<P> {
   let container: HTMLDivElement;
-  let root: Root;
+  let root: Root | undefined;
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
-    root = createRoot(container);
+    root = undefined;
   });
 
   afterEach(() => {
-    act(() => {
-      root.unmount();
-    });
+    const r = root;
+    if (r) {
+      act(() => {
+        r.unmount();
+      });
+    }
     container.remove();
   });
 
@@ -30,8 +33,9 @@ export function setupRender<P extends object>(Component: ComponentType<P>): Rend
       return container;
     },
     render(props) {
+      const r = (root ??= createRoot(container));
       act(() => {
-        root.render(createElement(Component, props));
+        r.render(createElement(Component, props));
       });
     },
     click(el) {
