@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { fetchFiles, fetchFileSource, type FileEntry } from "./api/files";
 import { subscribe } from "./api/events";
 import { renderPlantUML } from "./plantuml/renderer";
-import { FileTree } from "./components/FileTree";
+import { FileTree } from "./components/file-tree";
 import { Preview } from "./components/Preview";
 import { SourceView } from "./components/SourceView";
 import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./sourcePanel";
