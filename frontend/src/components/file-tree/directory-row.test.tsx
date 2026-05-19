@@ -3,7 +3,7 @@ import { DirectoryRow } from "./directory-row";
 import type { DirNode } from "./tree";
 import { setupRender } from "../../test/render";
 
-const view = setupRender();
+const view = setupRender(DirectoryRow);
 
 function button(): HTMLButtonElement {
   const b = view.container.querySelector("button");
@@ -15,14 +15,14 @@ const dir: DirNode = { kind: "dir", key: "/r/sub", name: "sub", children: [] };
 
 describe("DirectoryRow", () => {
   it("renders a down chevron with aria-expanded=true when expanded", () => {
-    view.render(<DirectoryRow node={dir} depth={1} isExpanded onToggle={() => {}} />);
+    view.render({ node: dir, depth: 1, isExpanded: true, onToggle: () => {} });
     const b = button();
     expect(b.getAttribute("aria-expanded")).toBe("true");
     expect(b.textContent).toContain("▾");
   });
 
   it("renders a right chevron with aria-expanded=false when collapsed", () => {
-    view.render(<DirectoryRow node={dir} depth={1} isExpanded={false} onToggle={() => {}} />);
+    view.render({ node: dir, depth: 1, isExpanded: false, onToggle: () => {} });
     const b = button();
     expect(b.getAttribute("aria-expanded")).toBe("false");
     expect(b.textContent).toContain("▸");
@@ -30,17 +30,17 @@ describe("DirectoryRow", () => {
 
   it("calls onToggle with the node key when clicked", () => {
     const onToggle = vi.fn();
-    view.render(<DirectoryRow node={dir} depth={1} isExpanded onToggle={onToggle} />);
+    view.render({ node: dir, depth: 1, isExpanded: true, onToggle });
     view.click(button());
     expect(onToggle).toHaveBeenCalledWith("/r/sub");
   });
 
   it("uses smaller text for source-root rows (depth 0) than nested directories", () => {
-    view.render(<DirectoryRow node={dir} depth={0} isExpanded onToggle={() => {}} />);
+    view.render({ node: dir, depth: 0, isExpanded: true, onToggle: () => {} });
     const rootClass = button().className;
     expect(rootClass).toContain("text-xs");
 
-    view.render(<DirectoryRow node={dir} depth={1} isExpanded onToggle={() => {}} />);
+    view.render({ node: dir, depth: 1, isExpanded: true, onToggle: () => {} });
     expect(button().className).toContain("text-sm");
   });
 });

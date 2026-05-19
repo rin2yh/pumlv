@@ -1,14 +1,14 @@
-import { act, type ReactElement } from "react";
+import { act, createElement, type ComponentType } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach } from "vitest";
 
-export interface RenderContext {
+export interface RenderContext<P> {
   readonly container: HTMLDivElement;
-  render(node: ReactElement): void;
+  render(props: P): void;
   click(el: HTMLElement): void;
 }
 
-export function setupRender(): RenderContext {
+export function setupRender<P extends object>(Component: ComponentType<P>): RenderContext<P> {
   let container: HTMLDivElement;
   let root: Root | undefined;
 
@@ -19,9 +19,10 @@ export function setupRender(): RenderContext {
   });
 
   afterEach(() => {
-    if (root) {
+    const r = root;
+    if (r) {
       act(() => {
-        root!.unmount();
+        r.unmount();
       });
     }
     container.remove();
@@ -31,10 +32,10 @@ export function setupRender(): RenderContext {
     get container() {
       return container;
     },
-    render(node) {
-      root ??= createRoot(container);
+    render(props) {
+      const r = (root ??= createRoot(container));
       act(() => {
-        root!.render(node);
+        r.render(createElement(Component, props));
       });
     },
     click(el) {
