@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.0](https://github.com/rin2yh/pumlv/compare/v0.1.0...v0.2.0) - 2026-05-19
+- Add zoom/pan support to diagram preview by @rin2yh in https://github.com/rin2yh/pumlv/pull/3
+- fix: raise plantuml.js dimension limit from 4096px to 65536px (fixes #9) by @rin2yh in https://github.com/rin2yh/pumlv/pull/10
+
 ## [v0.1.0](https://github.com/rin2yh/pumlv/compare/v0.0.1...v0.1.0) - 2026-05-18
 - docs: expand Background section with competitive differentiators by @rin2yh in https://github.com/rin2yh/pumlv/pull/4
 - Move developer docs from README to CLAUDE.md by @rin2yh in https://github.com/rin2yh/pumlv/pull/6
