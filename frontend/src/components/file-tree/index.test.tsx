@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { act } from "react";
 import { FileTree } from ".";
 import { flatFiles, nestedFiles } from "./__test__/fixtures";
 import { setupRender } from "../../test/render";
 
-const view = setupRender();
+const render = setupRender();
 
 function dirButtons(): HTMLButtonElement[] {
-  return [...view.container.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")];
+  return [...document.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")];
 }
 
 function fileButtons(): HTMLButtonElement[] {
-  return [...view.container.querySelectorAll<HTMLButtonElement>("button:not([aria-expanded])")];
+  return [...document.querySelectorAll<HTMLButtonElement>("button:not([aria-expanded])")];
 }
 
 function dirByTitle(title: string): HTMLButtonElement {
@@ -23,9 +24,9 @@ function dirByTitle(title: string): HTMLButtonElement {
 
 describe("FileTree", () => {
   it("shows the empty state when no files are passed", () => {
-    view.render(<FileTree files={[]} active={null} onSelect={() => {}} />);
-    expect(view.container.textContent).toContain("no files found");
-    expect(view.container.querySelector("nav")).toBeNull();
+    render(<FileTree files={[]} active={null} onSelect={() => {}} />);
+    expect(document.body.textContent).toContain("no files found");
+    expect(document.querySelector("nav")).toBeNull();
   });
 
   it.each([
@@ -44,7 +45,7 @@ describe("FileTree", () => {
   ])(
     "renders dir + file buttons with all groups expanded ($name)",
     ({ files, dirs, fileLabels }) => {
-      view.render(<FileTree files={files} active={null} onSelect={() => {}} />);
+      render(<FileTree files={files} active={null} onSelect={() => {}} />);
       expect(dirButtons().map((b) => b.getAttribute("title"))).toEqual(dirs);
       expect(dirButtons().every((b) => b.getAttribute("aria-expanded") === "true")).toBe(true);
       expect(fileButtons().map((b) => b.textContent)).toEqual(fileLabels);
@@ -81,9 +82,11 @@ describe("FileTree", () => {
       remainingFiles: [],
     },
   ])("$name", ({ files, toggle, remainingDirs, remainingFiles }) => {
-    view.render(<FileTree files={files} active={null} onSelect={() => {}} />);
+    render(<FileTree files={files} active={null} onSelect={() => {}} />);
     const target = dirByTitle(toggle);
-    view.click(target);
+    act(() => {
+      target.click();
+    });
 
     expect(target.getAttribute("aria-expanded")).toBe("false");
     expect(dirButtons().map((b) => b.getAttribute("title"))).toEqual(remainingDirs);
@@ -91,20 +94,24 @@ describe("FileTree", () => {
   });
 
   it("re-clicking a collapsed toggle restores the original tree", () => {
-    view.render(<FileTree files={flatFiles} active={null} onSelect={() => {}} />);
+    render(<FileTree files={flatFiles} active={null} onSelect={() => {}} />);
     const before = fileButtons().map((b) => b.textContent);
 
     const rootA = dirByTitle("/a");
-    view.click(rootA);
+    act(() => {
+      rootA.click();
+    });
     expect(rootA.getAttribute("aria-expanded")).toBe("false");
 
-    view.click(rootA);
+    act(() => {
+      rootA.click();
+    });
     expect(rootA.getAttribute("aria-expanded")).toBe("true");
     expect(fileButtons().map((b) => b.textContent)).toEqual(before);
   });
 
   it("passes active down so the selected file gets the highlight", () => {
-    view.render(<FileTree files={flatFiles} active="/a/y.puml" onSelect={() => {}} />);
+    render(<FileTree files={flatFiles} active="/a/y.puml" onSelect={() => {}} />);
     const selected = fileButtons().find((b) => b.textContent === "y.puml");
     expect(selected?.className).toMatch(/violet/);
   });

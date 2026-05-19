@@ -18,7 +18,7 @@ vi.mock("shiki/themes/github-light.mjs", () => ({ default: {} }));
 vi.mock("shiki/langs/yaml.mjs", () => ({ default: {} }));
 vi.mock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
 
-const view = setupRender();
+const render = setupRender();
 
 async function flushAsync(): Promise<void> {
   await act(async () => {
@@ -39,21 +39,21 @@ afterEach(() => {
 describe("SourceView", () => {
   it("shows 'no source' for an empty string", async () => {
     const { SourceView } = await import("./source-view");
-    view.render(<SourceView source="" />);
-    expect(view.container.textContent).toContain("no source");
-    expect(view.container.querySelector("pre")).toBeNull();
+    render(<SourceView source="" />);
+    expect(document.body.textContent).toContain("no source");
+    expect(document.querySelector("pre")).toBeNull();
   });
 
   it("renders the highlighter output for a non-empty source", async () => {
     const { SourceView } = await import("./source-view");
-    view.render(<SourceView source={"@startuml\n@enduml\n"} />);
+    render(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
     expect(codeToHtmlMock).toHaveBeenCalledWith("@startuml\n@enduml\n", {
       lang: "yaml",
       theme: "github-light",
     });
-    expect(view.container.innerHTML).toContain("highlighted");
+    expect(document.body.innerHTML).toContain("highlighted");
   });
 
   it("falls back to escaped <pre> when the highlighter throws", async () => {
@@ -61,10 +61,10 @@ describe("SourceView", () => {
       throw new Error("boom");
     });
     const { SourceView } = await import("./source-view");
-    view.render(<SourceView source={"<script>alert(1)</script>"} />);
+    render(<SourceView source={"<script>alert(1)</script>"} />);
     await flushAsync();
 
-    const pre = view.container.querySelector("pre");
+    const pre = document.querySelector("pre");
     expect(pre).not.toBeNull();
     expect(pre!.innerHTML).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
   });
@@ -74,20 +74,20 @@ describe("SourceView", () => {
       throw new Error("nope");
     });
     const { SourceView } = await import("./source-view");
-    view.render(<SourceView source="a & b < c > d" />);
+    render(<SourceView source="a & b < c > d" />);
     await flushAsync();
 
-    const pre = view.container.querySelector("pre");
+    const pre = document.querySelector("pre");
     expect(pre!.innerHTML).toBe("a &amp; b &lt; c &gt; d");
   });
 
   it("clears highlighted html when source becomes empty", async () => {
     const { SourceView } = await import("./source-view");
-    view.render(<SourceView source="hello" />);
+    render(<SourceView source="hello" />);
     await flushAsync();
-    expect(view.container.innerHTML).toContain("highlighted");
+    expect(document.body.innerHTML).toContain("highlighted");
 
-    view.render(<SourceView source="" />);
-    expect(view.container.textContent).toContain("no source");
+    render(<SourceView source="" />);
+    expect(document.body.textContent).toContain("no source");
   });
 });
