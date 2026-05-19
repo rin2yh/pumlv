@@ -52,14 +52,14 @@ afterEach(() => {
 
 describe("SourceView", () => {
   it("shows 'no source' for an empty string", async () => {
-    const { SourceView } = await import("./SourceView");
+    const { SourceView } = await import("./source-view");
     renderSync(<SourceView source="" />);
     expect(container.textContent).toContain("no source");
     expect(container.querySelector("pre")).toBeNull();
   });
 
   it("renders the highlighter output for a non-empty source", async () => {
-    const { SourceView } = await import("./SourceView");
+    const { SourceView } = await import("./source-view");
     renderSync(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
@@ -74,7 +74,7 @@ describe("SourceView", () => {
     codeToHtmlMock.mockImplementation(() => {
       throw new Error("boom");
     });
-    const { SourceView } = await import("./SourceView");
+    const { SourceView } = await import("./source-view");
     renderSync(<SourceView source={"<script>alert(1)</script>"} />);
     await flushAsync();
 
@@ -87,7 +87,7 @@ describe("SourceView", () => {
     codeToHtmlMock.mockImplementation(() => {
       throw new Error("nope");
     });
-    const { SourceView } = await import("./SourceView");
+    const { SourceView } = await import("./source-view");
     renderSync(<SourceView source="a & b < c > d" />);
     await flushAsync();
 
@@ -96,7 +96,7 @@ describe("SourceView", () => {
   });
 
   it("clears highlighted html when source becomes empty", async () => {
-    const { SourceView } = await import("./SourceView");
+    const { SourceView } = await import("./source-view");
     renderSync(<SourceView source="hello" />);
     await flushAsync();
     expect(container.innerHTML).toContain("highlighted");

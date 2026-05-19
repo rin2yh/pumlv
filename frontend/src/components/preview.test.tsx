@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, type ReactElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { Preview } from "./Preview";
+import { Preview } from "./preview";
 
 const mockZoomIn = vi.fn();
 const mockZoomOut = vi.fn();
