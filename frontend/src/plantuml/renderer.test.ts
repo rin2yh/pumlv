@@ -34,13 +34,17 @@ describe("renderPlantUML", () => {
     expect(renderToString.mock.calls[0][0]).toEqual(["@startuml", "A -> B", "@enduml"]);
   });
 
-  it("rejects when renderToString reports an error", async () => {
+  it.each([
+    { error: "parse error at line 2" },
+    { error: "syntax error" },
+    { error: "unknown diagram type" },
+  ])("rejects when renderToString reports an error ($error)", async ({ error }) => {
     renderToString.mockImplementationOnce(
       (_lines: string[], _onSuccess: (svg: string) => void, onError: (msg: string) => void) => {
-        onError("parse error at line 2");
+        onError(error);
       },
     );
-    await expect(renderPlantUML("bad")).rejects.toThrow(/parse error at line 2/);
+    await expect(renderPlantUML("bad")).rejects.toThrow(error);
   });
 
   it("passes large source to renderToString without truncation", async () => {
