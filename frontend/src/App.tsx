@@ -5,6 +5,7 @@ import { renderPlantUML } from "./plantuml/renderer";
 import { FileTree } from "./components/FileTree";
 import { Preview } from "./components/Preview";
 import { SourceView } from "./components/SourceView";
+import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./sourcePanel";
 
 type RenderState =
   | { kind: "idle" }
@@ -17,6 +18,7 @@ export default function App(): JSX.Element {
   const [active, setActive] = useState<string | null>(null);
   const [source, setSource] = useState<string>("");
   const [render, setRender] = useState<RenderState>({ kind: "idle" });
+  const [sourceOpen, setSourceOpen] = useState<boolean>(true);
 
   const activeRef = useRef<string | null>(null);
   activeRef.current = active;
@@ -103,6 +105,7 @@ export default function App(): JSX.Element {
   }, [reloadActive, reloadFiles]);
 
   const activeName = files.find((f) => f.path === active)?.rel ?? "";
+  const toggleLabel = sourceOpen ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
 
   return (
     <div className="flex h-full">
@@ -116,8 +119,18 @@ export default function App(): JSX.Element {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-slate-200 px-4 py-2 text-sm text-slate-600">
-          {activeName || "no file selected"}
+        <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-2 text-sm text-slate-600">
+          <span className="min-w-0 truncate">{activeName || "no file selected"}</span>
+
+          <button
+            type="button"
+            aria-expanded={sourceOpen}
+            aria-controls={SOURCE_PANEL_ID}
+            onClick={() => setSourceOpen((v) => !v)}
+            className="shrink-0 rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+          >
+            {toggleLabel}
+          </button>
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -143,7 +156,12 @@ export default function App(): JSX.Element {
             )}
           </section>
 
-          <section className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white">
+          <section
+            id={SOURCE_PANEL_ID}
+            aria-label={SOURCE_PANEL_NAME}
+            hidden={!sourceOpen}
+            className="w-[40ch] max-w-[50%] shrink-0 overflow-auto border-l border-slate-200 bg-white"
+          >
             <SourceView source={source} />
           </section>
         </div>
