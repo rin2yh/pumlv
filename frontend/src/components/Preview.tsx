@@ -7,7 +7,7 @@ import {
 import type { JSX } from "react";
 
 const MIN_SCALE = 0.1;
-const MAX_SCALE = 10;
+const MAX_SCALE = 50;
 
 const BASE_BTN =
   "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur-sm hover:bg-white active:bg-slate-100";
