@@ -52,3 +52,7 @@ Uses **octocov** for coverage reporting. Releases automated via **tagpr** and **
 ## Pull Requests
 
 Verify every Test plan item yourself before handing the PR off — that includes UI behavior. Use `make test-frontend` / `make test-backend` / `make lint` for unit/lint checks, and the Playwright e2e suite (`make e2e`) or `make screenshot` for browser-level verification. If a feature lacks coverage, add an e2e test that exercises it. Pre-check every Test plan item you've verified; only leave something unchecked when verification is genuinely impossible in this environment, and call that out explicitly. Do not make the user point this out.
+
+## Git
+
+**Always ask for user confirmation before force-pushing** (`git push --force`, `git push --force-with-lease`, or any equivalent), regardless of branch. When integrating upstream changes into a feature branch, prefer `git merge` over `git rebase` so a normal push works and force-push is unnecessary in the first place.
