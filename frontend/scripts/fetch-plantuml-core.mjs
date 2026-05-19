@@ -25,14 +25,23 @@ const PLANTUML_PATCHES = [
 
 function patchPlantumlJs(filePath) {
   let src = readFileSync(filePath, "utf8");
-  let patched = false;
+  let changed = false;
   for (const { from, to } of PLANTUML_PATCHES) {
     if (src.includes(from)) {
       src = src.replaceAll(from, to);
-      patched = true;
+      changed = true;
+    } else if (!src.includes(to)) {
+      // Neither the original string nor the patched string is present —
+      // the upstream build has changed its minified variable names.
+      // Bail out so the broken state is visible rather than silent.
+      console.error(
+        `plantuml.js patch failed: expected "${from}" or "${to}" not found.\n` +
+          "The upstream TeaVM build may have changed. Update PLANTUML_PATCHES in fetch-plantuml-core.mjs.",
+      );
+      process.exit(1);
     }
   }
-  if (patched) {
+  if (changed) {
     writeFileSync(filePath, src);
     console.log("plantuml.js: raised dimension limit from 4096 to 65536px");
   }
