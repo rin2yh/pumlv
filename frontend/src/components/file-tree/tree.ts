@@ -11,10 +11,12 @@ export interface TreeRow {
   depth: number;
 }
 
+const INDENT_BASE_PX = 16;
+const INDENT_STEP_PX = 12;
 export const CHEVRON_INDENT_PX = 24;
 
 export function rowIndentPx(depth: number): number {
-  return 16 + depth * 12;
+  return INDENT_BASE_PX + depth * INDENT_STEP_PX;
 }
 
 export function buildTree(files: FileEntry[]): DirNode[] {

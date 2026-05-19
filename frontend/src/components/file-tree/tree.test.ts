@@ -1,29 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { FileEntry } from "../../api/files";
+import { flatFiles, nestedFiles } from "./fixtures";
 import { buildTree, flatten } from "./tree";
-
-const flat: FileEntry[] = [
-  { path: "/a/x.puml", rel: "x.puml", name: "x.puml", source: "/a" },
-  { path: "/a/y.puml", rel: "y.puml", name: "y.puml", source: "/a" },
-  { path: "/b/z.puml", rel: "z.puml", name: "z.puml", source: "/b" },
-];
-
-const nested: FileEntry[] = [
-  { path: "/r/top.puml", rel: "top.puml", name: "top.puml", source: "/r" },
-  { path: "/r/sub/a.puml", rel: "sub/a.puml", name: "a.puml", source: "/r" },
-  { path: "/r/sub/deep/b.puml", rel: "sub/deep/b.puml", name: "b.puml", source: "/r" },
-];
 
 describe("buildTree", () => {
   it("groups files by their source directory", () => {
-    const roots = buildTree(flat);
+    const roots = buildTree(flatFiles);
     expect(roots.map((r) => r.key)).toEqual(["/a", "/b"]);
     expect(roots[0]!.children.map((c) => c.key)).toEqual(["/a/x.puml", "/a/y.puml"]);
     expect(roots[1]!.children.map((c) => c.key)).toEqual(["/b/z.puml"]);
   });
 
   it("creates intermediate directory nodes for nested rel paths", () => {
-    const [root] = buildTree(nested);
+    const [root] = buildTree(nestedFiles);
     const sub = root!.children.find((c) => c.kind === "dir" && c.name === "sub");
     expect(sub).toBeDefined();
     const deep = sub!.kind === "dir" && sub!.children.find((c) => c.kind === "dir");
@@ -44,7 +33,7 @@ describe("buildTree", () => {
 
 describe("flatten", () => {
   it("emits every node in DFS order when nothing is collapsed", () => {
-    const rows = flatten(buildTree(nested), new Set());
+    const rows = flatten(buildTree(nestedFiles), new Set());
     expect(rows.map(({ node }) => node.name)).toEqual([
       "/r",
       "sub",
@@ -56,7 +45,7 @@ describe("flatten", () => {
   });
 
   it("skips the children of a collapsed directory but still emits the directory itself", () => {
-    const tree = buildTree(nested);
+    const tree = buildTree(nestedFiles);
     const rows = flatten(tree, new Set(["/r/sub/deep"]));
     const names = rows.map(({ node }) => node.name);
     expect(names).toContain("deep");
@@ -64,12 +53,12 @@ describe("flatten", () => {
   });
 
   it("hides descendant toggles when an ancestor is collapsed", () => {
-    const rows = flatten(buildTree(nested), new Set(["/r/sub"]));
+    const rows = flatten(buildTree(nestedFiles), new Set(["/r/sub"]));
     expect(rows.map(({ node }) => node.name)).toEqual(["/r", "sub", "top.puml"]);
   });
 
   it("annotates each row with the correct depth", () => {
-    const rows = flatten(buildTree(nested), new Set());
+    const rows = flatten(buildTree(nestedFiles), new Set());
     const byName = Object.fromEntries(rows.map(({ node, depth }) => [node.name, depth]));
     expect(byName).toMatchObject({
       "/r": 0,

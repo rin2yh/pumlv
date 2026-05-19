@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, type ReactElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { FileTree } from ".";
-import type { FileEntry } from "../../api/files";
+import { flatFiles, nestedFiles } from "./fixtures";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -48,18 +48,6 @@ afterEach(() => {
   container.remove();
 });
 
-const flat: FileEntry[] = [
-  { path: "/a/x.puml", rel: "x.puml", name: "x.puml", source: "/a" },
-  { path: "/a/y.puml", rel: "y.puml", name: "y.puml", source: "/a" },
-  { path: "/b/z.puml", rel: "z.puml", name: "z.puml", source: "/b" },
-];
-
-const nested: FileEntry[] = [
-  { path: "/r/top.puml", rel: "top.puml", name: "top.puml", source: "/r" },
-  { path: "/r/sub/a.puml", rel: "sub/a.puml", name: "a.puml", source: "/r" },
-  { path: "/r/sub/deep/b.puml", rel: "sub/deep/b.puml", name: "b.puml", source: "/r" },
-];
-
 describe("FileTree", () => {
   it("shows the empty state when no files are passed", () => {
     render(<FileTree files={[]} active={null} onSelect={() => {}} />);
@@ -70,13 +58,13 @@ describe("FileTree", () => {
   it.each([
     {
       name: "flat sources",
-      files: flat,
+      files: flatFiles,
       dirs: ["/a", "/b"],
       fileLabels: ["x.puml", "y.puml", "z.puml"],
     },
     {
       name: "nested subdirectories",
-      files: nested,
+      files: nestedFiles,
       dirs: ["/r", "sub", "deep"],
       fileLabels: ["b.puml", "a.puml", "top.puml"],
     },
@@ -93,28 +81,28 @@ describe("FileTree", () => {
   it.each([
     {
       name: "source group collapse hides its files",
-      files: flat,
+      files: flatFiles,
       toggle: "/a",
       remainingDirs: ["/a", "/b"],
       remainingFiles: ["z.puml"],
     },
     {
       name: "leaf subdirectory collapse hides only its own files",
-      files: nested,
+      files: nestedFiles,
       toggle: "deep",
       remainingDirs: ["/r", "sub", "deep"],
       remainingFiles: ["a.puml", "top.puml"],
     },
     {
       name: "ancestor collapse hides descendant toggles",
-      files: nested,
+      files: nestedFiles,
       toggle: "sub",
       remainingDirs: ["/r", "sub"],
       remainingFiles: ["top.puml"],
     },
     {
       name: "root collapse hides everything below it",
-      files: nested,
+      files: nestedFiles,
       toggle: "/r",
       remainingDirs: ["/r"],
       remainingFiles: [],
@@ -130,7 +118,7 @@ describe("FileTree", () => {
   });
 
   it("re-clicking a collapsed toggle restores the original tree", () => {
-    render(<FileTree files={flat} active={null} onSelect={() => {}} />);
+    render(<FileTree files={flatFiles} active={null} onSelect={() => {}} />);
     const before = fileButtons().map((b) => b.textContent);
 
     const rootA = dirByTitle("/a");
@@ -143,7 +131,7 @@ describe("FileTree", () => {
   });
 
   it("passes active down so the selected file gets the highlight", () => {
-    render(<FileTree files={flat} active="/a/y.puml" onSelect={() => {}} />);
+    render(<FileTree files={flatFiles} active="/a/y.puml" onSelect={() => {}} />);
     const selected = fileButtons().find((b) => b.textContent === "y.puml");
     expect(selected?.className).toMatch(/violet/);
   });
