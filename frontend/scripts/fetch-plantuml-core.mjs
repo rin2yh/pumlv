@@ -14,10 +14,21 @@ const REQUIRED_FILES = ["plantuml.js", "viz-global.js"];
 // The upstream TeaVM build rejects diagrams whose layout exceeds 4096px on
 // either axis. This check fires before the SVG is emitted, and cannot be
 // worked around from the diagram source (scale/dpi pragmas don't affect the
-// raw layout dimensions that are checked). We raise the limit to 65536px —
-// enough to cover large sequence/ER diagrams (observed max: ~56 000px) while
-// still bounding pathological inputs. SVG is vector, so coordinate-system
-// size has no meaningful effect on memory or rendering performance.
+// raw layout dimensions that are checked).
+//
+// There is no external API to configure this limit: plantuml.js exports only
+// `render` and `renderToString`, and neither accepts a size option. The limit
+// is a constant compiled into the TeaVM output from the Java source, and the
+// Java-side PLANTUML_LIMIT_SIZE JVM property is not surfaced to JavaScript.
+// Other PlantUML tooling (VS Code extension, GitLab integration) sidestep the
+// problem entirely by delegating to a Java server process, which is at odds
+// with pumlv's "no Java, no external server" design.
+//
+// The only viable option for a pure-browser renderer is to patch the constant
+// in the downloaded file. We raise it to 65536px — enough to cover large ER /
+// sequence diagrams (observed max: ~56 000px) while still bounding pathological
+// inputs. SVG is vector, so coordinate-system size has no meaningful effect on
+// memory or rendering performance.
 const PLANTUML_PATCHES = [
   { from: "p<=4096.0", to: "p<=65536.0" },
   { from: "q<=4096.0", to: "q<=65536.0" },
