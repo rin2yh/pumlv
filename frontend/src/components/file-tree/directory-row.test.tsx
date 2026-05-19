@@ -1,36 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type ReactElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { describe, expect, it, vi } from "vitest";
+import { act } from "react";
 import { DirectoryRow } from "./directory-row";
 import type { DirNode } from "./tree";
+import { setupRender } from "../../test/render";
 
-let container: HTMLDivElement;
-let root: Root;
-
-function render(node: ReactElement): void {
-  root = createRoot(container);
-  act(() => {
-    root.render(node);
-  });
-}
+const render = setupRender();
 
 function button(): HTMLButtonElement {
-  const b = container.querySelector("button");
+  const b = document.querySelector("button");
   if (!b) throw new Error("DirectoryRow button not found");
   return b;
 }
-
-beforeEach(() => {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-});
-
-afterEach(() => {
-  act(() => {
-    root.unmount();
-  });
-  container.remove();
-});
 
 const dir: DirNode = { kind: "dir", key: "/r/sub", name: "sub", children: [] };
 
@@ -63,9 +43,7 @@ describe("DirectoryRow", () => {
     const rootClass = button().className;
     expect(rootClass).toContain("text-xs");
 
-    act(() => {
-      root.render(<DirectoryRow node={dir} depth={1} isExpanded onToggle={() => {}} />);
-    });
+    render(<DirectoryRow node={dir} depth={1} isExpanded onToggle={() => {}} />);
     expect(button().className).toContain("text-sm");
   });
 });

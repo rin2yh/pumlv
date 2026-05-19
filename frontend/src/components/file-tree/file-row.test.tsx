@@ -1,36 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type ReactElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { describe, expect, it, vi } from "vitest";
+import { act } from "react";
 import { FileRow } from "./file-row";
 import type { FileEntry } from "../../api/files";
+import { setupRender } from "../../test/render";
 
-let container: HTMLDivElement;
-let root: Root;
-
-function render(node: ReactElement): void {
-  root = createRoot(container);
-  act(() => {
-    root.render(node);
-  });
-}
+const render = setupRender();
 
 function button(): HTMLButtonElement {
-  const b = container.querySelector("button");
+  const b = document.querySelector("button");
   if (!b) throw new Error("FileRow button not found");
   return b;
 }
-
-beforeEach(() => {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-});
-
-afterEach(() => {
-  act(() => {
-    root.unmount();
-  });
-  container.remove();
-});
 
 const entry: FileEntry = {
   path: "/a/x.puml",

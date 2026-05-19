@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type ReactElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act } from "react";
+import { setupRender } from "../test/render";
 
 let codeToHtmlMock: ReturnType<typeof vi.fn>;
 
@@ -18,8 +18,7 @@ vi.mock("shiki/themes/github-light.mjs", () => ({ default: {} }));
 vi.mock("shiki/langs/yaml.mjs", () => ({ default: {} }));
 vi.mock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
 
-let container: HTMLDivElement;
-let root: Root;
+const render = setupRender();
 
 async function flushAsync(): Promise<void> {
   await act(async () => {
@@ -29,45 +28,32 @@ async function flushAsync(): Promise<void> {
   });
 }
 
-function renderSync(node: ReactElement): void {
-  root = createRoot(container);
-  act(() => {
-    root.render(node);
-  });
-}
-
 beforeEach(() => {
   codeToHtmlMock = vi.fn(() => "<pre class='shiki'>highlighted</pre>");
-  container = document.createElement("div");
-  document.body.appendChild(container);
 });
 
 afterEach(() => {
-  act(() => {
-    root.unmount();
-  });
-  container.remove();
   vi.resetModules();
 });
 
 describe("SourceView", () => {
   it("shows 'no source' for an empty string", async () => {
     const { SourceView } = await import("./source-view");
-    renderSync(<SourceView source="" />);
-    expect(container.textContent).toContain("no source");
-    expect(container.querySelector("pre")).toBeNull();
+    render(<SourceView source="" />);
+    expect(document.body.textContent).toContain("no source");
+    expect(document.querySelector("pre")).toBeNull();
   });
 
   it("renders the highlighter output for a non-empty source", async () => {
     const { SourceView } = await import("./source-view");
-    renderSync(<SourceView source={"@startuml\n@enduml\n"} />);
+    render(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
     expect(codeToHtmlMock).toHaveBeenCalledWith("@startuml\n@enduml\n", {
       lang: "yaml",
       theme: "github-light",
     });
-    expect(container.innerHTML).toContain("highlighted");
+    expect(document.body.innerHTML).toContain("highlighted");
   });
 
   it("falls back to escaped <pre> when the highlighter throws", async () => {
@@ -75,10 +61,10 @@ describe("SourceView", () => {
       throw new Error("boom");
     });
     const { SourceView } = await import("./source-view");
-    renderSync(<SourceView source={"<script>alert(1)</script>"} />);
+    render(<SourceView source={"<script>alert(1)</script>"} />);
     await flushAsync();
 
-    const pre = container.querySelector("pre");
+    const pre = document.querySelector("pre");
     expect(pre).not.toBeNull();
     expect(pre!.innerHTML).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
   });
@@ -88,22 +74,20 @@ describe("SourceView", () => {
       throw new Error("nope");
     });
     const { SourceView } = await import("./source-view");
-    renderSync(<SourceView source="a & b < c > d" />);
+    render(<SourceView source="a & b < c > d" />);
     await flushAsync();
 
-    const pre = container.querySelector("pre");
+    const pre = document.querySelector("pre");
     expect(pre!.innerHTML).toBe("a &amp; b &lt; c &gt; d");
   });
 
   it("clears highlighted html when source becomes empty", async () => {
     const { SourceView } = await import("./source-view");
-    renderSync(<SourceView source="hello" />);
+    render(<SourceView source="hello" />);
     await flushAsync();
-    expect(container.innerHTML).toContain("highlighted");
+    expect(document.body.innerHTML).toContain("highlighted");
 
-    act(() => {
-      root.render(<SourceView source="" />);
-    });
-    expect(container.textContent).toContain("no source");
+    render(<SourceView source="" />);
+    expect(document.body.textContent).toContain("no source");
   });
 });
