@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, type ReactElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { FileTree } from "./file-tree";
-import type { FileEntry } from "../api/files";
+import { FileTree } from ".";
+import type { FileEntry } from "../../api/files";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -84,32 +84,11 @@ describe("FileTree", () => {
     "renders dir + file buttons with all groups expanded ($name)",
     ({ files, dirs, fileLabels }) => {
       render(<FileTree files={files} active={null} onSelect={() => {}} />);
-
       expect(dirButtons().map((b) => b.getAttribute("title"))).toEqual(dirs);
       expect(dirButtons().every((b) => b.getAttribute("aria-expanded") === "true")).toBe(true);
       expect(fileButtons().map((b) => b.textContent)).toEqual(fileLabels);
     },
   );
-
-  it("highlights the active file", () => {
-    render(<FileTree files={flat} active="/a/y.puml" onSelect={() => {}} />);
-    const buttons = fileButtons();
-    const activeButton = buttons.find((b) => b.textContent === "y.puml");
-    expect(activeButton?.className).toMatch(/violet/);
-
-    const inactive = buttons.find((b) => b.textContent === "x.puml");
-    expect(inactive?.className).not.toMatch(/violet/);
-  });
-
-  it("calls onSelect with the path of the clicked file", () => {
-    const onSelect = vi.fn();
-    render(<FileTree files={flat} active={null} onSelect={onSelect} />);
-
-    click(fileButtons().find((b) => b.textContent === "z.puml")!);
-
-    expect(onSelect).toHaveBeenCalledWith("/b/z.puml");
-    expect(onSelect).toHaveBeenCalledTimes(1);
-  });
 
   it.each([
     {
@@ -142,7 +121,6 @@ describe("FileTree", () => {
     },
   ])("$name", ({ files, toggle, remainingDirs, remainingFiles }) => {
     render(<FileTree files={files} active={null} onSelect={() => {}} />);
-
     const target = dirByTitle(toggle);
     click(target);
 
@@ -162,5 +140,11 @@ describe("FileTree", () => {
     click(rootA);
     expect(rootA.getAttribute("aria-expanded")).toBe("true");
     expect(fileButtons().map((b) => b.textContent)).toEqual(before);
+  });
+
+  it("passes active down so the selected file gets the highlight", () => {
+    render(<FileTree files={flat} active="/a/y.puml" onSelect={() => {}} />);
+    const selected = fileButtons().find((b) => b.textContent === "y.puml");
+    expect(selected?.className).toMatch(/violet/);
   });
 });

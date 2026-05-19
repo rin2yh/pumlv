@@ -42,7 +42,6 @@ export function FileTree({ files, active, onSelect }: Props): JSX.Element {
           <FileRow
             key={node.key}
             entry={node.entry}
-            name={node.name}
             depth={depth}
             isSelected={active === node.entry.path}
             onSelect={onSelect}

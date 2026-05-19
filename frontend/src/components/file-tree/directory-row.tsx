@@ -1,5 +1,5 @@
 import { type JSX } from "react";
-import type { DirNode } from "./tree";
+import { rowIndentPx, type DirNode } from "./tree";
 
 interface Props {
   node: DirNode;
@@ -18,7 +18,7 @@ export function DirectoryRow({ node, depth, isExpanded, onToggle }: Props): JSX.
       type="button"
       onClick={() => onToggle(node.key)}
       className={`${groupSpacingClass}flex w-full items-center gap-1 py-1 pr-4 text-left hover:bg-slate-50 ${headerTextClass}`}
-      style={{ paddingLeft: `${16 + depth * 12}px` }}
+      style={{ paddingLeft: `${rowIndentPx(depth)}px` }}
       title={node.name}
       aria-expanded={isExpanded}
     >

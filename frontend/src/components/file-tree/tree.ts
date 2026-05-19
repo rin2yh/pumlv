@@ -11,6 +11,12 @@ export interface TreeRow {
   depth: number;
 }
 
+export const CHEVRON_INDENT_PX = 24;
+
+export function rowIndentPx(depth: number): number {
+  return 16 + depth * 12;
+}
+
 export function buildTree(files: FileEntry[]): DirNode[] {
   const sourceRoots = new Map<string, DirNode>();
   for (const file of files) {
