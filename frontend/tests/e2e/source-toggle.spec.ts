@@ -1,36 +1,39 @@
 import { expect, test, type Page } from "@playwright/test";
-
-type Label = "hide source" | "show source";
+import {
+  SOURCE_TOGGLE_LABEL,
+  type SourceToggleLabel,
+} from "../../src/components/sourcePanel";
 
 const scenarios: Array<{
   name: string;
   clicks: number;
-  expectedButton: Label;
+  expectedButton: SourceToggleLabel;
   expectedPanel: "visible" | "hidden";
 }> = [
   {
     name: "shows the source panel by default",
     clicks: 0,
-    expectedButton: "hide source",
+    expectedButton: SOURCE_TOGGLE_LABEL.open,
     expectedPanel: "visible",
   },
   {
     name: "hides the source panel after one toggle",
     clicks: 1,
-    expectedButton: "show source",
+    expectedButton: SOURCE_TOGGLE_LABEL.closed,
     expectedPanel: "hidden",
   },
   {
     name: "re-shows the source panel after toggling back",
     clicks: 2,
-    expectedButton: "hide source",
+    expectedButton: SOURCE_TOGGLE_LABEL.open,
     expectedPanel: "visible",
   },
 ];
 
 async function clickToggle(page: Page, times: number): Promise<void> {
   for (let i = 0; i < times; i++) {
-    const label: Label = i % 2 === 0 ? "hide source" : "show source";
+    const label: SourceToggleLabel =
+      i % 2 === 0 ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
     await page.getByRole("button", { name: label }).click();
   }
 }

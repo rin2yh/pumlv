@@ -5,6 +5,7 @@ import { renderPlantUML } from "./plantuml/renderer";
 import { FileTree } from "./components/FileTree";
 import { Preview } from "./components/Preview";
 import { SourceView } from "./components/SourceView";
+import { SOURCE_TOGGLE_LABEL } from "./components/sourcePanel";
 
 type RenderState =
   | { kind: "idle" }
@@ -104,7 +105,7 @@ export default function App(): JSX.Element {
   }, [reloadActive, reloadFiles]);
 
   const activeName = files.find((f) => f.path === active)?.rel ?? "";
-  const toggleLabel = sourceOpen ? "hide source" : "show source";
+  const toggleLabel = sourceOpen ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
 
   return (
     <div className="flex h-full">
