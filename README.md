@@ -30,6 +30,12 @@ Download a pre-built binary from the [releases page](https://github.com/rin2yh/p
 go install github.com/rin2yh/pumlv@latest
 ```
 
+Or with [mise](https://mise.jdx.dev/) ([GitHub backend](https://mise.jdx.dev/dev-tools/backends/github.html)):
+
+```sh
+mise use -g github:rin2yh/pumlv
+```
+
 
 ## Usage
 
