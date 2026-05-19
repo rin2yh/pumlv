@@ -14,9 +14,9 @@ function render(node: ReactElement): void {
   });
 }
 
-function click(el: Element): void {
+function click(el: HTMLElement): void {
   act(() => {
-    el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    el.click();
   });
 }
 
