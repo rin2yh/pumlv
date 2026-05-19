@@ -1,31 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { act, type ReactElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { describe, expect, it } from "vitest";
 import { FileTree } from ".";
 import { flatFiles, nestedFiles } from "./__test__/fixtures";
+import { setupRenderHarness } from "../../test/harness";
 
-let container: HTMLDivElement;
-let root: Root;
-
-function render(node: ReactElement): void {
-  root = createRoot(container);
-  act(() => {
-    root.render(node);
-  });
-}
-
-function click(el: HTMLElement): void {
-  act(() => {
-    el.click();
-  });
-}
+const harness = setupRenderHarness();
 
 function dirButtons(): HTMLButtonElement[] {
-  return [...container.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")];
+  return [...harness.container.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")];
 }
 
 function fileButtons(): HTMLButtonElement[] {
-  return [...container.querySelectorAll<HTMLButtonElement>("button:not([aria-expanded])")];
+  return [...harness.container.querySelectorAll<HTMLButtonElement>("button:not([aria-expanded])")];
 }
 
 function dirByTitle(title: string): HTMLButtonElement {
@@ -36,23 +21,11 @@ function dirByTitle(title: string): HTMLButtonElement {
   return btn;
 }
 
-beforeEach(() => {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-});
-
-afterEach(() => {
-  act(() => {
-    root.unmount();
-  });
-  container.remove();
-});
-
 describe("FileTree", () => {
   it("shows the empty state when no files are passed", () => {
-    render(<FileTree files={[]} active={null} onSelect={() => {}} />);
-    expect(container.textContent).toContain("no files found");
-    expect(container.querySelector("nav")).toBeNull();
+    harness.render(<FileTree files={[]} active={null} onSelect={() => {}} />);
+    expect(harness.container.textContent).toContain("no files found");
+    expect(harness.container.querySelector("nav")).toBeNull();
   });
 
   it.each([
@@ -71,7 +44,7 @@ describe("FileTree", () => {
   ])(
     "renders dir + file buttons with all groups expanded ($name)",
     ({ files, dirs, fileLabels }) => {
-      render(<FileTree files={files} active={null} onSelect={() => {}} />);
+      harness.render(<FileTree files={files} active={null} onSelect={() => {}} />);
       expect(dirButtons().map((b) => b.getAttribute("title"))).toEqual(dirs);
       expect(dirButtons().every((b) => b.getAttribute("aria-expanded") === "true")).toBe(true);
       expect(fileButtons().map((b) => b.textContent)).toEqual(fileLabels);
@@ -108,9 +81,9 @@ describe("FileTree", () => {
       remainingFiles: [],
     },
   ])("$name", ({ files, toggle, remainingDirs, remainingFiles }) => {
-    render(<FileTree files={files} active={null} onSelect={() => {}} />);
+    harness.render(<FileTree files={files} active={null} onSelect={() => {}} />);
     const target = dirByTitle(toggle);
-    click(target);
+    harness.click(target);
 
     expect(target.getAttribute("aria-expanded")).toBe("false");
     expect(dirButtons().map((b) => b.getAttribute("title"))).toEqual(remainingDirs);
@@ -118,20 +91,20 @@ describe("FileTree", () => {
   });
 
   it("re-clicking a collapsed toggle restores the original tree", () => {
-    render(<FileTree files={flatFiles} active={null} onSelect={() => {}} />);
+    harness.render(<FileTree files={flatFiles} active={null} onSelect={() => {}} />);
     const before = fileButtons().map((b) => b.textContent);
 
     const rootA = dirByTitle("/a");
-    click(rootA);
+    harness.click(rootA);
     expect(rootA.getAttribute("aria-expanded")).toBe("false");
 
-    click(rootA);
+    harness.click(rootA);
     expect(rootA.getAttribute("aria-expanded")).toBe("true");
     expect(fileButtons().map((b) => b.textContent)).toEqual(before);
   });
 
   it("passes active down so the selected file gets the highlight", () => {
-    render(<FileTree files={flatFiles} active="/a/y.puml" onSelect={() => {}} />);
+    harness.render(<FileTree files={flatFiles} active="/a/y.puml" onSelect={() => {}} />);
     const selected = fileButtons().find((b) => b.textContent === "y.puml");
     expect(selected?.className).toMatch(/violet/);
   });
