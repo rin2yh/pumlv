@@ -5,8 +5,10 @@ import {
   type SourceToggleLabel,
 } from "../../src/sourcePanel";
 
+const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const TOGGLE_NAME_PATTERN = new RegExp(
-  `^(?:${SOURCE_TOGGLE_LABEL.open}|${SOURCE_TOGGLE_LABEL.closed})$`,
+  `^(?:${escapeRegExp(SOURCE_TOGGLE_LABEL.open)}|${escapeRegExp(SOURCE_TOGGLE_LABEL.closed)})$`,
 );
 
 const scenarios: Array<{
