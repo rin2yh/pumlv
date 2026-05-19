@@ -39,15 +39,15 @@ test.describe("PlantUML rendering", () => {
   test("re-renders when another file is selected", async ({ page }) => {
     await page.goto("/");
 
-    const buttons = page.locator("aside nav button");
-    await expect.poll(async () => buttons.count(), { timeout: 60_000 }).toBeGreaterThan(1);
+    const fileButtons = page.locator("aside nav button:not([aria-expanded])");
+    await expect.poll(async () => fileButtons.count(), { timeout: 60_000 }).toBeGreaterThan(1);
 
     const preview = page.getByAltText("preview");
     await expect(preview).toBeVisible({ timeout: 60_000 });
     const firstSrc = await preview.getAttribute("src");
     expect(firstSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
 
-    await buttons.nth(1).click();
+    await fileButtons.last().click();
 
     await expect
       .poll(async () => await preview.getAttribute("src"), { timeout: 60_000 })
@@ -55,5 +55,26 @@ test.describe("PlantUML rendering", () => {
 
     const nextSrc = await preview.getAttribute("src");
     expect(nextSrc).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+  });
+
+  test("collapses and re-expands a directory from its toggle header", async ({ page }) => {
+    await page.goto("/");
+
+    const dirToggles = page.locator("aside nav button[aria-expanded]");
+    const fileButtons = page.locator("aside nav button:not([aria-expanded])");
+
+    await expect.poll(async () => fileButtons.count(), { timeout: 60_000 }).toBeGreaterThan(0);
+    const initialCount = await fileButtons.count();
+
+    const rootToggle = dirToggles.first();
+    await expect(rootToggle).toHaveAttribute("aria-expanded", "true");
+
+    await rootToggle.click();
+    await expect(rootToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(fileButtons).toHaveCount(0);
+
+    await rootToggle.click();
+    await expect(rootToggle).toHaveAttribute("aria-expanded", "true");
+    await expect(fileButtons).toHaveCount(initialCount);
   });
 });
