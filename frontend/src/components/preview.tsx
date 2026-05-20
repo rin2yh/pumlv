@@ -53,7 +53,7 @@ function ZoomControls(): JSX.Element {
     setDraft(null);
   };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       commit();
@@ -65,7 +65,7 @@ function ZoomControls(): JSX.Element {
     }
   };
 
-  const onFocus = (e: FocusEvent<HTMLInputElement>) => {
+  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
     setDraft(String(displayPercent));
     e.target.select();
   };
@@ -87,9 +87,9 @@ function ZoomControls(): JSX.Element {
           inputMode="numeric"
           value={draft ?? String(displayPercent)}
           onChange={(e) => setDraft(e.target.value)}
-          onFocus={onFocus}
+          onFocus={handleFocus}
           onBlur={commit}
-          onKeyDown={onKeyDown}
+          onKeyDown={handleKeyDown}
           className="h-full w-8 cursor-text bg-transparent text-right outline-none"
           aria-label="Zoom level"
         />
