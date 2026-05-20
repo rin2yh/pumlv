@@ -113,8 +113,7 @@ const hiddenCases: HiddenCase[] = [
 describe("hiddenLines", () => {
   for (const { name, ranges, folded, expected } of hiddenCases) {
     it(name, () => {
-      const got = [...hiddenLines(ranges, new Set(folded))].toSorted((a, b) => a - b);
-      expect(got).toEqual(expected);
+      expect(hiddenLines(ranges, new Set(folded))).toEqual(new Set(expected));
     });
   }
 });
