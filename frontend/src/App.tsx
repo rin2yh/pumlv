@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { fetchFiles, fetchFileSource, type FileEntry } from "./api/files";
 import { subscribe } from "./api/events";
 import { renderPlantUML } from "./plantuml/renderer";
@@ -22,49 +22,43 @@ export default function App(): JSX.Element {
   const [filesReloadKey, setFilesReloadKey] = useState(0);
   const [activeReloadKey, setActiveReloadKey] = useState(0);
 
+  const renderSeq = useRef(0);
+
   useEffect(() => {
-    let cancelled = false;
     void (async () => {
       const list = await fetchFiles();
-      if (cancelled) return;
       setFiles(list);
       setActive((prev) =>
         prev && list.some((f) => f.path === prev) ? prev : (list[0]?.path ?? null),
       );
     })();
-    return () => {
-      cancelled = true;
-    };
   }, [filesReloadKey]);
 
   useEffect(() => {
     if (!active) {
+      renderSeq.current++;
       setSource("");
       setRender({ kind: "idle" });
       return;
     }
 
-    let cancelled = false;
+    const seq = ++renderSeq.current;
     setRender({ kind: "loading" });
 
     void (async () => {
       try {
         const src = await fetchFileSource(active);
-        if (cancelled) return;
+        if (seq !== renderSeq.current) return;
         setSource(src);
         const svg = await renderPlantUML(src);
-        if (cancelled) return;
+        if (seq !== renderSeq.current) return;
         setRender({ kind: "ok", svg });
       } catch (e) {
-        if (cancelled) return;
+        if (seq !== renderSeq.current) return;
         const message = e instanceof Error ? e.message : String(e);
         setRender({ kind: "error", message });
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [active, activeReloadKey]);
 
   useEffect(() => {
