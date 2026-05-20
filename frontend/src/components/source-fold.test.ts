@@ -1,91 +1,130 @@
 import { describe, expect, it } from "vitest";
-import { computeFoldRanges, hiddenLines } from "./source-fold";
+import { computeFoldRanges, hiddenLines, type FoldRange } from "./source-fold";
 
-describe("computeFoldRanges", () => {
-  it("returns no ranges for source without braces", () => {
-    const src = "@startuml\nactor User\n@enduml\n";
-    expect(computeFoldRanges(src)).toEqual([]);
-  });
+interface ComputeCase {
+  name: string;
+  src: string;
+  expected: FoldRange[];
+}
 
-  it("detects a single brace block spanning multiple lines", () => {
-    const src = ["@startuml", "class A {", "  field", "}", "@enduml"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("ignores single-line braces ({ and } on same line)", () => {
-    const src = ["class A { field }", "class B {", "  x", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("detects multiple sibling blocks", () => {
-    const src = ["class A {", "  a", "}", "class B {", "  b", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([
+const computeCases: ComputeCase[] = [
+  {
+    name: "returns no ranges for source without braces",
+    src: "@startuml\nactor User\n@enduml\n",
+    expected: [],
+  },
+  {
+    name: "detects a single brace block spanning multiple lines",
+    src: ["@startuml", "class A {", "  field", "}", "@enduml"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "ignores single-line braces ({ and } on same line)",
+    src: ["class A { field }", "class B {", "  x", "}"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "detects multiple sibling blocks",
+    src: ["class A {", "  a", "}", "class B {", "  b", "}"].join("\n"),
+    expected: [
       { startLine: 0, endLine: 2 },
       { startLine: 3, endLine: 5 },
-    ]);
-  });
-
-  it("detects nested blocks", () => {
-    const src = ["package P {", "  class A {", "    f", "  }", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([
+    ],
+  },
+  {
+    name: "detects nested blocks",
+    src: ["package P {", "  class A {", "    f", "  }", "}"].join("\n"),
+    expected: [
       { startLine: 0, endLine: 4 },
       { startLine: 1, endLine: 3 },
-    ]);
-  });
+    ],
+  },
+  {
+    name: "ignores braces inside double-quoted strings",
+    src: ['note "}" as N1', "class A {", "  x", "}"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "ignores braces after a line comment",
+    src: ["' class A {", "class B {", "  x", "}"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "ignores braces inside block comments",
+    src: ["/' { '/", "class B {", "  x", "}"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "ignores escaped quotes inside strings",
+    src: ['note "\\"{" as N', "class A {", "  x", "}"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "ignores unmatched closing braces",
+    src: ["}", "class A {", "  x", "}"].join("\n"),
+    expected: [{ startLine: 1, endLine: 3 }],
+  },
+  {
+    name: "handles CRLF line endings",
+    src: "class A {\r\n  x\r\n}\r\n",
+    expected: [{ startLine: 0, endLine: 2 }],
+  },
+];
 
-  it("ignores braces inside double-quoted strings", () => {
-    const src = ['note "}" as N1', "class A {", "  x", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("ignores braces after a line comment", () => {
-    const src = ["' class A {", "class B {", "  x", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("ignores braces inside block comments", () => {
-    const src = ["/' { '/", "class B {", "  x", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("ignores escaped quotes inside strings", () => {
-    const src = ['note "\\"{" as N', "class A {", "  x", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("ignores unmatched closing braces", () => {
-    const src = ["}", "class A {", "  x", "}"].join("\n");
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 1, endLine: 3 }]);
-  });
-
-  it("handles CRLF line endings", () => {
-    const src = "class A {\r\n  x\r\n}\r\n";
-    expect(computeFoldRanges(src)).toEqual([{ startLine: 0, endLine: 2 }]);
-  });
+describe("computeFoldRanges", () => {
+  for (const { name, src, expected } of computeCases) {
+    it(name, () => {
+      expect(computeFoldRanges(src)).toEqual(expected);
+    });
+  }
 });
 
-describe("hiddenLines", () => {
-  it("hides lines after a folded range's start through its end", () => {
-    const ranges = [{ startLine: 1, endLine: 4 }];
-    const hidden = hiddenLines(ranges, new Set([1]), 6);
-    expect(hidden).toEqual([false, false, true, true, true, false]);
-  });
+interface HiddenCase {
+  name: string;
+  ranges: FoldRange[];
+  folded: number[];
+  total: number;
+  expected: boolean[];
+}
 
-  it("returns all-false when nothing is folded", () => {
-    const ranges = [{ startLine: 0, endLine: 2 }];
-    expect(hiddenLines(ranges, new Set(), 3)).toEqual([false, false, false]);
-  });
-
-  it("hides nested ranges when only the outer is folded", () => {
-    const ranges = [
+const hiddenCases: HiddenCase[] = [
+  {
+    name: "hides lines after a folded range's start through its end",
+    ranges: [{ startLine: 1, endLine: 4 }],
+    folded: [1],
+    total: 6,
+    expected: [false, false, true, true, true, false],
+  },
+  {
+    name: "returns all-false when nothing is folded",
+    ranges: [{ startLine: 0, endLine: 2 }],
+    folded: [],
+    total: 3,
+    expected: [false, false, false],
+  },
+  {
+    name: "hides nested ranges when only the outer is folded",
+    ranges: [
       { startLine: 0, endLine: 4 },
       { startLine: 1, endLine: 3 },
-    ];
-    expect(hiddenLines(ranges, new Set([0]), 5)).toEqual([false, true, true, true, true]);
-  });
+    ],
+    folded: [0],
+    total: 5,
+    expected: [false, true, true, true, true],
+  },
+  {
+    name: "clamps end line to the available total",
+    ranges: [{ startLine: 0, endLine: 10 }],
+    folded: [0],
+    total: 3,
+    expected: [false, true, true],
+  },
+];
 
-  it("clamps end line to the available total", () => {
-    const ranges = [{ startLine: 0, endLine: 10 }];
-    expect(hiddenLines(ranges, new Set([0]), 3)).toEqual([false, true, true]);
-  });
+describe("hiddenLines", () => {
+  for (const { name, ranges, folded, total, expected } of hiddenCases) {
+    it(name, () => {
+      expect(hiddenLines(ranges, new Set(folded), total)).toEqual(expected);
+    });
+  }
 });
