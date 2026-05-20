@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useTransformContext } from "react-zoom-pan-pinch";
 
-const PAN_STEP = 50;
-const PAN_STEP_FAST = 200;
+export const PAN_STEP = 50;
+export const PAN_STEP_FAST = 200;
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

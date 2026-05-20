@@ -1,7 +1,6 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { PAN_STEP, PAN_STEP_FAST } from "../../src/components/use-keyboard-pan";
 
-const PAN_STEP = 50;
-const PAN_STEP_FAST = 200;
 const TRANSLATE_RE = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/;
 
 async function readTranslate(canvas: Locator): Promise<[number, number]> {
