@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import { setupRender } from "../test/render";
+import { setupRender } from "../../test/render";
 import { FOLD_LABEL, UNFOLD_LABEL } from "./source-fold";
-import type { ShikiToken } from "./source-view";
+import type { ShikiToken } from "./highlighter";
 
 let codeToTokensMock: ReturnType<typeof vi.fn>;
 
@@ -54,14 +54,14 @@ afterEach(() => {
 
 describe("SourceView", () => {
   it("shows 'no source' for an empty string", async () => {
-    const { SourceView } = await import("./source-view");
+    const { SourceView } = await import("./index");
     render(<SourceView source="" />);
     expect(document.body.textContent).toContain("no source");
     expect(document.querySelector("pre")).toBeNull();
   });
 
   it("renders one line per source line via the highlighter", async () => {
-    const { SourceView } = await import("./source-view");
+    const { SourceView } = await import("./index");
     render(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
@@ -77,7 +77,7 @@ describe("SourceView", () => {
     codeToTokensMock.mockImplementation(() => {
       throw new Error("boom");
     });
-    const { SourceView } = await import("./source-view");
+    const { SourceView } = await import("./index");
     render(<SourceView source={"<script>alert(1)</script>"} />);
     await flushAsync();
 
@@ -89,7 +89,7 @@ describe("SourceView", () => {
   });
 
   it("clears highlighted output when source becomes empty", async () => {
-    const { SourceView } = await import("./source-view");
+    const { SourceView } = await import("./index");
     render(<SourceView source="hello" />);
     await flushAsync();
     expect(document.body.textContent).toContain("hello");
@@ -102,7 +102,7 @@ describe("SourceView", () => {
     const source = ["class A {", "  field1", "  field2", "}", "class B"].join("\n");
 
     it("renders a fold toggle on the opening brace line", async () => {
-      const { SourceView } = await import("./source-view");
+      const { SourceView } = await import("./index");
       render(<SourceView source={source} />);
       await flushAsync();
 
@@ -112,7 +112,7 @@ describe("SourceView", () => {
     });
 
     it("hides the block body after clicking the toggle", async () => {
-      const { SourceView } = await import("./source-view");
+      const { SourceView } = await import("./index");
       render(<SourceView source={source} />);
       await flushAsync();
 
@@ -138,7 +138,7 @@ describe("SourceView", () => {
     });
 
     it("re-shows the block body after toggling back", async () => {
-      const { SourceView } = await import("./source-view");
+      const { SourceView } = await import("./index");
       render(<SourceView source={source} />);
       await flushAsync();
 
@@ -150,7 +150,7 @@ describe("SourceView", () => {
     });
 
     it("does not show a fold toggle on lines without a brace block", async () => {
-      const { SourceView } = await import("./source-view");
+      const { SourceView } = await import("./index");
       render(<SourceView source={"@startuml\nactor User\n@enduml\n"} />);
       await flushAsync();
 
