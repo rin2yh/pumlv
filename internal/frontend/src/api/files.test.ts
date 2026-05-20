@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { fetchFileSource, fetchFiles, type FileEntry } from "./files";
+import { fetchFileSource, fetchFiles, sameFilePaths, type FileEntry } from "./files";
 
 const originalFetch = globalThis.fetch;
 
@@ -148,5 +148,52 @@ describe("fetchFileSource", () => {
     controller.abort();
 
     await expect(pending).rejects.toThrow(/aborted/);
+  });
+});
+
+function entry(path: string): FileEntry {
+  return {
+    path,
+    rel: path.replace(/^\//, ""),
+    name: path.split("/").pop()!,
+    source: "/",
+  };
+}
+
+describe("sameFilePaths", () => {
+  it.each([
+    { name: "two empty lists", a: [], b: [], want: true },
+    {
+      name: "same paths in the same order",
+      a: [entry("/a.puml"), entry("/b.puml")],
+      b: [entry("/a.puml"), entry("/b.puml")],
+      want: true,
+    },
+    {
+      name: "only non-path fields differ",
+      a: [{ path: "/a.puml", rel: "a.puml", name: "a.puml", source: "/" }] as FileEntry[],
+      b: [{ path: "/a.puml", rel: "x", name: "x", source: "/different" }] as FileEntry[],
+      want: true,
+    },
+    {
+      name: "lengths differ",
+      a: [entry("/a.puml")],
+      b: [entry("/a.puml"), entry("/b.puml")],
+      want: false,
+    },
+    {
+      name: "a path differs",
+      a: [entry("/a.puml")],
+      b: [entry("/b.puml")],
+      want: false,
+    },
+    {
+      name: "order differs",
+      a: [entry("/a.puml"), entry("/b.puml")],
+      b: [entry("/b.puml"), entry("/a.puml")],
+      want: false,
+    },
+  ])("$name -> $want", ({ a, b, want }) => {
+    expect(sameFilePaths(a, b)).toBe(want);
   });
 });

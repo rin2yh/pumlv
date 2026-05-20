@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from "react";
-import { fetchFiles, fetchFileSource, type FileEntry } from "./api/files";
+import { fetchFiles, fetchFileSource, sameFilePaths, type FileEntry } from "./api/files";
 import { subscribe } from "./api/events";
 import { renderPlantUML } from "./plantuml/renderer";
 import { FileTree } from "./components/file-tree";
@@ -30,7 +30,7 @@ export default function App(): JSX.Element {
   useEffect(() => {
     void (async () => {
       const list = await fetchFiles();
-      setFiles(list);
+      setFiles((prev) => (sameFilePaths(prev, list) ? prev : list));
       setActive((prev) =>
         prev && list.some((f) => f.path === prev) ? prev : (list[0]?.path ?? null),
       );

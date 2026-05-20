@@ -20,3 +20,7 @@ export async function fetchFileSource(path: string, signal?: AbortSignal): Promi
   }
   return res.text();
 }
+
+export function sameFilePaths(a: FileEntry[], b: FileEntry[]): boolean {
+  return a.length === b.length && a.every((f, i) => f.path === b[i]!.path);
+}
