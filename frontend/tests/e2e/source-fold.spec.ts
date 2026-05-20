@@ -3,30 +3,36 @@ import { FOLD_LABEL, UNFOLD_LABEL } from "../../src/components/source-fold";
 
 test.describe("source folding", () => {
   test("folds and unfolds a brace block", async ({ page }) => {
-    await page.goto("/");
-
     const preview = page.getByAltText("preview");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
-
-    await page.getByRole("button", { name: "class.puml" }).click();
-    await expect(preview).toBeVisible();
-
     const sourceRegion = page.getByRole("region", { name: "Source" });
-    await expect(sourceRegion.getByText("+registry: Registry")).toBeVisible();
+    const fieldRow = sourceRegion.getByText("+registry: Registry");
+    const foldToggle = sourceRegion.getByRole("button", { name: FOLD_LABEL }).first();
+    const unfoldToggle = sourceRegion.getByRole("button", { name: UNFOLD_LABEL }).first();
 
-    const foldButtons = sourceRegion.getByRole("button", { name: FOLD_LABEL });
-    await expect(foldButtons.first()).toBeVisible();
-    const initialFolds = await foldButtons.count();
-    expect(initialFolds).toBeGreaterThan(0);
+    await test.step("open class.puml and wait for the preview to render", async () => {
+      await page.goto("/");
+      await expect(preview).toBeVisible({ timeout: 60_000 });
+      await page.getByRole("button", { name: "class.puml" }).click();
+      await expect(preview).toBeVisible();
+      await expect(fieldRow).toBeVisible();
+    });
 
-    await foldButtons.first().click();
+    await test.step("source panel shows at least one fold toggle", async () => {
+      await expect(foldToggle).toBeVisible();
+      expect(await sourceRegion.getByRole("button", { name: FOLD_LABEL }).count()).toBeGreaterThan(
+        0,
+      );
+    });
 
-    await expect(sourceRegion.getByText("+registry: Registry")).toBeHidden();
-    await expect(
-      sourceRegion.getByRole("button", { name: UNFOLD_LABEL }).first(),
-    ).toBeVisible();
+    await test.step("clicking the toggle hides the block body", async () => {
+      await foldToggle.click();
+      await expect(fieldRow).toBeHidden();
+      await expect(unfoldToggle).toBeVisible();
+    });
 
-    await sourceRegion.getByRole("button", { name: UNFOLD_LABEL }).first().click();
-    await expect(sourceRegion.getByText("+registry: Registry")).toBeVisible();
+    await test.step("clicking again restores the block body", async () => {
+      await unfoldToggle.click();
+      await expect(fieldRow).toBeVisible();
+    });
   });
 });
