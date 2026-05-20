@@ -1,3 +1,10 @@
+---
+paths:
+  - "**/*_test.go"
+  - "frontend/**/*.test.{ts,tsx}"
+  - "frontend/tests/e2e/**/*.spec.ts"
+---
+
 # Test Code Rules
 
 ## Table-driven tests
