@@ -18,7 +18,7 @@ interface SubscribeRecord {
 
 let subscriptions: SubscribeRecord[];
 
-function Harness(props: { onTree: () => void; onChanged: (path: string) => void }): JSX.Element {
+function Probe(props: { onTree: () => void; onChanged: (path: string) => void }): JSX.Element {
   useServerEvents({ onTree: props.onTree, onChanged: props.onChanged });
   return <div />;
 }
@@ -26,7 +26,7 @@ function Harness(props: { onTree: () => void; onChanged: (path: string) => void 
 let capturedSetActive: (path: string | null) => void;
 let changedForActive: number;
 
-function RebindHarness(): JSX.Element {
+function StatefulProbe(): JSX.Element {
   const [active, setActive] = useState<string | null>("/a.puml");
   capturedSetActive = setActive;
   useServerEvents({
@@ -63,14 +63,14 @@ const emit = (ev: ServerEvent): void => {
 
 describe("useServerEvents", () => {
   it("subscribes exactly once on mount", () => {
-    render(<Harness onTree={() => {}} onChanged={() => {}} />);
+    render(<Probe onTree={() => {}} onChanged={() => {}} />);
     expect(mockedSubscribe).toHaveBeenCalledTimes(1);
     expect(subscriptions).toHaveLength(1);
   });
 
   it("invokes onTree for tree events", () => {
     const onTree = vi.fn();
-    render(<Harness onTree={onTree} onChanged={() => {}} />);
+    render(<Probe onTree={onTree} onChanged={() => {}} />);
 
     emit({ type: "tree" });
     expect(onTree).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe("useServerEvents", () => {
 
   it("invokes onChanged with the changed path", () => {
     const onChanged = vi.fn();
-    render(<Harness onTree={() => {}} onChanged={onChanged} />);
+    render(<Probe onTree={() => {}} onChanged={onChanged} />);
 
     emit({ type: "changed", path: "/a.puml" });
     expect(onChanged).toHaveBeenCalledWith("/a.puml");
@@ -87,7 +87,7 @@ describe("useServerEvents", () => {
   it("ignores hello events", () => {
     const onTree = vi.fn();
     const onChanged = vi.fn();
-    render(<Harness onTree={onTree} onChanged={onChanged} />);
+    render(<Probe onTree={onTree} onChanged={onChanged} />);
 
     emit({ type: "hello" });
     expect(onTree).not.toHaveBeenCalled();
@@ -97,8 +97,8 @@ describe("useServerEvents", () => {
   it("does not resubscribe when handler identities change between renders", () => {
     const onTreeA = vi.fn();
     const onTreeB = vi.fn();
-    render(<Harness onTree={onTreeA} onChanged={() => {}} />);
-    render(<Harness onTree={onTreeB} onChanged={() => {}} />);
+    render(<Probe onTree={onTreeA} onChanged={() => {}} />);
+    render(<Probe onTree={onTreeB} onChanged={() => {}} />);
 
     expect(mockedSubscribe).toHaveBeenCalledTimes(1);
 
@@ -110,8 +110,8 @@ describe("useServerEvents", () => {
   it("calls the latest onChanged after re-render", () => {
     const first = vi.fn();
     const second = vi.fn();
-    render(<Harness onTree={() => {}} onChanged={first} />);
-    render(<Harness onTree={() => {}} onChanged={second} />);
+    render(<Probe onTree={() => {}} onChanged={first} />);
+    render(<Probe onTree={() => {}} onChanged={second} />);
 
     emit({ type: "changed", path: "/x.puml" });
 
@@ -120,7 +120,7 @@ describe("useServerEvents", () => {
   });
 
   it("sees updated closure values through the ref (active path swap)", () => {
-    render(<RebindHarness />);
+    render(<StatefulProbe />);
 
     emit({ type: "changed", path: "/a.puml" });
     expect(changedForActive).toBe(1);
@@ -135,7 +135,7 @@ describe("useServerEvents", () => {
   });
 
   it("invokes the cleanup returned by subscribe on unmount", () => {
-    render(<Harness onTree={() => {}} onChanged={() => {}} />);
+    render(<Probe onTree={() => {}} onChanged={() => {}} />);
     expect(subscriptions[0]!.cleanup).not.toHaveBeenCalled();
 
     render(<div />);

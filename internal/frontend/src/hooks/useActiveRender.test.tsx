@@ -20,7 +20,7 @@ const mockedRenderPlantUML = vi.mocked(renderPlantUML);
 let captured: UseActiveRenderResult | null;
 let setActiveExternal: ((path: string | null) => void) | null;
 
-function Harness({ initial = null }: { initial?: string | null }): JSX.Element {
+function Probe({ initial = null }: { initial?: string | null }): JSX.Element {
   const [active, setActive] = useState<string | null>(initial);
   setActiveExternal = setActive;
   captured = useActiveRender(active);
@@ -64,7 +64,7 @@ afterEach(() => {
 
 describe("useActiveRender", () => {
   it("starts idle with no active path", () => {
-    render(<Harness initial={null} />);
+    render(<Probe initial={null} />);
     expect(captured!.render).toEqual({ kind: "idle" });
     expect(captured!.source).toBe("");
     expect(mockedFetchFileSource).not.toHaveBeenCalled();
@@ -74,7 +74,7 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockResolvedValueOnce("@startuml\n@enduml");
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,svg");
 
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     await flush();
 
     expect(captured!.source).toBe("@startuml\n@enduml");
@@ -87,7 +87,7 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockReturnValueOnce(src.promise);
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,x");
 
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     expect(captured!.render).toEqual({ kind: "loading" });
 
     await act(async () => {
@@ -100,7 +100,7 @@ describe("useActiveRender", () => {
 
   it("reports an error state when the source fetch fails", async () => {
     mockedFetchFileSource.mockRejectedValueOnce(new Error("boom"));
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     await flush();
 
     expect(captured!.render).toEqual({ kind: "error", message: "boom" });
@@ -109,7 +109,7 @@ describe("useActiveRender", () => {
   it("reports an error state when rendering fails", async () => {
     mockedFetchFileSource.mockResolvedValueOnce("source");
     mockedRenderPlantUML.mockRejectedValueOnce(new Error("parse error"));
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     await flush();
 
     expect(captured!.render).toEqual({ kind: "error", message: "parse error" });
@@ -118,7 +118,7 @@ describe("useActiveRender", () => {
   it("returns to idle and clears source when active becomes null", async () => {
     mockedFetchFileSource.mockResolvedValueOnce("source");
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,x");
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     await flush();
 
     act(() => setActiveExternal!(null));
@@ -132,7 +132,7 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
     mockedRenderPlantUML.mockResolvedValue("data:image/svg+xml,svg");
 
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     act(() => setActiveExternal!("/b.puml"));
 
     await act(async () => {
@@ -152,7 +152,7 @@ describe("useActiveRender", () => {
   it("re-fetches when reload is invoked", async () => {
     mockedFetchFileSource.mockResolvedValue("source");
     mockedRenderPlantUML.mockResolvedValue("data:image/svg+xml,x");
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     await flush();
 
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(1);
@@ -165,7 +165,7 @@ describe("useActiveRender", () => {
 
   it("coerces non-Error throwables into a string message", async () => {
     mockedFetchFileSource.mockRejectedValueOnce("string error");
-    render(<Harness initial="/a.puml" />);
+    render(<Probe initial="/a.puml" />);
     await flush();
 
     expect(captured!.render).toEqual({ kind: "error", message: "string error" });
