@@ -3,14 +3,12 @@ import {
   TransformWrapper,
   useControls,
   useTransformComponent,
-  useTransformContext,
 } from "react-zoom-pan-pinch";
-import { useEffect, type JSX } from "react";
+import type { JSX } from "react";
+import { useKeyboardPan } from "./use-keyboard-pan";
 
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 50;
-const PAN_STEP = 50;
-const PAN_STEP_FAST = 200;
 
 const BASE_BTN =
   "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur-sm hover:bg-white active:bg-slate-100";
@@ -57,48 +55,8 @@ function ZoomControls(): JSX.Element {
   );
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
-}
-
 function KeyboardPan(): null {
-  // useTransformContext returns a stable instance, so the listener is registered
-  // exactly once. useControls returns a fresh object each render, which would
-  // cause the keydown listener to re-register on every parent re-render.
-  const ctx = useTransformContext();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (isEditableTarget(e.target)) return;
-      const step = e.shiftKey ? PAN_STEP_FAST : PAN_STEP;
-      let dx = 0;
-      let dy = 0;
-      switch (e.key) {
-        case "ArrowLeft":
-          dx = step;
-          break;
-        case "ArrowRight":
-          dx = -step;
-          break;
-        case "ArrowUp":
-          dy = step;
-          break;
-        case "ArrowDown":
-          dy = -step;
-          break;
-        default:
-          return;
-      }
-      e.preventDefault();
-      const { positionX, positionY, scale } = ctx.transformState;
-      ctx.setTransformState(scale, positionX + dx, positionY + dy);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [ctx]);
-
+  useKeyboardPan();
   return null;
 }
 
