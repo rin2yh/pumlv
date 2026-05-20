@@ -2,10 +2,10 @@ import { expect, test, type Locator } from "@playwright/test";
 
 const TRANSLATE_RE = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/;
 
-async function readTranslate(el: Locator): Promise<[number, number]> {
+async function readTranslate(el: Locator): Promise<[number, number] | null> {
   const transform = await el.evaluate((node) => (node as HTMLElement).style.transform);
   const m = TRANSLATE_RE.exec(transform);
-  if (!m) return [0, 0];
+  if (!m) return null;
   return [parseFloat(m[1]!), parseFloat(m[2]!)];
 }
 
@@ -34,11 +34,15 @@ test.describe("Minimap", () => {
     const indicator = page.locator(".rzpp-preview");
     await expect(indicator).toBeVisible();
 
-    // Let the minimap finish its initial transform pass.
-    await expect.poll(async () => (await readTranslate(indicator))[0]).toBeCloseTo(0, 0);
+    // Wait until the minimap has applied a transform (centerOnInit usually
+    // produces a non-empty value once the first frame settles).
+    await expect.poll(async () => await readTranslate(indicator)).not.toBeNull();
+    const before = await readTranslate(indicator);
+    if (!before) throw new Error("indicator transform did not settle");
 
-    const [x0] = await readTranslate(indicator);
     await page.keyboard.press("ArrowRight");
-    await expect.poll(async () => (await readTranslate(indicator))[0]).not.toBe(x0);
+    await expect
+      .poll(async () => (await readTranslate(indicator))?.[0])
+      .not.toBe(before[0]);
   });
 });
