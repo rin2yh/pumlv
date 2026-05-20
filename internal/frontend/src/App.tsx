@@ -1,81 +1,23 @@
-import { useEffect, useRef, useState, type JSX } from "react";
-import { fetchFiles, fetchFileSource, sameFilePaths, type FileEntry } from "./api/files";
-import { subscribe } from "./api/events";
-import { renderPlantUML } from "./plantuml/renderer";
+import { useState, type JSX } from "react";
 import { FileTree } from "./components/file-tree";
 import { Preview } from "./components/preview";
 import { SourceView } from "./components/source-view";
+import { useActiveRender } from "./hooks/useActiveRender";
+import { useFileList } from "./hooks/useFileList";
+import { useServerEvents } from "./hooks/useServerEvents";
 import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./sourcePanel";
 
-type RenderState =
-  | { kind: "idle" }
-  | { kind: "loading" }
-  | { kind: "ok"; svg: string }
-  | { kind: "error"; message: string };
-
 export default function App(): JSX.Element {
-  const [files, setFiles] = useState<FileEntry[]>([]);
-  const [active, setActive] = useState<string | null>(null);
-  const [source, setSource] = useState<string>("");
-  const [render, setRender] = useState<RenderState>({ kind: "idle" });
+  const { files, active, select, reload: reloadFiles } = useFileList();
+  const { source, render, reload: reloadActive } = useActiveRender(active);
   const [sourceOpen, setSourceOpen] = useState<boolean>(true);
-  const [filesReloadKey, setFilesReloadKey] = useState(0);
-  const [activeReloadKey, setActiveReloadKey] = useState(0);
 
-  // Synced during render so the SSE callback (which lives across active
-  // changes) reads the current path without re-subscribing per file switch.
-  const activeRef = useRef<string | null>(null);
-  activeRef.current = active;
-
-  useEffect(() => {
-    void (async () => {
-      const list = await fetchFiles();
-      setFiles((prev) => (sameFilePaths(prev, list) ? prev : list));
-      setActive((prev) =>
-        prev && list.some((f) => f.path === prev) ? prev : (list[0]?.path ?? null),
-      );
-    })();
-  }, [filesReloadKey]);
-
-  useEffect(() => {
-    if (!active) {
-      setSource("");
-      setRender({ kind: "idle" });
-      return;
-    }
-
-    const controller = new AbortController();
-    setRender({ kind: "loading" });
-
-    void (async () => {
-      try {
-        const src = await fetchFileSource(active, controller.signal);
-        if (controller.signal.aborted) return;
-        setSource(src);
-        const svg = await renderPlantUML(src);
-        if (controller.signal.aborted) return;
-        setRender({ kind: "ok", svg });
-      } catch (e) {
-        if (controller.signal.aborted) return;
-        const message = e instanceof Error ? e.message : String(e);
-        setRender({ kind: "error", message });
-      }
-    })();
-
-    return () => controller.abort();
-  }, [active, activeReloadKey]);
-
-  useEffect(() => {
-    const unsubscribe = subscribe((ev) => {
-      if (ev.type === "changed") {
-        if (ev.path === activeRef.current) setActiveReloadKey((k) => k + 1);
-      } else if (ev.type === "tree") {
-        setFilesReloadKey((k) => k + 1);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
+  useServerEvents({
+    onTree: reloadFiles,
+    onChanged: (path) => {
+      if (path === active) reloadActive();
+    },
+  });
 
   const activeName = files.find((f) => f.path === active)?.rel ?? "";
   const toggleLabel = sourceOpen ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
@@ -88,7 +30,7 @@ export default function App(): JSX.Element {
           <p className="text-xs text-slate-500">{files.length} file(s)</p>
         </div>
 
-        <FileTree files={files} active={active} onSelect={setActive} />
+        <FileTree files={files} active={active} onSelect={select} />
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
