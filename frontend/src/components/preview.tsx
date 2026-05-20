@@ -5,6 +5,7 @@ import {
   useTransformComponent,
 } from "react-zoom-pan-pinch";
 import { useState, type JSX } from "react";
+import { useKeyboardPan } from "./use-keyboard-pan";
 
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 50;
@@ -17,6 +18,7 @@ function ZoomControls(): JSX.Element {
   // useTransformComponent re-renders on every transform change (wheel/pinch
   // included), unlike useTransformContext which only exposes a ref.
   const scale = useTransformComponent(({ state }) => state.scale);
+  useKeyboardPan();
 
   return (
     <div className="absolute bottom-3 right-3 z-20 flex gap-1">

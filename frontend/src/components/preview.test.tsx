@@ -12,6 +12,10 @@ let mockScale = 1;
 let lastPanningStart: (() => void) | undefined;
 let lastPanningStop: (() => void) | undefined;
 
+vi.mock("./use-keyboard-pan", () => ({
+  useKeyboardPan: () => {},
+}));
+
 vi.mock("react-zoom-pan-pinch", () => ({
   TransformWrapper: ({
     children,
