@@ -3,6 +3,9 @@ export interface FoldRange {
   endLine: number;
 }
 
+export const FOLD_LABEL = "fold block";
+export const UNFOLD_LABEL = "unfold block";
+
 const NEWLINE = /\r?\n/;
 
 export function computeFoldRanges(source: string): FoldRange[] {

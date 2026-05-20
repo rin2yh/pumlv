@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { setupRender } from "../test/render";
+import { FOLD_LABEL, UNFOLD_LABEL } from "./source-fold";
 
 interface ShikiToken {
   content: string;
@@ -43,7 +44,7 @@ function tokenize(source: string): { tokens: ShikiToken[][]; fg: string; bg: str
 
 function findFoldToggle(): HTMLButtonElement {
   return document.querySelector(
-    'button[aria-label="fold block"], button[aria-label="unfold block"]',
+    `button[aria-label="${FOLD_LABEL}"], button[aria-label="${UNFOLD_LABEL}"]`,
   ) as HTMLButtonElement;
 }
 
@@ -109,7 +110,7 @@ describe("SourceView", () => {
       render(<SourceView source={source} />);
       await flushAsync();
 
-      const buttons = document.querySelectorAll('button[aria-label="fold block"]');
+      const buttons = document.querySelectorAll(`button[aria-label="${FOLD_LABEL}"]`);
       expect(buttons.length).toBe(1);
       expect(buttons[0].getAttribute("aria-expanded")).toBe("true");
     });
@@ -119,7 +120,9 @@ describe("SourceView", () => {
       render(<SourceView source={source} />);
       await flushAsync();
 
-      const button = document.querySelector('button[aria-label="fold block"]') as HTMLButtonElement;
+      const button = document.querySelector(
+        `button[aria-label="${FOLD_LABEL}"]`,
+      ) as HTMLButtonElement;
       expect(button).not.toBeNull();
 
       act(() => {
@@ -132,7 +135,7 @@ describe("SourceView", () => {
       expect(document.body.textContent).toContain("class B");
 
       const unfoldBtn = document.querySelector(
-        'button[aria-label="unfold block"]',
+        `button[aria-label="${UNFOLD_LABEL}"]`,
       ) as HTMLButtonElement;
       expect(unfoldBtn).not.toBeNull();
       expect(unfoldBtn.getAttribute("aria-expanded")).toBe("false");
@@ -155,7 +158,7 @@ describe("SourceView", () => {
       render(<SourceView source={"@startuml\nactor User\n@enduml\n"} />);
       await flushAsync();
 
-      expect(document.querySelector('button[aria-label="fold block"]')).toBeNull();
+      expect(document.querySelector(`button[aria-label="${FOLD_LABEL}"]`)).toBeNull();
     });
   });
 });
