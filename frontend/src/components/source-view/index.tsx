@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { useToggleSet } from "../../hooks/useToggleSet";
 import { highlight, type Highlighted, type ShikiToken } from "./highlighter";
-import { computeFoldRanges, hiddenLines, type FoldRange } from "./source-fold";
+import { computeFoldRanges, hiddenLines } from "./source-fold";
 import { LineRow } from "./line-row";
 
 interface Props {
@@ -12,16 +12,13 @@ export function SourceView({ source }: Props): JSX.Element {
   const [highlighted, setHighlighted] = useState<Highlighted | null>(null);
   const [folded, toggle] = useToggleSet<number>();
 
-  const lines = useMemo(() => source.split(/\r?\n/), [source]);
-  const ranges = useMemo<FoldRange[]>(() => computeFoldRanges(source), [source]);
-  const foldStarts = useMemo(() => new Set(ranges.map((r) => r.startLine)), [ranges]);
+  const lines = source.split(/\r?\n/);
+  const ranges = computeFoldRanges(source);
+  const foldStarts = new Set(ranges.map((r) => r.startLine));
 
-  const tokenLines = useMemo<ShikiToken[][]>(
-    () => highlighted?.tokens ?? lines.map((l) => [{ content: l }]),
-    [highlighted, lines],
-  );
+  const tokenLines: ShikiToken[][] = highlighted?.tokens ?? lines.map((l) => [{ content: l }]);
 
-  const hidden = useMemo(() => hiddenLines(ranges, folded), [ranges, folded]);
+  const hidden = hiddenLines(ranges, folded);
 
   useEffect(() => {
     let cancelled = false;
