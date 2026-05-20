@@ -1,6 +1,6 @@
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
-import { splitLines } from "../../lines";
+import { splitLines } from "../../lib/lines";
 
 export interface ShikiToken {
   content: string;

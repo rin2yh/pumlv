@@ -1,5 +1,5 @@
 import { loadPlantUMLModule } from "./bootstrap";
-import { splitLines } from "../lines";
+import { splitLines } from "../lib/lines";
 
 export async function renderPlantUML(source: string): Promise<string> {
   const mod = await loadPlantUMLModule();
