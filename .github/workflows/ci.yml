@@ -4,35 +4,13 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'cmd/**'
-      - 'server/**'
-      - 'static/**'
-      - 'version/**'
-      - 'frontend/**'
-      - 'examples/**'
-      - 'main.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'Makefile'
-      - '.octocov.yml'
-      - '.github/workflows/ci.yml'
-      - '.github/actions/setup-frontend/**'
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
   pull_request:
-    paths:
-      - 'cmd/**'
-      - 'server/**'
-      - 'static/**'
-      - 'version/**'
-      - 'frontend/**'
-      - 'examples/**'
-      - 'main.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'Makefile'
-      - '.octocov.yml'
-      - '.github/workflows/ci.yml'
-      - '.github/actions/setup-frontend/**'
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
 
 permissions:
   contents: read
