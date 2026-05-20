@@ -127,33 +127,39 @@ function entry(path: string): FileEntry {
 }
 
 describe("sameFilePaths", () => {
-  it("returns true for two empty lists", () => {
-    expect(sameFilePaths([], [])).toBe(true);
-  });
-
-  it("returns true when both lists have the same paths in the same order", () => {
-    const a = [entry("/a.puml"), entry("/b.puml")];
-    const b = [entry("/a.puml"), entry("/b.puml")];
-    expect(sameFilePaths(a, b)).toBe(true);
-  });
-
-  it("returns true when only non-path fields differ", () => {
-    const a: FileEntry[] = [{ path: "/a.puml", rel: "a.puml", name: "a.puml", source: "/" }];
-    const b: FileEntry[] = [{ path: "/a.puml", rel: "x", name: "x", source: "/different" }];
-    expect(sameFilePaths(a, b)).toBe(true);
-  });
-
-  it("returns false when lengths differ", () => {
-    expect(sameFilePaths([entry("/a.puml")], [entry("/a.puml"), entry("/b.puml")])).toBe(false);
-  });
-
-  it("returns false when a path differs", () => {
-    expect(sameFilePaths([entry("/a.puml")], [entry("/b.puml")])).toBe(false);
-  });
-
-  it("returns false when order differs", () => {
-    const a = [entry("/a.puml"), entry("/b.puml")];
-    const b = [entry("/b.puml"), entry("/a.puml")];
-    expect(sameFilePaths(a, b)).toBe(false);
+  it.each([
+    { name: "two empty lists", a: [], b: [], want: true },
+    {
+      name: "same paths in the same order",
+      a: [entry("/a.puml"), entry("/b.puml")],
+      b: [entry("/a.puml"), entry("/b.puml")],
+      want: true,
+    },
+    {
+      name: "only non-path fields differ",
+      a: [{ path: "/a.puml", rel: "a.puml", name: "a.puml", source: "/" }] as FileEntry[],
+      b: [{ path: "/a.puml", rel: "x", name: "x", source: "/different" }] as FileEntry[],
+      want: true,
+    },
+    {
+      name: "lengths differ",
+      a: [entry("/a.puml")],
+      b: [entry("/a.puml"), entry("/b.puml")],
+      want: false,
+    },
+    {
+      name: "a path differs",
+      a: [entry("/a.puml")],
+      b: [entry("/b.puml")],
+      want: false,
+    },
+    {
+      name: "order differs",
+      a: [entry("/a.puml"), entry("/b.puml")],
+      b: [entry("/b.puml"), entry("/a.puml")],
+      want: false,
+    },
+  ])("$name -> $want", ({ a, b, want }) => {
+    expect(sameFilePaths(a, b)).toBe(want);
   });
 });
