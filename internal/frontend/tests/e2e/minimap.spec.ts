@@ -16,7 +16,7 @@ test.describe("Minimap", () => {
   });
 
   test("renders a minimap overlay with a thumbnail of the current diagram", async ({ page }) => {
-    const minimap = page.getByTestId("minimap");
+    const minimap = page.getByLabel("diagram minimap");
     await expect(minimap).toBeVisible();
 
     // The thumbnail img inside the minimap is the same data URL as the preview.

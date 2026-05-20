@@ -25,7 +25,6 @@ export function Preview({ svg }: { svg: string }): JSX.Element {
             the whole minimap in the overlay corner — bottom-right, stacked
             above the zoom controls. */}
         <div
-          data-testid="minimap"
           aria-label="diagram minimap"
           className="pointer-events-none absolute bottom-14 right-3 z-20 overflow-hidden rounded border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm"
         >

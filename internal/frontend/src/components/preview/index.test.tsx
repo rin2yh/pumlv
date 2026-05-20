@@ -7,6 +7,8 @@ let mockScale = 1;
 
 let lastPanningStart: (() => void) | undefined;
 let lastPanningStop: (() => void) | undefined;
+let lastWrapperClass: string | undefined;
+let lastMiniMapProps: { width?: number; height?: number; borderColor?: string } = {};
 
 vi.mock("./use-keyboard-pan", () => ({
   useKeyboardPan: () => {},
@@ -32,11 +34,10 @@ vi.mock("react-zoom-pan-pinch", () => ({
   }: {
     children: ReactNode;
     wrapperClass?: string;
-  }) => (
-    <div data-testid="transform-wrapper" className={wrapperClass}>
-      {children}
-    </div>
-  ),
+  }) => {
+    lastWrapperClass = wrapperClass;
+    return <div className={wrapperClass}>{children}</div>;
+  },
   MiniMap: ({
     children,
     width,
@@ -47,16 +48,10 @@ vi.mock("react-zoom-pan-pinch", () => ({
     width?: number;
     height?: number;
     borderColor?: string;
-  }) => (
-    <div
-      data-testid="minimap-inner"
-      data-width={width}
-      data-height={height}
-      data-border-color={borderColor}
-    >
-      {children}
-    </div>
-  ),
+  }) => {
+    lastMiniMapProps = { width, height, borderColor };
+    return <div>{children}</div>;
+  },
   useControls: () => ({
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -70,10 +65,8 @@ vi.mock("react-zoom-pan-pinch", () => ({
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
-const panWrapper = () => document.querySelector('[data-testid="transform-wrapper"]')!;
-const previewImg = () => panWrapper().querySelector("img")!;
-const minimap = () => document.querySelector('[data-testid="minimap"]')!;
-const minimapInner = () => document.querySelector('[data-testid="minimap-inner"]')!;
+const previewImg = () => document.querySelector<HTMLImageElement>('img[alt="preview"]')!;
+const minimap = () => document.querySelector('[aria-label="diagram minimap"]')!;
 const minimapImgs = () =>
   Array.from(minimap().querySelectorAll("img")).map((el) => el.getAttribute("src"));
 
@@ -83,6 +76,8 @@ beforeEach(() => {
   mockScale = 1;
   lastPanningStart = undefined;
   lastPanningStop = undefined;
+  lastWrapperClass = undefined;
+  lastMiniMapProps = {};
   vi.clearAllMocks();
 });
 
@@ -132,10 +127,9 @@ describe("Preview", () => {
 
     it("forwards configured width/height/borderColor to MiniMap", () => {
       render(<Preview svg={SAMPLE_SVG} />);
-      const inner = minimapInner();
-      expect(inner.getAttribute("data-width")).toBe("160");
-      expect(inner.getAttribute("data-height")).toBe("120");
-      expect(inner.getAttribute("data-border-color")).toBe("#7c3aed");
+      expect(lastMiniMapProps.width).toBe(160);
+      expect(lastMiniMapProps.height).toBe(120);
+      expect(lastMiniMapProps.borderColor).toBe("#7c3aed");
     });
 
     it("updates the minimap thumbnail when svg changes", () => {
@@ -168,7 +162,7 @@ describe("Preview", () => {
       for (const action of actions) {
         act(() => action());
       }
-      expect(panWrapper().className).toBe(expected);
+      expect(lastWrapperClass).toBe(expected);
     });
   });
 });
