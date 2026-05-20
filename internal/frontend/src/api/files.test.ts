@@ -84,7 +84,9 @@ describe("fetchFileSource", () => {
 
     const body = await fetchFileSource("/tmp/a b.puml");
     expect(body).toBe("@startuml\n@enduml\n");
-    expect(mock).toHaveBeenCalledWith("/api/file?path=%2Ftmp%2Fa%20b.puml");
+    expect(mock).toHaveBeenCalledWith("/api/file?path=%2Ftmp%2Fa%20b.puml", {
+      signal: undefined,
+    });
   });
 
   it("encodes non-ASCII paths", async () => {
@@ -95,7 +97,9 @@ describe("fetchFileSource", () => {
     globalThis.fetch = mock as unknown as typeof fetch;
 
     await fetchFileSource("/tmp/日本語.puml");
-    expect(mock).toHaveBeenCalledWith(`/api/file?path=${encodeURIComponent("/tmp/日本語.puml")}`);
+    expect(mock).toHaveBeenCalledWith(`/api/file?path=${encodeURIComponent("/tmp/日本語.puml")}`, {
+      signal: undefined,
+    });
   });
 
   it("returns an empty string for an empty file", async () => {
@@ -114,5 +118,35 @@ describe("fetchFileSource", () => {
     } as unknown as Response) as unknown as typeof fetch;
 
     await expect(fetchFileSource("/tmp/x.puml")).rejects.toThrow(/failed to load source: 503/);
+  });
+
+  it("forwards the AbortSignal to fetch", async () => {
+    const mock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(""),
+    } as unknown as Response);
+    globalThis.fetch = mock as unknown as typeof fetch;
+
+    const controller = new AbortController();
+    await fetchFileSource("/tmp/x.puml", controller.signal);
+
+    expect(mock).toHaveBeenCalledWith("/api/file?path=%2Ftmp%2Fx.puml", {
+      signal: controller.signal,
+    });
+  });
+
+  it("rejects with the abort reason when the signal aborts mid-flight", async () => {
+    globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "AbortError"));
+        });
+      })) as unknown as typeof fetch;
+
+    const controller = new AbortController();
+    const pending = fetchFileSource("/tmp/x.puml", controller.signal);
+    controller.abort();
+
+    await expect(pending).rejects.toThrow(/aborted/);
   });
 });

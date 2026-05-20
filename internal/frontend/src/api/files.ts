@@ -13,8 +13,8 @@ export async function fetchFiles(): Promise<FileEntry[]> {
   return (await res.json()) as FileEntry[];
 }
 
-export async function fetchFileSource(path: string): Promise<string> {
-  const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+export async function fetchFileSource(path: string, signal?: AbortSignal): Promise<string> {
+  const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`, { signal });
   if (!res.ok) {
     throw new Error(`failed to load source: ${res.status}`);
   }
