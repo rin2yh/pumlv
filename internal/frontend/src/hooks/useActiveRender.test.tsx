@@ -98,21 +98,35 @@ describe("useActiveRender", () => {
     expect(captured!.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,x" });
   });
 
-  it("reports an error state when the source fetch fails", async () => {
-    mockedFetchFileSource.mockRejectedValueOnce(new Error("boom"));
+  it.each([
+    {
+      name: "source fetch rejects with Error",
+      setup: () => {
+        mockedFetchFileSource.mockRejectedValueOnce(new Error("boom"));
+      },
+      message: "boom",
+    },
+    {
+      name: "renderer rejects with Error",
+      setup: () => {
+        mockedFetchFileSource.mockResolvedValueOnce("source");
+        mockedRenderPlantUML.mockRejectedValueOnce(new Error("parse error"));
+      },
+      message: "parse error",
+    },
+    {
+      name: "non-Error throwable is coerced to string",
+      setup: () => {
+        mockedFetchFileSource.mockRejectedValueOnce("string error");
+      },
+      message: "string error",
+    },
+  ])("reports error state when $name", async ({ setup, message }) => {
+    setup();
     render(<Probe initial="/a.puml" />);
     await flush();
 
-    expect(captured!.render).toEqual({ kind: "error", message: "boom" });
-  });
-
-  it("reports an error state when rendering fails", async () => {
-    mockedFetchFileSource.mockResolvedValueOnce("source");
-    mockedRenderPlantUML.mockRejectedValueOnce(new Error("parse error"));
-    render(<Probe initial="/a.puml" />);
-    await flush();
-
-    expect(captured!.render).toEqual({ kind: "error", message: "parse error" });
+    expect(captured!.render).toEqual({ kind: "error", message });
   });
 
   it("returns to idle and clears source when active becomes null", async () => {
@@ -161,13 +175,5 @@ describe("useActiveRender", () => {
     await flush();
 
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(2);
-  });
-
-  it("coerces non-Error throwables into a string message", async () => {
-    mockedFetchFileSource.mockRejectedValueOnce("string error");
-    render(<Probe initial="/a.puml" />);
-    await flush();
-
-    expect(captured!.render).toEqual({ kind: "error", message: "string error" });
   });
 });

@@ -68,30 +68,24 @@ describe("useServerEvents", () => {
     expect(subscriptions).toHaveLength(1);
   });
 
-  it("invokes onTree for tree events", () => {
-    const onTree = vi.fn();
-    render(<Probe onTree={onTree} onChanged={() => {}} />);
-
-    emit({ type: "tree" });
-    expect(onTree).toHaveBeenCalledTimes(1);
-  });
-
-  it("invokes onChanged with the changed path", () => {
-    const onChanged = vi.fn();
-    render(<Probe onTree={() => {}} onChanged={onChanged} />);
-
-    emit({ type: "changed", path: "/a.puml" });
-    expect(onChanged).toHaveBeenCalledWith("/a.puml");
-  });
-
-  it("ignores hello events", () => {
+  it.each<{ name: string; event: ServerEvent; treeCalls: number; changedArgs: string[] }>([
+    { name: "tree -> onTree()", event: { type: "tree" }, treeCalls: 1, changedArgs: [] },
+    {
+      name: "changed -> onChanged(path)",
+      event: { type: "changed", path: "/a.puml" },
+      treeCalls: 0,
+      changedArgs: ["/a.puml"],
+    },
+    { name: "hello -> noop", event: { type: "hello" }, treeCalls: 0, changedArgs: [] },
+  ])("routes $name", ({ event, treeCalls, changedArgs }) => {
     const onTree = vi.fn();
     const onChanged = vi.fn();
     render(<Probe onTree={onTree} onChanged={onChanged} />);
 
-    emit({ type: "hello" });
-    expect(onTree).not.toHaveBeenCalled();
-    expect(onChanged).not.toHaveBeenCalled();
+    emit(event);
+
+    expect(onTree).toHaveBeenCalledTimes(treeCalls);
+    expect(onChanged.mock.calls.flat()).toEqual(changedArgs);
   });
 
   it("does not resubscribe when handler identities change between renders", () => {

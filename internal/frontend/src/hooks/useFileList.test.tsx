@@ -43,24 +43,21 @@ afterEach(() => {
 });
 
 describe("useFileList", () => {
-  it("loads files and selects the first one as active", async () => {
-    mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml")]);
+  it.each([
+    {
+      name: "selects the first file as active",
+      files: [file("/a.puml"), file("/b.puml")],
+      expected: "/a.puml",
+    },
+    { name: "leaves active null when the list is empty", files: [], expected: null },
+  ])("initial load $name", async ({ files: initial, expected }) => {
+    mockedFetchFiles.mockResolvedValueOnce(initial);
 
     render(<Probe />);
     await flush();
 
-    expect(captured!.files.map((f) => f.path)).toEqual(["/a.puml", "/b.puml"]);
-    expect(captured!.active).toBe("/a.puml");
-  });
-
-  it("starts with no active when the file list is empty", async () => {
-    mockedFetchFiles.mockResolvedValueOnce([]);
-
-    render(<Probe />);
-    await flush();
-
-    expect(captured!.files).toEqual([]);
-    expect(captured!.active).toBeNull();
+    expect(captured!.files).toEqual(initial);
+    expect(captured!.active).toBe(expected);
   });
 
   it("select updates the active path", async () => {
@@ -73,66 +70,55 @@ describe("useFileList", () => {
     expect(captured!.active).toBe("/b.puml");
   });
 
-  it("preserves active across reloads when the file still exists", async () => {
-    mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml")]);
+  it.each([
+    {
+      name: "preserves active when the file still exists",
+      initial: [file("/a.puml"), file("/b.puml")],
+      selected: "/b.puml",
+      reloaded: [file("/a.puml"), file("/b.puml"), file("/c.puml")],
+      expected: "/b.puml",
+    },
+    {
+      name: "falls back to the first file when active is gone",
+      initial: [file("/a.puml"), file("/b.puml")],
+      selected: "/b.puml",
+      reloaded: [file("/c.puml"), file("/d.puml")],
+      expected: "/c.puml",
+    },
+    {
+      name: "clears active when the reloaded list is empty",
+      initial: [file("/a.puml")],
+      selected: "/a.puml",
+      reloaded: [],
+      expected: null,
+    },
+  ])("on reload $name", async ({ initial, selected, reloaded, expected }) => {
+    mockedFetchFiles.mockResolvedValueOnce(initial);
     render(<Probe />);
     await flush();
 
-    act(() => captured!.select("/b.puml"));
+    act(() => captured!.select(selected));
 
-    mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml"), file("/c.puml")]);
+    mockedFetchFiles.mockResolvedValueOnce(reloaded);
     act(() => captured!.reload());
     await flush();
 
-    expect(captured!.active).toBe("/b.puml");
-    expect(captured!.files).toHaveLength(3);
+    expect(captured!.active).toBe(expected);
   });
 
-  it("falls back to the first file when the previously active path is gone", async () => {
-    mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml")]);
-    render(<Probe />);
-    await flush();
-
-    act(() => captured!.select("/b.puml"));
-
-    mockedFetchFiles.mockResolvedValueOnce([file("/c.puml"), file("/d.puml")]);
-    act(() => captured!.reload());
-    await flush();
-
-    expect(captured!.active).toBe("/c.puml");
-  });
-
-  it("clears active when the reloaded list is empty", async () => {
-    mockedFetchFiles.mockResolvedValueOnce([file("/a.puml")]);
-    render(<Probe />);
-    await flush();
-
-    expect(captured!.active).toBe("/a.puml");
-
-    mockedFetchFiles.mockResolvedValueOnce([]);
-    act(() => captured!.reload());
-    await flush();
-
-    expect(captured!.active).toBeNull();
-  });
-
-  it("calls fetchFiles only once on mount", async () => {
-    mockedFetchFiles.mockResolvedValueOnce([file("/a.puml")]);
-    render(<Probe />);
-    await flush();
-    expect(mockedFetchFiles).toHaveBeenCalledTimes(1);
-  });
-
-  it("re-fetches when reload is invoked", async () => {
+  it.each([
+    { name: "once on mount", reloads: 0, expected: 1 },
+    { name: "once per reload", reloads: 2, expected: 3 },
+  ])("fetchFiles is called $name", async ({ reloads, expected }) => {
     mockedFetchFiles.mockResolvedValue([file("/a.puml")]);
     render(<Probe />);
     await flush();
 
-    act(() => captured!.reload());
-    await flush();
-    act(() => captured!.reload());
-    await flush();
+    for (let i = 0; i < reloads; i++) {
+      act(() => captured!.reload());
+      await flush();
+    }
 
-    expect(mockedFetchFiles).toHaveBeenCalledTimes(3);
+    expect(mockedFetchFiles).toHaveBeenCalledTimes(expected);
   });
 });
