@@ -5,7 +5,6 @@ import { ZoomControls } from "./zoom-controls";
 
 const MINIMAP_WIDTH = 160;
 const MINIMAP_HEIGHT = 120;
-// violet-600 — matches the app accent so the viewport rectangle is recognizable.
 const MINIMAP_BORDER = "#7c3aed";
 
 export function Preview({ svg }: { svg: string }): JSX.Element {
@@ -21,9 +20,7 @@ export function Preview({ svg }: { svg: string }): JSX.Element {
         onPanningStart={() => setIsPanning(true)}
         onPanningStop={() => setIsPanning(false)}
       >
-        {/* MiniMap forces position: relative inline, so wrap it to position
-            the whole minimap in the overlay corner — bottom-right, stacked
-            above the zoom controls. */}
+        {/* MiniMap sets position: relative inline, so the wrapper handles positioning. */}
         <div
           aria-label="diagram minimap"
           className="pointer-events-none absolute bottom-14 right-3 z-20 overflow-hidden rounded border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm"
