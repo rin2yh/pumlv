@@ -4,7 +4,7 @@ import {
   useControls,
   useTransformComponent,
 } from "react-zoom-pan-pinch";
-import { useEffect, useRef, useState, type FocusEvent, type JSX, type KeyboardEvent } from "react";
+import { useRef, useState, type FocusEvent, type JSX, type KeyboardEvent } from "react";
 
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 50;
@@ -25,33 +25,29 @@ function ZoomControls(): JSX.Element {
   const scale = useTransformComponent(({ state }) => state.scale);
   const displayPercent = Math.round(scale * 100);
 
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(displayPercent));
+  // null = not editing; the input mirrors displayPercent. A string value
+  // means the user is mid-edit and that draft takes over until commit/cancel.
+  const [draft, setDraft] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const skipCommitRef = useRef(false);
-
-  // Sync the input with the live scale whenever the user isn't editing.
-  useEffect(() => {
-    if (!editing) setDraft(String(displayPercent));
-  }, [displayPercent, editing]);
 
   const commit = () => {
     if (skipCommitRef.current) {
       skipCommitRef.current = false;
-      setEditing(false);
+      setDraft(null);
       return;
     }
+    if (draft === null) return;
     const parsed = Number.parseFloat(draft);
     if (Number.isFinite(parsed) && parsed > 0) {
       centerView(clampScale(parsed / 100), 0);
     }
-    setEditing(false);
+    setDraft(null);
   };
 
   const cancel = () => {
     skipCommitRef.current = true;
-    setDraft(String(displayPercent));
-    setEditing(false);
+    setDraft(null);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -67,7 +63,6 @@ function ZoomControls(): JSX.Element {
   };
 
   const onFocus = (e: FocusEvent<HTMLInputElement>) => {
-    setEditing(true);
     setDraft(String(displayPercent));
     e.target.select();
   };
@@ -87,7 +82,7 @@ function ZoomControls(): JSX.Element {
           ref={inputRef}
           type="text"
           inputMode="numeric"
-          value={editing ? draft : String(displayPercent)}
+          value={draft ?? String(displayPercent)}
           onChange={(e) => setDraft(e.target.value)}
           onFocus={onFocus}
           onBlur={commit}

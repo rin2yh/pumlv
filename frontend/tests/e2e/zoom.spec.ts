@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Zoom controls", () => {
-  test("typing a percentage into the zoom input zooms to that scale", async ({ page }) => {
-    const preview = page.getByAltText("preview");
-    const zoomInput = page.getByLabel("Zoom level");
-
+  test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByAltText("preview")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByLabel("Zoom level")).toHaveValue("100");
+  });
 
-    await expect(zoomInput).toHaveValue("100");
+  test("typing a percentage into the zoom input zooms to that scale", async ({ page }) => {
+    const zoomInput = page.getByLabel("Zoom level");
 
     await zoomInput.focus();
     await page.keyboard.press("ControlOrMeta+A");
@@ -19,12 +19,7 @@ test.describe("Zoom controls", () => {
   });
 
   test("Escape reverts the draft without changing zoom", async ({ page }) => {
-    const preview = page.getByAltText("preview");
     const zoomInput = page.getByLabel("Zoom level");
-
-    await page.goto("/");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
-    await expect(zoomInput).toHaveValue("100");
 
     await zoomInput.focus();
     await page.keyboard.press("ControlOrMeta+A");
@@ -35,11 +30,7 @@ test.describe("Zoom controls", () => {
   });
 
   test("invalid input is ignored and display stays at the current scale", async ({ page }) => {
-    const preview = page.getByAltText("preview");
     const zoomInput = page.getByLabel("Zoom level");
-
-    await page.goto("/");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
 
     await zoomInput.focus();
     await page.keyboard.press("ControlOrMeta+A");
