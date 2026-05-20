@@ -23,17 +23,17 @@ Go module: `github.com/rin2yh/pumlv`
 **Backend (Go):**
 
 - `cmd/root.go` — CLI entry point (Cobra)
-- `server/server.go` — net.Listen → http.Server, started under donegroup
-- `server/handlers.go` — `/api/files`, `/api/file`, `/api/events`, SPA serving
-- `server/files.go` — file enumeration and whitelist (Registry); prevents directory traversal
-- `server/watcher.go` — fsnotify + 100ms debounce → broadcast to Hub
-- `server/hub.go` — SSE pub/sub
+- `internal/server/server.go` — net.Listen → http.Server, started under donegroup
+- `internal/server/handlers.go` — `/api/files`, `/api/file`, `/api/events`, SPA serving
+- `internal/server/files.go` — file enumeration and whitelist (Registry); prevents directory traversal
+- `internal/server/watcher.go` — fsnotify + 100ms debounce → broadcast to Hub
+- `internal/server/hub.go` — SSE pub/sub
 
 **Frontend (Vite + React 19 + Tailwind v4):**
 
-- `frontend/src/plantuml/renderer.ts` — SVG generation via plantuml.js (TeaVM) + viz-global.js (Graphviz/Viz.js)
-- `frontend/scripts/fetch-plantuml-core.mjs` — downloads `js-plantuml-SNAPSHOT.zip` from plantuml/plantuml releases and extracts `plantuml.js` + `viz-global.js`
-- `static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
+- `internal/frontend/src/plantuml/renderer.ts` — SVG generation via plantuml.js (TeaVM) + viz-global.js (Graphviz/Viz.js)
+- `internal/frontend/scripts/fetch-plantuml-core.mjs` — downloads `js-plantuml-SNAPSHOT.zip` from plantuml/plantuml releases and extracts `plantuml.js` + `viz-global.js`
+- `internal/static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
 
 ## HTTP API
 

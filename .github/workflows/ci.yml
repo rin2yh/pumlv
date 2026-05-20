@@ -4,7 +4,31 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'version/**'
+      - 'examples/**'
+      - 'main.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.octocov.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/actions/setup-frontend/**'
   pull_request:
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'version/**'
+      - 'examples/**'
+      - 'main.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.octocov.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/actions/setup-frontend/**'
 
 permissions:
   contents: read
@@ -85,10 +109,10 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('internal/frontend/pnpm-lock.yaml') }}
 
       - name: Install Playwright Chrome
-        working-directory: frontend
+        working-directory: internal/frontend
         run: pnpm exec playwright install --with-deps chrome
 
       - name: E2E tests
@@ -100,6 +124,6 @@ jobs:
         with:
           name: playwright-report
           path: |
-            frontend/playwright-report/
-            frontend/test-results/
+            internal/frontend/playwright-report/
+            internal/frontend/test-results/
           retention-days: 7

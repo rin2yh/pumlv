@@ -1,5 +1,5 @@
 APP      := pumlv
-FRONTEND := frontend
+FRONTEND := internal/frontend
 
 GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing
 
@@ -71,7 +71,7 @@ release-snapshot: generate
 
 clean:
 	rm -f $(APP)
-	rm -rf static/dist
+	rm -rf internal/static/dist
 	rm -rf images
 	rm -rf dist
 

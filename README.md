@@ -55,7 +55,7 @@ pumlv aims to remove all of these pain points.
 
 ## About PlantUML rendering
 
-To keep everything in the browser, this project bundles PlantUML's official TeaVM build (`plantuml.js` ~7 MB + `viz-global.js` ~1.4 MB). `frontend/scripts/fetch-plantuml-core.mjs` downloads `js-plantuml-SNAPSHOT.zip` from the [plantuml/plantuml releases](https://github.com/plantuml/plantuml/releases/tag/snapshot), extracts the two files, Vite copies them into `static/dist/`, and `go:embed` then bundles them into the final binary. PlantUML source is never sent to any external service.
+To keep everything in the browser, this project bundles PlantUML's official TeaVM build (`plantuml.js` ~7 MB + `viz-global.js` ~1.4 MB). `internal/frontend/scripts/fetch-plantuml-core.mjs` downloads `js-plantuml-SNAPSHOT.zip` from the [plantuml/plantuml releases](https://github.com/plantuml/plantuml/releases/tag/snapshot), extracts the two files, Vite copies them into `internal/static/dist/`, and `go:embed` then bundles them into the final binary. PlantUML source is never sent to any external service.
 
 ## License
 

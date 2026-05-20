@@ -1,7 +1,7 @@
 // Downloads the TeaVM-compiled PlantUML build (plantuml.js + viz-global.js)
 // from the upstream plantuml/plantuml release "snapshot" zip and places the
-// two required files into frontend/public/plantuml/ so Vite copies them into
-// static/dist/.
+// two required files into internal/frontend/public/plantuml/ so Vite copies
+// them into internal/static/dist/.
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
