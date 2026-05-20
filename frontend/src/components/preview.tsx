@@ -18,6 +18,7 @@ function ZoomControls(): JSX.Element {
   // useTransformComponent re-renders on every transform change (wheel/pinch
   // included), unlike useTransformContext which only exposes a ref.
   const scale = useTransformComponent(({ state }) => state.scale);
+  useKeyboardPan();
 
   return (
     <div className="absolute bottom-3 right-3 z-20 flex gap-1">
@@ -55,17 +56,11 @@ function ZoomControls(): JSX.Element {
   );
 }
 
-function KeyboardPan(): null {
-  useKeyboardPan();
-  return null;
-}
-
 export function Preview({ svg }: { svg: string }): JSX.Element {
   return (
     <div className="relative h-full overflow-hidden">
       {/* key remounts the wrapper on file change, resetting zoom/pan state */}
       <TransformWrapper key={svg} centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
-        <KeyboardPan />
         <ZoomControls />
         <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
           <img src={svg} alt="preview" />
