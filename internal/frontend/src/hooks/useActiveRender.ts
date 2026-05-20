@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchFileSource } from "../api/files";
 import { renderPlantUML } from "../plantuml/renderer";
 
@@ -18,33 +18,33 @@ export function useActiveRender(active: string | null): UseActiveRenderResult {
   const [source, setSource] = useState<string>("");
   const [render, setRender] = useState<RenderState>({ kind: "idle" });
   const [reloadKey, setReloadKey] = useState(0);
-  const renderSeq = useRef(0);
 
   useEffect(() => {
     if (!active) {
-      renderSeq.current++;
       setSource("");
       setRender({ kind: "idle" });
       return;
     }
 
-    const seq = ++renderSeq.current;
+    const controller = new AbortController();
     setRender({ kind: "loading" });
 
     void (async () => {
       try {
-        const src = await fetchFileSource(active);
-        if (seq !== renderSeq.current) return;
+        const src = await fetchFileSource(active, controller.signal);
+        if (controller.signal.aborted) return;
         setSource(src);
         const svg = await renderPlantUML(src);
-        if (seq !== renderSeq.current) return;
+        if (controller.signal.aborted) return;
         setRender({ kind: "ok", svg });
       } catch (e) {
-        if (seq !== renderSeq.current) return;
+        if (controller.signal.aborted) return;
         const message = e instanceof Error ? e.message : String(e);
         setRender({ kind: "error", message });
       }
     })();
+
+    return () => controller.abort();
   }, [active, reloadKey]);
 
   return {

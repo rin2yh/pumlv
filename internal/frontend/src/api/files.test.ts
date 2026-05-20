@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { fetchFileSource, fetchFiles, type FileEntry } from "./files";
+import { fetchFileSource, fetchFiles, sameFilePaths, type FileEntry } from "./files";
 
 const originalFetch = globalThis.fetch;
 
@@ -84,7 +84,9 @@ describe("fetchFileSource", () => {
 
     const body = await fetchFileSource("/tmp/a b.puml");
     expect(body).toBe("@startuml\n@enduml\n");
-    expect(mock).toHaveBeenCalledWith("/api/file?path=%2Ftmp%2Fa%20b.puml");
+    expect(mock).toHaveBeenCalledWith("/api/file?path=%2Ftmp%2Fa%20b.puml", {
+      signal: undefined,
+    });
   });
 
   it("encodes non-ASCII paths", async () => {
@@ -95,7 +97,9 @@ describe("fetchFileSource", () => {
     globalThis.fetch = mock as unknown as typeof fetch;
 
     await fetchFileSource("/tmp/日本語.puml");
-    expect(mock).toHaveBeenCalledWith(`/api/file?path=${encodeURIComponent("/tmp/日本語.puml")}`);
+    expect(mock).toHaveBeenCalledWith(`/api/file?path=${encodeURIComponent("/tmp/日本語.puml")}`, {
+      signal: undefined,
+    });
   });
 
   it("returns an empty string for an empty file", async () => {
@@ -114,5 +118,82 @@ describe("fetchFileSource", () => {
     } as unknown as Response) as unknown as typeof fetch;
 
     await expect(fetchFileSource("/tmp/x.puml")).rejects.toThrow(/failed to load source: 503/);
+  });
+
+  it("forwards the AbortSignal to fetch", async () => {
+    const mock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(""),
+    } as unknown as Response);
+    globalThis.fetch = mock as unknown as typeof fetch;
+
+    const controller = new AbortController();
+    await fetchFileSource("/tmp/x.puml", controller.signal);
+
+    expect(mock).toHaveBeenCalledWith("/api/file?path=%2Ftmp%2Fx.puml", {
+      signal: controller.signal,
+    });
+  });
+
+  it("rejects with the abort reason when the signal aborts mid-flight", async () => {
+    globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "AbortError"));
+        });
+      })) as unknown as typeof fetch;
+
+    const controller = new AbortController();
+    const pending = fetchFileSource("/tmp/x.puml", controller.signal);
+    controller.abort();
+
+    await expect(pending).rejects.toThrow(/aborted/);
+  });
+});
+
+function entry(path: string): FileEntry {
+  return {
+    path,
+    rel: path.replace(/^\//, ""),
+    name: path.split("/").pop()!,
+    source: "/",
+  };
+}
+
+describe("sameFilePaths", () => {
+  it.each([
+    { name: "two empty lists", a: [], b: [], want: true },
+    {
+      name: "same paths in the same order",
+      a: [entry("/a.puml"), entry("/b.puml")],
+      b: [entry("/a.puml"), entry("/b.puml")],
+      want: true,
+    },
+    {
+      name: "only non-path fields differ",
+      a: [{ path: "/a.puml", rel: "a.puml", name: "a.puml", source: "/" }] as FileEntry[],
+      b: [{ path: "/a.puml", rel: "x", name: "x", source: "/different" }] as FileEntry[],
+      want: true,
+    },
+    {
+      name: "lengths differ",
+      a: [entry("/a.puml")],
+      b: [entry("/a.puml"), entry("/b.puml")],
+      want: false,
+    },
+    {
+      name: "a path differs",
+      a: [entry("/a.puml")],
+      b: [entry("/b.puml")],
+      want: false,
+    },
+    {
+      name: "order differs",
+      a: [entry("/a.puml"), entry("/b.puml")],
+      b: [entry("/b.puml"), entry("/a.puml")],
+      want: false,
+    },
+  ])("$name -> $want", ({ a, b, want }) => {
+    expect(sameFilePaths(a, b)).toBe(want);
   });
 });

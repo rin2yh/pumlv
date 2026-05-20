@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchFiles, type FileEntry } from "../api/files";
+import { fetchFiles, sameFilePaths, type FileEntry } from "../api/files";
 
 export interface UseFileListResult {
   files: FileEntry[];
@@ -16,7 +16,7 @@ export function useFileList(): UseFileListResult {
   useEffect(() => {
     void (async () => {
       const list = await fetchFiles();
-      setFiles(list);
+      setFiles((prev) => (sameFilePaths(prev, list) ? prev : list));
       setActive((prev) =>
         prev && list.some((f) => f.path === prev) ? prev : (list[0]?.path ?? null),
       );

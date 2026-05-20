@@ -72,7 +72,7 @@ describe("useActiveRender", () => {
 
     expect(captured!.source).toBe("@startuml\n@enduml");
     expect(captured!.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,svg" });
-    expect(mockedFetchFileSource).toHaveBeenCalledWith("/a.puml");
+    expect(mockedFetchFileSource).toHaveBeenCalledWith("/a.puml", expect.any(AbortSignal));
   });
 
   it("shows loading state while the source/render is in flight", async () => {

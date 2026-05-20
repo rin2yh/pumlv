@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { useToggleSet } from "../../hooks/useToggleSet";
+import { splitLines } from "../../lib/lines";
 import { highlight, type Highlighted, type ShikiToken } from "./highlighter";
 import { computeFoldRanges, hiddenLines } from "./source-fold";
 import { LineRow } from "./line-row";
@@ -12,7 +13,7 @@ export function SourceView({ source }: Props): JSX.Element {
   const [highlighted, setHighlighted] = useState<Highlighted | null>(null);
   const [folded, toggle] = useToggleSet<number>();
 
-  const lines = source.split(/\r?\n/);
+  const lines = splitLines(source);
   const ranges = computeFoldRanges(source);
   const foldStarts = new Set(ranges.map((r) => r.startLine));
 

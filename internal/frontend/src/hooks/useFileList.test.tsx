@@ -6,9 +6,10 @@ import { flush } from "../test/flush";
 import { setupRender } from "../test/render";
 import { useFileList, type UseFileListResult } from "./useFileList";
 
-vi.mock("../api/files", () => ({
-  fetchFiles: vi.fn(),
-}));
+vi.mock("../api/files", async () => {
+  const actual = await vi.importActual<typeof import("../api/files")>("../api/files");
+  return { ...actual, fetchFiles: vi.fn() };
+});
 
 const mockedFetchFiles = vi.mocked(fetchFiles);
 
