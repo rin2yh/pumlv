@@ -54,7 +54,7 @@ export function SourceView({ source }: Props): JSX.Element {
           <LineRow
             key={i}
             tokens={tokens}
-            depth={depths[i] ?? 0}
+            depth={depths[i]}
             isFoldStart={isFoldStart}
             isFolded={isFoldStart && folded.has(i)}
             onToggle={() => toggle(i)}
