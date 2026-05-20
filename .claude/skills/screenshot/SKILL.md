@@ -19,53 +19,38 @@ make screenshot
 
 ## B. Ad-hoc capture for verification / chat reply
 
-When you just need one screenshot of a specific UI region (e.g. the Source tab after a fix, the preview of one file), write a one-off Playwright script under `/tmp/`. **Do not extend `screenshots.mjs`** — that script is dedicated to the gallery and writes into a tracked directory.
+When you just need one screenshot of a specific UI region (e.g. the Source tab after a fix, the preview of one file), write a one-off Playwright script under `/tmp/`. **Do not extend `screenshots.mjs`** — that script is the gallery generator and writes into a tracked directory.
 
-Template (adapt the file, region, and output path):
+Reuse its server/browser plumbing instead of repasting it. `screenshots.mjs` exports `withPumlvPage`, `spawnPumlv`, and `waitForServer`; the ad-hoc script just describes what to click and shoot:
 
 ```js
-import { spawn } from "node:child_process";
+import { withPumlvPage } from "/home/user/pumlv/internal/frontend/scripts/screenshots.mjs";
 import { setTimeout as delay } from "node:timers/promises";
-import { chromium } from "/home/user/pumlv/internal/frontend/node_modules/@playwright/test/index.mjs";
 
-const BIN = "/home/user/pumlv/pumlv";       // run `make build` first
-const DIR = "/tmp/pumlv-shot";              // contains the .puml file(s) to render
-const PORT = 8770;                          // avoid the e2e default 8766
-const CHROME = "<path/to/chrome>";          // see Recovery below
+const DIR = "/tmp/pumlv-shot";  // contains the .puml file(s) to render
+const OUT = `${DIR}/shot.png`;
 
-const server = spawn(BIN, ["--no-open", "--host", "127.0.0.1", "--port", String(PORT), DIR], {
-  stdio: ["ignore", "inherit", "inherit"],
-});
-const cleanup = () => { if (!server.killed) server.kill("SIGTERM"); };
-process.on("exit", cleanup);
+await withPumlvPage(
+  {
+    dir: DIR,
+    port: 8770,                                  // avoid the e2e default 8766
+    deviceScaleFactor: 2,
+    // launchOptions: { executablePath: "<path>" } // see Recovery below
+  },
+  async ({ page }) => {
+    await page.getByRole("button", { name: "<file>.puml" }).click();
 
-const baseURL = `http://127.0.0.1:${PORT}`;
-const deadline = Date.now() + 30_000;
-while (Date.now() < deadline) {
-  try { if ((await fetch(`${baseURL}/api/files`)).ok) break; } catch {}
-  await delay(150);
-}
+    // Pick the region to shoot:
+    //   page.getByAltText("preview")                 — the rendered SVG
+    //   page.getByRole("region", { name: "Source" }) — the source tab
+    //   page                                          — the whole viewport
+    const target = page.getByRole("region", { name: "Source" });
+    await target.getByText("@startuml").first().waitFor({ timeout: 30_000 });
+    await delay(800); // let the syntax highlighter settle
 
-const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-try {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
-  const page = await ctx.newPage();
-  await page.goto(baseURL);
-  await page.getByRole("button", { name: "<file>.puml" }).click();
-
-  // Pick the region to shoot:
-  //   page.getByAltText("preview")                       — the rendered SVG
-  //   page.getByRole("region", { name: "Source" })       — the source tab
-  //   page                                                — the whole viewport
-  const target = page.getByRole("region", { name: "Source" });
-  await target.getByText("@startuml").first().waitFor({ timeout: 30_000 });
-  await delay(800); // let the syntax highlighter settle
-
-  await target.screenshot({ path: `${DIR}/shot.png` });
-} finally {
-  await browser.close();
-  cleanup();
-}
+    await target.screenshot({ path: OUT });
+  },
+);
 ```
 
 For the preview, wait until the SVG has actually rendered before shooting:
@@ -93,7 +78,7 @@ If the two PNGs come out identical (same MD5), the binary wasn't actually rebuil
 
 ## Recovering from failures
 
-- **`Chromium distribution 'chrome' is not found …`** — Playwright is set to `channel: "chrome"`. Try `cd internal/frontend && pnpm exec playwright install chrome`. If the sandbox blocks the download, point Playwright at a preinstalled chromium under `/opt/pw-browsers/<version>/chrome-linux/chrome` — via `executablePath` in the ad-hoc script, or `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=<path> make screenshot` for the gallery. Do **not** commit that path or bake it into `screenshots.mjs`.
+- **`Chromium distribution 'chrome' is not found …`** — `withPumlvPage` defaults to `launchOptions: { channel: "chrome" }`. Try `cd internal/frontend && pnpm exec playwright install chrome`. If the sandbox blocks the download, point Playwright at a preinstalled chromium under `/opt/pw-browsers/<version>/chrome-linux/chrome` — pass `launchOptions: { executablePath: "<path>" }` to `withPumlvPage` for ad-hoc, or run `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=<path> make screenshot` for the gallery. Do **not** commit that path or bake it into `screenshots.mjs`.
 
 - **`make build` fails with `pattern all:dist: no matching files found`** — the frontend bundle wasn't generated. Re-run `make build` from a clean tree (the `go:generate` directive runs `pnpm install && pnpm run build`).
 
