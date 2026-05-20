@@ -3,11 +3,14 @@ import {
   TransformWrapper,
   useControls,
   useTransformComponent,
+  useTransformContext,
 } from "react-zoom-pan-pinch";
-import type { JSX } from "react";
+import { useEffect, type JSX } from "react";
 
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 50;
+const PAN_STEP = 50;
+const PAN_STEP_FAST = 200;
 
 const BASE_BTN =
   "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur-sm hover:bg-white active:bg-slate-100";
@@ -54,11 +57,57 @@ function ZoomControls(): JSX.Element {
   );
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
+}
+
+function KeyboardPan(): null {
+  // useTransformContext exposes the live (non-reactive) ZoomPanPinch instance,
+  // so the handler reads the latest position without re-subscribing on every move.
+  const ctx = useTransformContext();
+  const { setTransform } = useControls();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      const step = e.shiftKey ? PAN_STEP_FAST : PAN_STEP;
+      let dx = 0;
+      let dy = 0;
+      switch (e.key) {
+        case "ArrowLeft":
+          dx = step;
+          break;
+        case "ArrowRight":
+          dx = -step;
+          break;
+        case "ArrowUp":
+          dy = step;
+          break;
+        case "ArrowDown":
+          dy = -step;
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+      const { positionX, positionY, scale } = ctx.transformState;
+      setTransform(positionX + dx, positionY + dy, scale, 0);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ctx, setTransform]);
+
+  return null;
+}
+
 export function Preview({ svg }: { svg: string }): JSX.Element {
   return (
     <div className="relative h-full overflow-hidden">
       {/* key remounts the wrapper on file change, resetting zoom/pan state */}
       <TransformWrapper key={svg} centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
+        <KeyboardPan />
         <ZoomControls />
         <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
           <img src={svg} alt="preview" />
