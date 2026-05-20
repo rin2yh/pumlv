@@ -4,7 +4,7 @@ import {
   useControls,
   useTransformComponent,
 } from "react-zoom-pan-pinch";
-import type { JSX } from "react";
+import { useState, type JSX } from "react";
 import { useKeyboardPan } from "./use-keyboard-pan";
 
 const MIN_SCALE = 0.1;
@@ -57,12 +57,23 @@ function ZoomControls(): JSX.Element {
 }
 
 export function Preview({ svg }: { svg: string }): JSX.Element {
+  const [isPanning, setIsPanning] = useState(false);
   return (
     <div className="relative h-full overflow-hidden">
       {/* key remounts the wrapper on file change, resetting zoom/pan state */}
-      <TransformWrapper key={svg} centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
+      <TransformWrapper
+        key={svg}
+        centerOnInit
+        minScale={MIN_SCALE}
+        maxScale={MAX_SCALE}
+        onPanningStart={() => setIsPanning(true)}
+        onPanningStop={() => setIsPanning(false)}
+      >
         <ZoomControls />
-        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+        <TransformComponent
+          wrapperStyle={{ width: "100%", height: "100%" }}
+          wrapperClass={isPanning ? "cursor-grabbing" : "cursor-grab"}
+        >
           <img src={svg} alt="preview" />
         </TransformComponent>
       </TransformWrapper>
