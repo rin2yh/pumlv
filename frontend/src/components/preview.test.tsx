@@ -10,9 +10,38 @@ const mockCenterView = vi.fn();
 
 let mockScale = 1;
 
+let lastPanningStart: (() => void) | undefined;
+let lastPanningStop: (() => void) | undefined;
+
+vi.mock("./use-keyboard-pan", () => ({
+  useKeyboardPan: () => {},
+}));
+
 vi.mock("react-zoom-pan-pinch", () => ({
-  TransformWrapper: ({ children }: { children: ReactNode }) => children,
-  TransformComponent: ({ children }: { children: ReactNode }) => children,
+  TransformWrapper: ({
+    children,
+    onPanningStart,
+    onPanningStop,
+  }: {
+    children: ReactNode;
+    onPanningStart?: () => void;
+    onPanningStop?: () => void;
+  }) => {
+    lastPanningStart = onPanningStart;
+    lastPanningStop = onPanningStop;
+    return children;
+  },
+  TransformComponent: ({
+    children,
+    wrapperClass,
+  }: {
+    children: ReactNode;
+    wrapperClass?: string;
+  }) => (
+    <div data-testid="transform-wrapper" className={wrapperClass}>
+      {children}
+    </div>
+  ),
   useControls: () => ({
     zoomIn: mockZoomIn,
     zoomOut: mockZoomOut,
@@ -27,6 +56,7 @@ const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
 const zoomLevel = () => zoomInput().value;
+const panWrapper = () => document.querySelector('[data-testid="transform-wrapper"]')!;
 
 const typeAndCommit = (value: string, { key = "Enter" } = {}) => {
   const input = zoomInput();
@@ -47,6 +77,8 @@ const render = setupRender();
 
 beforeEach(() => {
   mockScale = 1;
+  lastPanningStart = undefined;
+  lastPanningStop = undefined;
   vi.clearAllMocks();
 });
 
@@ -156,6 +188,31 @@ describe("Preview", () => {
         input.blur();
       });
       expect(mockCenterView).toHaveBeenCalledWith(1, 0);
+    });
+  });
+
+  describe("drag cursor", () => {
+    const startPan = () => lastPanningStart?.();
+    const stopPan = () => lastPanningStop?.();
+
+    it.each([
+      { name: "defaults to cursor-grab when not panning", actions: [], expected: "cursor-grab" },
+      {
+        name: "switches to cursor-grabbing while panning",
+        actions: [startPan],
+        expected: "cursor-grabbing",
+      },
+      {
+        name: "returns to cursor-grab when panning stops",
+        actions: [startPan, stopPan],
+        expected: "cursor-grab",
+      },
+    ])("$name", ({ actions, expected }) => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      for (const action of actions) {
+        act(() => action());
+      }
+      expect(panWrapper().className).toBe(expected);
     });
   });
 });

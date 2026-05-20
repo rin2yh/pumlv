@@ -5,6 +5,7 @@ import {
   useTransformComponent,
 } from "react-zoom-pan-pinch";
 import { useRef, useState, type FocusEvent, type JSX, type KeyboardEvent } from "react";
+import { useKeyboardPan } from "./use-keyboard-pan";
 
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 50;
@@ -24,6 +25,8 @@ function ZoomControls(): JSX.Element {
   // included), unlike useTransformContext which only exposes a ref.
   const scale = useTransformComponent(({ state }) => state.scale);
   const displayPercent = Math.round(scale * 100);
+
+  useKeyboardPan();
 
   // null = not editing; the input mirrors displayPercent. A string value
   // means the user is mid-edit and that draft takes over until commit/cancel.
@@ -113,12 +116,23 @@ function ZoomControls(): JSX.Element {
 }
 
 export function Preview({ svg }: { svg: string }): JSX.Element {
+  const [isPanning, setIsPanning] = useState(false);
   return (
     <div className="relative h-full overflow-hidden">
       {/* key remounts the wrapper on file change, resetting zoom/pan state */}
-      <TransformWrapper key={svg} centerOnInit minScale={MIN_SCALE} maxScale={MAX_SCALE}>
+      <TransformWrapper
+        key={svg}
+        centerOnInit
+        minScale={MIN_SCALE}
+        maxScale={MAX_SCALE}
+        onPanningStart={() => setIsPanning(true)}
+        onPanningStop={() => setIsPanning(false)}
+      >
         <ZoomControls />
-        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+        <TransformComponent
+          wrapperStyle={{ width: "100%", height: "100%" }}
+          wrapperClass={isPanning ? "cursor-grabbing" : "cursor-grab"}
+        >
           <img src={svg} alt="preview" />
         </TransformComponent>
       </TransformWrapper>
