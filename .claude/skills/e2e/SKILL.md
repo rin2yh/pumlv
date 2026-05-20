@@ -1,6 +1,6 @@
 ---
 name: e2e
-description: Run the Playwright end-to-end suite for pumlv. Use when the user asks to run e2e tests (e.g. "run e2e", "e2e実行", "make e2e"), validate a UI change in a real browser, debug a failing e2e spec, or verify a frontend change end-to-end after unit tests pass.
+description: Run the Playwright end-to-end suite for pumlv. TRIGGER on both directions — when the user asks to run e2e tests (e.g. "run e2e", "e2eを実行", "make e2e"), validate a UI change in a real browser, or debug a failing spec; AND whenever you are about to run `make e2e`, `pnpm test:e2e`, or `playwright test` on your own initiative (e.g. as part of verifying a frontend PR's Test plan before handing it off, or before declaring a UI-touching change complete). Invoke this skill BEFORE running the e2e command, not after.
 ---
 
 # Run pumlv e2e tests
