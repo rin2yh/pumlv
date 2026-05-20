@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, type JSX } from "react";
 import { useKeyboardPan } from "./use-keyboard-pan";
-import { setupRender } from "../test/render";
+import { setupRender } from "../../test/render";
 
 const mockSetTransformState = vi.fn();
 const mockTransformState = { scale: 1, positionX: 0, positionY: 0 };
