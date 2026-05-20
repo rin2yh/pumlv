@@ -85,15 +85,15 @@ describe("LineRow", () => {
     expect(document.body.textContent).toContain("…");
   });
 
-  it("applies no left padding at depth 0", () => {
-    render(<LineRow tokens={tokens} depth={0} isFoldStart isFolded={false} onToggle={() => {}} />);
+  it.each([
+    { depth: 0, expected: "0px" },
+    { depth: 1, expected: "12px" },
+    { depth: 2, expected: "24px" },
+  ])("applies paddingLeft $expected at depth $depth", ({ depth, expected }) => {
+    render(
+      <LineRow tokens={tokens} depth={depth} isFoldStart isFolded={false} onToggle={() => {}} />,
+    );
     const row = document.querySelector("button")!.closest("div") as HTMLElement;
-    expect(row.style.paddingLeft).toBe("0px");
-  });
-
-  it("indents the row in proportion to depth", () => {
-    render(<LineRow tokens={tokens} depth={2} isFoldStart isFolded={false} onToggle={() => {}} />);
-    const row = document.querySelector("button")!.closest("div") as HTMLElement;
-    expect(row.style.paddingLeft).toBe("24px");
+    expect(row.style.paddingLeft).toBe(expected);
   });
 });

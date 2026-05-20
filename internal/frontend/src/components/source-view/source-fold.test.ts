@@ -124,40 +124,70 @@ describe("hiddenLines", () => {
   }
 });
 
-describe("computeLineDepths", () => {
-  it("returns all zeros when there are no ranges", () => {
-    expect(computeLineDepths(3, [])).toEqual([0, 0, 0]);
-  });
+interface DepthCase {
+  name: string;
+  numLines: number;
+  ranges: FoldRange[];
+  expected: number[];
+}
 
-  it("places opening and closing brace lines at the enclosing scope's depth", () => {
+const depthCases: DepthCase[] = [
+  {
+    name: "returns all zeros when there are no ranges",
+    numLines: 3,
+    ranges: [],
+    expected: [0, 0, 0],
+  },
+  {
     // package P {       -> line 0, depth 0
     //   class A {       -> line 1, depth 1
     //     f             -> line 2, depth 2
     //   }               -> line 3, depth 1
     // }                 -> line 4, depth 0
-    const ranges: FoldRange[] = [
+    name: "places opening and closing brace lines at the enclosing scope's depth",
+    numLines: 5,
+    ranges: [
       { startLine: 0, endLine: 4 },
       { startLine: 1, endLine: 3 },
-    ];
-    expect(computeLineDepths(5, ranges)).toEqual([0, 1, 2, 1, 0]);
-  });
-
-  it("treats sibling blocks as independent", () => {
-    const ranges: FoldRange[] = [
+    ],
+    expected: [0, 1, 2, 1, 0],
+  },
+  {
+    name: "treats sibling blocks as independent",
+    numLines: 6,
+    ranges: [
       { startLine: 0, endLine: 2 },
       { startLine: 3, endLine: 5 },
-    ];
-    expect(computeLineDepths(6, ranges)).toEqual([0, 1, 0, 0, 1, 0]);
-  });
+    ],
+    expected: [0, 1, 0, 0, 1, 0],
+  },
+];
+
+describe("computeLineDepths", () => {
+  for (const { name, numLines, ranges, expected } of depthCases) {
+    it(name, () => {
+      expect(computeLineDepths(numLines, ranges)).toEqual(expected);
+    });
+  }
 });
 
-describe("lineIndentPx", () => {
-  it("returns zero at depth zero", () => {
-    expect(lineIndentPx(0)).toBe(0);
-  });
+interface IndentCase {
+  name: string;
+  depth: number;
+  expected: number;
+}
 
-  it("scales linearly with depth", () => {
-    expect(lineIndentPx(2)).toBe(lineIndentPx(1) * 2);
-    expect(lineIndentPx(3)).toBeGreaterThan(lineIndentPx(2));
-  });
+const indentCases: IndentCase[] = [
+  { name: "returns zero at depth 0", depth: 0, expected: 0 },
+  { name: "returns one step at depth 1", depth: 1, expected: 12 },
+  { name: "scales linearly at depth 2", depth: 2, expected: 24 },
+  { name: "scales linearly at depth 3", depth: 3, expected: 36 },
+];
+
+describe("lineIndentPx", () => {
+  for (const { name, depth, expected } of indentCases) {
+    it(name, () => {
+      expect(lineIndentPx(depth)).toBe(expected);
+    });
+  }
 });
