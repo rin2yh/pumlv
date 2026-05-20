@@ -2,15 +2,21 @@ name: Trivy
 
 on:
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'LICENSE'
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - 'frontend/package.json'
+      - 'frontend/pnpm-lock.yaml'
+      - '.github/workflows/trivy.yml'
   push:
     branches:
       - main
-    paths-ignore:
-      - '**/*.md'
-      - 'LICENSE'
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - 'frontend/package.json'
+      - 'frontend/pnpm-lock.yaml'
+      - '.github/workflows/trivy.yml'
   schedule:
     - cron: '0 0 * * 1'
 
