@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { fetchFiles, fetchFileSource, type FileEntry } from "./api/files";
 import { subscribe } from "./api/events";
 import { renderPlantUML } from "./plantuml/renderer";
@@ -19,90 +19,65 @@ export default function App(): JSX.Element {
   const [source, setSource] = useState<string>("");
   const [render, setRender] = useState<RenderState>({ kind: "idle" });
   const [sourceOpen, setSourceOpen] = useState<boolean>(true);
-
-  const activeRef = useRef<string | null>(null);
-  activeRef.current = active;
-
-  const renderSeq = useRef(0);
-
-  const reloadFiles = async () => {
-    const list = await fetchFiles();
-
-    setFiles(list);
-
-    setActive((prev) => {
-      if (prev && list.some((f) => f.path === prev)) {
-        return prev;
-      }
-
-      return list[0]?.path ?? null;
-    });
-  };
-
-  const reloadActive = async (path: string) => {
-    const seq = ++renderSeq.current;
-
-    setRender({ kind: "loading" });
-
-    try {
-      const src = await fetchFileSource(path);
-
-      if (seq !== renderSeq.current) {
-        return;
-      }
-
-      setSource(src);
-
-      const svg = await renderPlantUML(src);
-
-      if (seq !== renderSeq.current) {
-        return;
-      }
-
-      if (activeRef.current === path) {
-        setRender({ kind: "ok", svg });
-      }
-    } catch (e) {
-      if (seq !== renderSeq.current) {
-        return;
-      }
-
-      const message = e instanceof Error ? e.message : String(e);
-
-      if (activeRef.current === path) {
-        setRender({ kind: "error", message });
-      }
-    }
-  };
+  const [filesReloadKey, setFilesReloadKey] = useState(0);
+  const [activeReloadKey, setActiveReloadKey] = useState(0);
 
   useEffect(() => {
-    void reloadFiles();
-  }, [reloadFiles]);
+    let cancelled = false;
+    void (async () => {
+      const list = await fetchFiles();
+      if (cancelled) return;
+      setFiles(list);
+      setActive((prev) =>
+        prev && list.some((f) => f.path === prev) ? prev : (list[0]?.path ?? null),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [filesReloadKey]);
 
   useEffect(() => {
-    if (active) {
-      void reloadActive(active);
-    } else {
-      renderSeq.current++;
-
+    if (!active) {
       setSource("");
       setRender({ kind: "idle" });
+      return;
     }
-  }, [active, reloadActive]);
+
+    let cancelled = false;
+    setRender({ kind: "loading" });
+
+    void (async () => {
+      try {
+        const src = await fetchFileSource(active);
+        if (cancelled) return;
+        setSource(src);
+        const svg = await renderPlantUML(src);
+        if (cancelled) return;
+        setRender({ kind: "ok", svg });
+      } catch (e) {
+        if (cancelled) return;
+        const message = e instanceof Error ? e.message : String(e);
+        setRender({ kind: "error", message });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active, activeReloadKey]);
 
   useEffect(() => {
     const unsubscribe = subscribe((ev) => {
       if (ev.type === "changed") {
-        if (ev.path === activeRef.current) {
-          void reloadActive(ev.path);
-        }
+        if (ev.path === active) setActiveReloadKey((k) => k + 1);
       } else if (ev.type === "tree") {
-        void reloadFiles();
+        setFilesReloadKey((k) => k + 1);
       }
     });
 
     return unsubscribe;
-  }, [reloadActive, reloadFiles]);
+  }, [active]);
 
   const activeName = files.find((f) => f.path === active)?.rel ?? "";
   const toggleLabel = sourceOpen ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
