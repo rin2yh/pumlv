@@ -22,11 +22,12 @@ export function Preview({ svg }: { svg: string }): JSX.Element {
         onPanningStop={() => setIsPanning(false)}
       >
         {/* MiniMap forces position: relative inline, so wrap it to position
-            the whole minimap in the overlay corner. */}
+            the whole minimap in the overlay corner — bottom-right, stacked
+            above the zoom controls. */}
         <div
           data-testid="minimap"
           aria-label="diagram minimap"
-          className="pointer-events-none absolute right-3 top-3 z-20 overflow-hidden rounded border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm"
+          className="pointer-events-none absolute bottom-14 right-3 z-20 overflow-hidden rounded border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm"
         >
           <MiniMap width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} borderColor={MINIMAP_BORDER}>
             <img src={svg} alt="" draggable={false} />
