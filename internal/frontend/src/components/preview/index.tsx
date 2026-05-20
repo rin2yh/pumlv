@@ -1,7 +1,12 @@
 import { useState, type JSX } from "react";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import { MiniMap, TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { MAX_SCALE, MIN_SCALE } from "./zoom";
 import { ZoomControls } from "./zoom-controls";
+
+const MINIMAP_WIDTH = 160;
+const MINIMAP_HEIGHT = 120;
+// violet-600 — matches the app accent so the viewport rectangle is recognizable.
+const MINIMAP_BORDER = "#7c3aed";
 
 export function Preview({ svg }: { svg: string }): JSX.Element {
   const [isPanning, setIsPanning] = useState(false);
@@ -16,6 +21,17 @@ export function Preview({ svg }: { svg: string }): JSX.Element {
         onPanningStart={() => setIsPanning(true)}
         onPanningStop={() => setIsPanning(false)}
       >
+        {/* MiniMap forces position: relative inline, so wrap it to position
+            the whole minimap in the overlay corner. */}
+        <div
+          data-testid="minimap"
+          aria-label="diagram minimap"
+          className="pointer-events-none absolute right-3 top-3 z-20 overflow-hidden rounded border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm"
+        >
+          <MiniMap width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} borderColor={MINIMAP_BORDER}>
+            <img src={svg} alt="" draggable={false} />
+          </MiniMap>
+        </div>
         <ZoomControls />
         <TransformComponent
           wrapperStyle={{ width: "100%", height: "100%" }}

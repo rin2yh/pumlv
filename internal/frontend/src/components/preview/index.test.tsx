@@ -37,6 +37,26 @@ vi.mock("react-zoom-pan-pinch", () => ({
       {children}
     </div>
   ),
+  MiniMap: ({
+    children,
+    width,
+    height,
+    borderColor,
+  }: {
+    children: ReactNode;
+    width?: number;
+    height?: number;
+    borderColor?: string;
+  }) => (
+    <div
+      data-testid="minimap-inner"
+      data-width={width}
+      data-height={height}
+      data-border-color={borderColor}
+    >
+      {children}
+    </div>
+  ),
   useControls: () => ({
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -51,6 +71,11 @@ const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
 const panWrapper = () => document.querySelector('[data-testid="transform-wrapper"]')!;
+const previewImg = () => panWrapper().querySelector("img")!;
+const minimap = () => document.querySelector('[data-testid="minimap"]')!;
+const minimapInner = () => document.querySelector('[data-testid="minimap-inner"]')!;
+const minimapImgs = () =>
+  Array.from(minimap().querySelectorAll("img")).map((el) => el.getAttribute("src"));
 
 const render = setupRender();
 
@@ -66,15 +91,13 @@ describe("Preview", () => {
     "renders an img with src=$svg",
     ({ svg }) => {
       render(<Preview svg={svg} />);
-      const img = document.querySelector("img");
-      expect(img).not.toBeNull();
-      expect(img!.getAttribute("src")).toBe(svg);
+      expect(previewImg().getAttribute("src")).toBe(svg);
     },
   );
 
   it("uses 'preview' as the alt text", () => {
     render(<Preview svg={SAMPLE_SVG} />);
-    expect(document.querySelector("img")!.getAttribute("alt")).toBe("preview");
+    expect(previewImg().getAttribute("alt")).toBe("preview");
   });
 
   it.each([
@@ -83,7 +106,7 @@ describe("Preview", () => {
   ])("updates src from $from to $to when svg prop changes", ({ from, to }) => {
     render(<Preview svg={from} />);
     render(<Preview svg={to} />);
-    expect(document.querySelector("img")!.getAttribute("src")).toBe(to);
+    expect(previewImg().getAttribute("src")).toBe(to);
   });
 
   it("resets the zoom display when svg changes (TransformWrapper remounts on key)", () => {
@@ -94,6 +117,34 @@ describe("Preview", () => {
     mockScale = 1;
     render(<Preview svg="data:image/png;base64,BBBB" />);
     expect(zoomInput().value).toBe("100");
+  });
+
+  describe("minimap", () => {
+    it("renders the minimap container as an overlay", () => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(minimap()).not.toBeNull();
+    });
+
+    it("passes a thumbnail of the current svg to MiniMap", () => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      expect(minimapImgs()).toContain(SAMPLE_SVG);
+    });
+
+    it("forwards configured width/height/borderColor to MiniMap", () => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      const inner = minimapInner();
+      expect(inner.getAttribute("data-width")).toBe("160");
+      expect(inner.getAttribute("data-height")).toBe("120");
+      expect(inner.getAttribute("data-border-color")).toBe("#7c3aed");
+    });
+
+    it("updates the minimap thumbnail when svg changes", () => {
+      render(<Preview svg={SAMPLE_SVG} />);
+      const next = "data:image/png;base64,NEXT";
+      render(<Preview svg={next} />);
+      expect(minimapImgs()).toContain(next);
+      expect(minimapImgs()).not.toContain(SAMPLE_SVG);
+    });
   });
 
   describe("drag cursor", () => {
