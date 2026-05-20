@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchFileSource } from "../api/files";
 import { renderPlantUML } from "../plantuml/renderer";
 
-export type RenderState =
+type RenderState =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "ok"; svg: string }

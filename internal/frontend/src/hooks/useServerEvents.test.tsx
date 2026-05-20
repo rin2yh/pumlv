@@ -23,16 +23,16 @@ function Harness(props: { onTree: () => void; onChanged: (path: string) => void 
   return <div />;
 }
 
+let capturedSetActive: (path: string | null) => void;
+let changedForActive: number;
+
 function RebindHarness(): JSX.Element {
   const [active, setActive] = useState<string | null>("/a.puml");
-  (RebindHarness as unknown as { setActive: (p: string | null) => void }).setActive = setActive;
+  capturedSetActive = setActive;
   useServerEvents({
     onTree: () => {},
     onChanged: (path) => {
-      if (path === active) {
-        (RebindHarness as unknown as { changedCount: number }).changedCount =
-          ((RebindHarness as unknown as { changedCount?: number }).changedCount ?? 0) + 1;
-      }
+      if (path === active) changedForActive++;
     },
   });
   return <div />;
@@ -42,6 +42,7 @@ const render = setupRender();
 
 beforeEach(() => {
   subscriptions = [];
+  changedForActive = 0;
   vi.clearAllMocks();
   mockedSubscribe.mockImplementation((handler: EventHandler) => {
     const cleanup = vi.fn();
@@ -119,22 +120,18 @@ describe("useServerEvents", () => {
   });
 
   it("sees updated closure values through the ref (active path swap)", () => {
-    const ctx = RebindHarness as unknown as {
-      setActive: (p: string | null) => void;
-      changedCount?: number;
-    };
     render(<RebindHarness />);
 
     emit({ type: "changed", path: "/a.puml" });
-    expect(ctx.changedCount).toBe(1);
+    expect(changedForActive).toBe(1);
 
-    act(() => ctx.setActive("/b.puml"));
+    act(() => capturedSetActive("/b.puml"));
 
     emit({ type: "changed", path: "/a.puml" });
-    expect(ctx.changedCount).toBe(1);
+    expect(changedForActive).toBe(1);
 
     emit({ type: "changed", path: "/b.puml" });
-    expect(ctx.changedCount).toBe(2);
+    expect(changedForActive).toBe(2);
   });
 
   it("invokes the cleanup returned by subscribe on unmount", () => {
