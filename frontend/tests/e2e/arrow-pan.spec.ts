@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
-import { PAN_STEP, PAN_STEP_FAST } from "../../src/components/use-keyboard-pan";
+import { PAN_STEP, PAN_STEP_FAST } from "../../src/components/preview/use-keyboard-pan";
 
 const TRANSLATE_RE = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/;
 

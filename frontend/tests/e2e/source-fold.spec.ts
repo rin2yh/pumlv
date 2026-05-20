@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { FOLD_LABEL, UNFOLD_LABEL } from "../../src/components/source-fold";
+import { FOLD_LABEL, UNFOLD_LABEL } from "../../src/components/source-view/source-fold";
 
 test.describe("source folding", () => {
   test("folds and unfolds a brace block", async ({ page }) => {

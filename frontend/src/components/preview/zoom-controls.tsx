@@ -1,25 +1,12 @@
-import {
-  TransformComponent,
-  TransformWrapper,
-  useControls,
-  useTransformComponent,
-} from "react-zoom-pan-pinch";
 import { useRef, useState, type FocusEvent, type JSX, type KeyboardEvent } from "react";
+import { useControls, useTransformComponent } from "react-zoom-pan-pinch";
+import { clampScale } from "./zoom";
 import { useKeyboardPan } from "./use-keyboard-pan";
-
-const MIN_SCALE = 0.1;
-const MAX_SCALE = 50;
 
 const BASE_BTN =
   "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur-sm hover:bg-white active:bg-slate-100";
 
-function clampScale(value: number): number {
-  if (value < MIN_SCALE) return MIN_SCALE;
-  if (value > MAX_SCALE) return MAX_SCALE;
-  return value;
-}
-
-function ZoomControls(): JSX.Element {
+export function ZoomControls(): JSX.Element {
   const { zoomIn, zoomOut, resetTransform, centerView } = useControls();
   // useTransformComponent re-renders on every transform change (wheel/pinch
   // included), unlike useTransformContext which only exposes a ref.
@@ -111,31 +98,6 @@ function ZoomControls(): JSX.Element {
       >
         reset
       </button>
-    </div>
-  );
-}
-
-export function Preview({ svg }: { svg: string }): JSX.Element {
-  const [isPanning, setIsPanning] = useState(false);
-  return (
-    <div className="relative h-full overflow-hidden">
-      {/* key remounts the wrapper on file change, resetting zoom/pan state */}
-      <TransformWrapper
-        key={svg}
-        centerOnInit
-        minScale={MIN_SCALE}
-        maxScale={MAX_SCALE}
-        onPanningStart={() => setIsPanning(true)}
-        onPanningStop={() => setIsPanning(false)}
-      >
-        <ZoomControls />
-        <TransformComponent
-          wrapperStyle={{ width: "100%", height: "100%" }}
-          wrapperClass={isPanning ? "cursor-grabbing" : "cursor-grab"}
-        >
-          <img src={svg} alt="preview" />
-        </TransformComponent>
-      </TransformWrapper>
     </div>
   );
 }
