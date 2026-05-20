@@ -125,24 +125,27 @@ describe("Preview", () => {
   });
 
   describe("drag cursor", () => {
-    it("defaults to cursor-grab when not panning", () => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      expect(panWrapper().className).toContain("cursor-grab");
-      expect(panWrapper().className).not.toContain("cursor-grabbing");
-    });
+    const startPan = () => lastPanningStart?.();
+    const stopPan = () => lastPanningStop?.();
 
-    it("switches to cursor-grabbing while panning", () => {
+    it.each([
+      { name: "defaults to cursor-grab when not panning", actions: [], expected: "cursor-grab" },
+      {
+        name: "switches to cursor-grabbing while panning",
+        actions: [startPan],
+        expected: "cursor-grabbing",
+      },
+      {
+        name: "returns to cursor-grab when panning stops",
+        actions: [startPan, stopPan],
+        expected: "cursor-grab",
+      },
+    ])("$name", ({ actions, expected }) => {
       render(<Preview svg={SAMPLE_SVG} />);
-      act(() => lastPanningStart?.());
-      expect(panWrapper().className).toContain("cursor-grabbing");
-    });
-
-    it("returns to cursor-grab when panning stops", () => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      act(() => lastPanningStart?.());
-      act(() => lastPanningStop?.());
-      expect(panWrapper().className).toContain("cursor-grab");
-      expect(panWrapper().className).not.toContain("cursor-grabbing");
+      for (const action of actions) {
+        act(() => action());
+      }
+      expect(panWrapper().className).toBe(expected);
     });
   });
 });
