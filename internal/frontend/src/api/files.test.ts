@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { fetchFileSource, fetchFiles, type FileEntry } from "./files";
+import { fetchFileSource, fetchFiles, sameFilePaths, type FileEntry } from "./files";
 
 const originalFetch = globalThis.fetch;
 
@@ -114,5 +114,46 @@ describe("fetchFileSource", () => {
     } as unknown as Response) as unknown as typeof fetch;
 
     await expect(fetchFileSource("/tmp/x.puml")).rejects.toThrow(/failed to load source: 503/);
+  });
+});
+
+function entry(path: string): FileEntry {
+  return {
+    path,
+    rel: path.replace(/^\//, ""),
+    name: path.split("/").pop()!,
+    source: "/",
+  };
+}
+
+describe("sameFilePaths", () => {
+  it("returns true for two empty lists", () => {
+    expect(sameFilePaths([], [])).toBe(true);
+  });
+
+  it("returns true when both lists have the same paths in the same order", () => {
+    const a = [entry("/a.puml"), entry("/b.puml")];
+    const b = [entry("/a.puml"), entry("/b.puml")];
+    expect(sameFilePaths(a, b)).toBe(true);
+  });
+
+  it("returns true when only non-path fields differ", () => {
+    const a: FileEntry[] = [{ path: "/a.puml", rel: "a.puml", name: "a.puml", source: "/" }];
+    const b: FileEntry[] = [{ path: "/a.puml", rel: "x", name: "x", source: "/different" }];
+    expect(sameFilePaths(a, b)).toBe(true);
+  });
+
+  it("returns false when lengths differ", () => {
+    expect(sameFilePaths([entry("/a.puml")], [entry("/a.puml"), entry("/b.puml")])).toBe(false);
+  });
+
+  it("returns false when a path differs", () => {
+    expect(sameFilePaths([entry("/a.puml")], [entry("/b.puml")])).toBe(false);
+  });
+
+  it("returns false when order differs", () => {
+    const a = [entry("/a.puml"), entry("/b.puml")];
+    const b = [entry("/b.puml"), entry("/a.puml")];
+    expect(sameFilePaths(a, b)).toBe(false);
   });
 });
