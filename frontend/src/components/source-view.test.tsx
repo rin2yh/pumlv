@@ -2,11 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { setupRender } from "../test/render";
 
-let codeToHtmlMock: ReturnType<typeof vi.fn>;
+interface ShikiToken {
+  content: string;
+  color?: string;
+}
+
+let codeToTokensMock: ReturnType<typeof vi.fn>;
 
 vi.mock("shiki/core", () => ({
   createHighlighterCore: vi.fn(async () => ({
-    codeToHtml: codeToHtmlMock,
+    codeToTokens: codeToTokensMock,
   })),
 }));
 
@@ -28,8 +33,22 @@ async function flushAsync(): Promise<void> {
   });
 }
 
+function tokenize(source: string): { tokens: ShikiToken[][]; fg: string; bg: string } {
+  return {
+    tokens: source.split(/\r?\n/).map((line) => [{ content: line, color: "#222" }]),
+    fg: "#222",
+    bg: "#fff",
+  };
+}
+
+function findFoldToggle(): HTMLButtonElement {
+  return document.querySelector(
+    'button[aria-label="fold block"], button[aria-label="unfold block"]',
+  ) as HTMLButtonElement;
+}
+
 beforeEach(() => {
-  codeToHtmlMock = vi.fn(() => "<pre class='shiki'>highlighted</pre>");
+  codeToTokensMock = vi.fn((source: string) => tokenize(source));
 });
 
 afterEach(() => {
@@ -44,20 +63,21 @@ describe("SourceView", () => {
     expect(document.querySelector("pre")).toBeNull();
   });
 
-  it("renders the highlighter output for a non-empty source", async () => {
+  it("renders one line per source line via the highlighter", async () => {
     const { SourceView } = await import("./source-view");
     render(<SourceView source={"@startuml\n@enduml\n"} />);
     await flushAsync();
 
-    expect(codeToHtmlMock).toHaveBeenCalledWith("@startuml\n@enduml\n", {
+    expect(codeToTokensMock).toHaveBeenCalledWith("@startuml\n@enduml\n", {
       lang: "yaml",
       theme: "github-light",
     });
-    expect(document.body.innerHTML).toContain("highlighted");
+    expect(document.body.textContent).toContain("@startuml");
+    expect(document.body.textContent).toContain("@enduml");
   });
 
-  it("falls back to escaped <pre> when the highlighter throws", async () => {
-    codeToHtmlMock.mockImplementation(() => {
+  it("falls back to a plain <pre> when the highlighter throws", async () => {
+    codeToTokensMock.mockImplementation(() => {
       throw new Error("boom");
     });
     const { SourceView } = await import("./source-view");
@@ -66,28 +86,76 @@ describe("SourceView", () => {
 
     const pre = document.querySelector("pre");
     expect(pre).not.toBeNull();
-    expect(pre!.innerHTML).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(pre!.textContent).toBe("<script>alert(1)</script>");
+    // React must have escaped the content; raw HTML must not be injected.
+    expect(pre!.querySelector("script")).toBeNull();
   });
 
-  it("escapes & < > characters in the fallback", async () => {
-    codeToHtmlMock.mockImplementation(() => {
-      throw new Error("nope");
-    });
-    const { SourceView } = await import("./source-view");
-    render(<SourceView source="a & b < c > d" />);
-    await flushAsync();
-
-    const pre = document.querySelector("pre");
-    expect(pre!.innerHTML).toBe("a &amp; b &lt; c &gt; d");
-  });
-
-  it("clears highlighted html when source becomes empty", async () => {
+  it("clears highlighted output when source becomes empty", async () => {
     const { SourceView } = await import("./source-view");
     render(<SourceView source="hello" />);
     await flushAsync();
-    expect(document.body.innerHTML).toContain("highlighted");
+    expect(document.body.textContent).toContain("hello");
 
     render(<SourceView source="" />);
     expect(document.body.textContent).toContain("no source");
+  });
+
+  describe("folding", () => {
+    const source = ["class A {", "  field1", "  field2", "}", "class B"].join("\n");
+
+    it("renders a fold toggle on the opening brace line", async () => {
+      const { SourceView } = await import("./source-view");
+      render(<SourceView source={source} />);
+      await flushAsync();
+
+      const buttons = document.querySelectorAll('button[aria-label="fold block"]');
+      expect(buttons.length).toBe(1);
+      expect(buttons[0].getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it("hides the block body after clicking the toggle", async () => {
+      const { SourceView } = await import("./source-view");
+      render(<SourceView source={source} />);
+      await flushAsync();
+
+      const button = document.querySelector('button[aria-label="fold block"]') as HTMLButtonElement;
+      expect(button).not.toBeNull();
+
+      act(() => {
+        button.click();
+      });
+
+      expect(document.body.textContent).not.toContain("field1");
+      expect(document.body.textContent).not.toContain("field2");
+      expect(document.body.textContent).toContain("class A {");
+      expect(document.body.textContent).toContain("class B");
+
+      const unfoldBtn = document.querySelector(
+        'button[aria-label="unfold block"]',
+      ) as HTMLButtonElement;
+      expect(unfoldBtn).not.toBeNull();
+      expect(unfoldBtn.getAttribute("aria-expanded")).toBe("false");
+    });
+
+    it("re-shows the block body after toggling back", async () => {
+      const { SourceView } = await import("./source-view");
+      render(<SourceView source={source} />);
+      await flushAsync();
+
+      act(() => findFoldToggle().click());
+      act(() => findFoldToggle().click());
+
+      expect(document.body.textContent).toContain("field1");
+      expect(document.body.textContent).toContain("field2");
+    });
+
+    it("does not show a fold toggle on lines without a brace block", async () => {
+      const { SourceView } = await import("./source-view");
+      render(<SourceView source={"@startuml\nactor User\n@enduml\n"} />);
+      await flushAsync();
+
+      expect(document.querySelector('button[aria-label="fold block"]')).toBeNull();
+    });
   });
 });
