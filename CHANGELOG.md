@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.3.1](https://github.com/rin2yh/pumlv/compare/v0.3.0...v0.3.1) - 2026-05-20
+- perf(frontend): skip setFiles when fetched list matches current state by @rin2yh in https://github.com/rin2yh/pumlv/pull/35
+- refactor(frontend): extract splitLines helper by @rin2yh in https://github.com/rin2yh/pumlv/pull/36
+- refactor(frontend): split App.tsx effects into per-responsibility hooks by @rin2yh in https://github.com/rin2yh/pumlv/pull/38
+- fix(source-view): indent fold toggles by brace-nesting depth by @rin2yh in https://github.com/rin2yh/pumlv/pull/39
+
 ## [v0.3.0](https://github.com/rin2yh/pumlv/compare/v0.2.1...v0.3.0) - 2026-05-20
 - docs: add mise GitHub backend installation instructions by @rin2yh in https://github.com/rin2yh/pumlv/pull/20
 - feat(preview): use grab/grabbing cursor while panning by @rin2yh in https://github.com/rin2yh/pumlv/pull/22
