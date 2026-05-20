@@ -27,8 +27,6 @@ export default function App(): JSX.Element {
   const activeRef = useRef<string | null>(null);
   activeRef.current = active;
 
-  const renderSeq = useRef(0);
-
   useEffect(() => {
     void (async () => {
       const list = await fetchFiles();
@@ -41,29 +39,30 @@ export default function App(): JSX.Element {
 
   useEffect(() => {
     if (!active) {
-      renderSeq.current++;
       setSource("");
       setRender({ kind: "idle" });
       return;
     }
 
-    const seq = ++renderSeq.current;
+    const controller = new AbortController();
     setRender({ kind: "loading" });
 
     void (async () => {
       try {
-        const src = await fetchFileSource(active);
-        if (seq !== renderSeq.current) return;
+        const src = await fetchFileSource(active, controller.signal);
+        if (controller.signal.aborted) return;
         setSource(src);
         const svg = await renderPlantUML(src);
-        if (seq !== renderSeq.current) return;
+        if (controller.signal.aborted) return;
         setRender({ kind: "ok", svg });
       } catch (e) {
-        if (seq !== renderSeq.current) return;
+        if (controller.signal.aborted) return;
         const message = e instanceof Error ? e.message : String(e);
         setRender({ kind: "error", message });
       }
     })();
+
+    return () => controller.abort();
   }, [active, activeReloadKey]);
 
   useEffect(() => {
