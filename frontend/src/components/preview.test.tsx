@@ -117,23 +117,16 @@ describe("Preview", () => {
       { input: "150", expectedScale: 1.5 },
       { input: "75", expectedScale: 0.75 },
       { input: "200%", expectedScale: 2 },
+      { input: "5", expectedScale: 0.1 },
+      { input: "10000", expectedScale: 50 },
     ])(
-      "typing '$input' and pressing Enter calls centerView with scale=$expectedScale",
+      "typing '$input' commits scale=$expectedScale via centerView (clamped to MIN/MAX)",
       ({ input, expectedScale }) => {
         render(<Preview svg={SAMPLE_SVG} />);
         typeAndCommit(input);
         expect(mockCenterView).toHaveBeenCalledWith(expectedScale, 0);
       },
     );
-
-    it.each([
-      { input: "5", expectedScale: 0.1 },
-      { input: "10000", expectedScale: 50 },
-    ])("clamps '$input%' to scale=$expectedScale (MIN/MAX bounds)", ({ input, expectedScale }) => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      typeAndCommit(input);
-      expect(mockCenterView).toHaveBeenCalledWith(expectedScale, 0);
-    });
 
     it.each(["abc", "", "-50", "0"])(
       "ignores invalid input '%s' without calling centerView",
@@ -152,7 +145,8 @@ describe("Preview", () => {
       expect(zoomInput().value).toBe("100");
     });
 
-    it("blurring the input without changing it does not call centerView with a NaN", () => {
+    it("focusing then blurring without typing commits the current scale", () => {
+      mockScale = 1;
       render(<Preview svg={SAMPLE_SVG} />);
       const input = zoomInput();
       act(() => {
@@ -161,11 +155,7 @@ describe("Preview", () => {
       act(() => {
         input.blur();
       });
-      // value '100' is valid — but it's the current scale, so centerView is called with 1.
-      // Either it isn't called, or it's called with the same scale; both are fine. NaN must not occur.
-      if (mockCenterView.mock.calls.length > 0) {
-        expect(mockCenterView).toHaveBeenCalledWith(1, 0);
-      }
+      expect(mockCenterView).toHaveBeenCalledWith(1, 0);
     });
   });
 });
