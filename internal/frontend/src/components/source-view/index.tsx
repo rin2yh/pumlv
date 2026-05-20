@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from "react";
 import { useToggleSet } from "../../hooks/useToggleSet";
 import { highlight, type Highlighted, type ShikiToken } from "./highlighter";
-import { computeFoldRanges, hiddenLines } from "./source-fold";
+import { computeFoldRanges, computeLineDepths, hiddenLines } from "./source-fold";
 import { LineRow } from "./line-row";
 
 interface Props {
@@ -15,6 +15,7 @@ export function SourceView({ source }: Props): JSX.Element {
   const lines = source.split(/\r?\n/);
   const ranges = computeFoldRanges(source);
   const foldStarts = new Set(ranges.map((r) => r.startLine));
+  const depths = computeLineDepths(lines.length, ranges);
 
   const tokenLines: ShikiToken[][] = highlighted?.tokens ?? lines.map((l) => [{ content: l }]);
 
@@ -53,6 +54,7 @@ export function SourceView({ source }: Props): JSX.Element {
           <LineRow
             key={i}
             tokens={tokens}
+            depth={depths[i] ?? 0}
             isFoldStart={isFoldStart}
             isFolded={isFoldStart && folded.has(i)}
             onToggle={() => toggle(i)}

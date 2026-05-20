@@ -6,6 +6,24 @@ export interface FoldRange {
 export const FOLD_LABEL = "fold block";
 export const UNFOLD_LABEL = "unfold block";
 
+const INDENT_STEP_PX = 12;
+
+export function lineIndentPx(depth: number): number {
+  return depth * INDENT_STEP_PX;
+}
+
+// Number of fold ranges that strictly enclose each line. Opening and closing
+// brace lines sit at the depth of the enclosing scope, body lines one deeper.
+export function computeLineDepths(numLines: number, ranges: readonly FoldRange[]): number[] {
+  const depths: number[] = Array.from({ length: numLines }, () => 0);
+  for (const r of ranges) {
+    for (let i = r.startLine + 1; i < r.endLine; i++) {
+      depths[i]++;
+    }
+  }
+  return depths;
+}
+
 // PlantUML block comments, strings, line comments, and structural braces /
 // newlines, in a single token alternation. Anything not matched (identifiers,
 // whitespace, etc.) is simply skipped between matches.

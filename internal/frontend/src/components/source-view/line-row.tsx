@@ -1,17 +1,18 @@
 import { type JSX } from "react";
-import { FOLD_LABEL, UNFOLD_LABEL } from "./source-fold";
+import { FOLD_LABEL, lineIndentPx, UNFOLD_LABEL } from "./source-fold";
 import type { ShikiToken } from "./highlighter";
 
 interface Props {
   tokens: ShikiToken[];
+  depth: number;
   isFoldStart: boolean;
   isFolded: boolean;
   onToggle: () => void;
 }
 
-export function LineRow({ tokens, isFoldStart, isFolded, onToggle }: Props): JSX.Element {
+export function LineRow({ tokens, depth, isFoldStart, isFolded, onToggle }: Props): JSX.Element {
   return (
-    <div className="flex items-start">
+    <div className="flex items-start" style={{ paddingLeft: `${lineIndentPx(depth)}px` }}>
       <span
         className="inline-block w-4 shrink-0 select-none text-center text-slate-400"
         aria-hidden={!isFoldStart}

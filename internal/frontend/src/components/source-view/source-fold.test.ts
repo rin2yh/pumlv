@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeFoldRanges, hiddenLines, type FoldRange } from "./source-fold";
+import {
+  computeFoldRanges,
+  computeLineDepths,
+  hiddenLines,
+  lineIndentPx,
+  type FoldRange,
+} from "./source-fold";
 
 interface ComputeCase {
   name: string;
@@ -116,4 +122,42 @@ describe("hiddenLines", () => {
       expect(hiddenLines(ranges, new Set(folded))).toEqual(new Set(expected));
     });
   }
+});
+
+describe("computeLineDepths", () => {
+  it("returns all zeros when there are no ranges", () => {
+    expect(computeLineDepths(3, [])).toEqual([0, 0, 0]);
+  });
+
+  it("places opening and closing brace lines at the enclosing scope's depth", () => {
+    // package P {       -> line 0, depth 0
+    //   class A {       -> line 1, depth 1
+    //     f             -> line 2, depth 2
+    //   }               -> line 3, depth 1
+    // }                 -> line 4, depth 0
+    const ranges: FoldRange[] = [
+      { startLine: 0, endLine: 4 },
+      { startLine: 1, endLine: 3 },
+    ];
+    expect(computeLineDepths(5, ranges)).toEqual([0, 1, 2, 1, 0]);
+  });
+
+  it("treats sibling blocks as independent", () => {
+    const ranges: FoldRange[] = [
+      { startLine: 0, endLine: 2 },
+      { startLine: 3, endLine: 5 },
+    ];
+    expect(computeLineDepths(6, ranges)).toEqual([0, 1, 0, 0, 1, 0]);
+  });
+});
+
+describe("lineIndentPx", () => {
+  it("returns zero at depth zero", () => {
+    expect(lineIndentPx(0)).toBe(0);
+  });
+
+  it("scales linearly with depth", () => {
+    expect(lineIndentPx(2)).toBe(lineIndentPx(1) * 2);
+    expect(lineIndentPx(3)).toBeGreaterThan(lineIndentPx(2));
+  });
 });
