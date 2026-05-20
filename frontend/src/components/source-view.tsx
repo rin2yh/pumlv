@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 import { useToggleSet } from "../hooks/useToggleSet";
@@ -43,19 +43,19 @@ export function SourceView({ source }: Props): JSX.Element {
   const [highlighted, setHighlighted] = useState<Highlighted | null>(null);
   const [folded, toggle] = useToggleSet<number>();
 
-  const lines = useMemo(() => source.split(/\r?\n/), [source]);
-  const ranges = useMemo<FoldRange[]>(() => computeFoldRanges(source), [source]);
-  const foldStarts = useMemo(() => new Set(ranges.map((r) => r.startLine)), [ranges]);
+  const lines = source.split(/\r?\n/);
+  const ranges: FoldRange[] = computeFoldRanges(source);
+  const foldStarts = new Set(ranges.map((r) => r.startLine));
 
-  const tokenLines = useMemo<ShikiToken[][]>(() => {
+  const tokenLines: ShikiToken[][] = (() => {
     const base = highlighted?.tokens ?? lines.map((l) => [{ content: l }]);
     if (base.length >= lines.length) return base;
     const padded = base.slice();
     while (padded.length < lines.length) padded.push([{ content: "" }]);
     return padded;
-  }, [highlighted, lines]);
+  })();
 
-  const hidden = useMemo(() => hiddenLines(ranges, folded), [ranges, folded]);
+  const hidden = hiddenLines(ranges, folded);
 
   useEffect(() => {
     let cancelled = false;

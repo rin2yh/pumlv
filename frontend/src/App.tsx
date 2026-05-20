@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { fetchFiles, fetchFileSource, type FileEntry } from "./api/files";
 import { subscribe } from "./api/events";
 import { renderPlantUML } from "./plantuml/renderer";
@@ -25,7 +25,7 @@ export default function App(): JSX.Element {
 
   const renderSeq = useRef(0);
 
-  const reloadFiles = useCallback(async () => {
+  const reloadFiles = async () => {
     const list = await fetchFiles();
 
     setFiles(list);
@@ -37,9 +37,9 @@ export default function App(): JSX.Element {
 
       return list[0]?.path ?? null;
     });
-  }, []);
+  };
 
-  const reloadActive = useCallback(async (path: string) => {
+  const reloadActive = async (path: string) => {
     const seq = ++renderSeq.current;
 
     setRender({ kind: "loading" });
@@ -73,7 +73,7 @@ export default function App(): JSX.Element {
         setRender({ kind: "error", message });
       }
     }
-  }, []);
+  };
 
   useEffect(() => {
     void reloadFiles();
