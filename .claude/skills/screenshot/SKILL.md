@@ -21,11 +21,11 @@ make screenshot
 
 When you just need one screenshot of a specific UI region (e.g. the Source tab after a fix, the preview of one file), write a one-off Playwright script under `/tmp/`. **Do not extend `screenshots.mjs`** — that script is the gallery generator and writes into a tracked directory.
 
-Reuse `screenshots.mjs`'s plumbing instead of repasting it — it exports `withPumlvPage`, `spawnPumlv`, and `waitForServer`. The ad-hoc script imports `withPumlvPage` from `/home/user/pumlv/internal/frontend/scripts/screenshots.mjs` and inside its callback:
+The pattern (server spawn + cleanup, `waitForServer`, `chromium.launch({ channel: "chrome" })`, viewport + context, file-button click) is already laid out in `screenshots.mjs` below. Copy the parts you need into your one-off script and swap the gallery loop for:
 
-- Picks a file with `page.getByRole("button", { name: "<file>.puml" }).click()`.
-- Picks a region: `page.getByAltText("preview")` for the rendered SVG, `page.getByRole("region", { name: "Source" })` for the source tab, or `page` for the whole viewport.
-- Waits for the region to settle. For the source tab, `await region.getByText("@startuml").first().waitFor()` then `delay(800)` for the syntax highlighter. For the preview, wait until the SVG has actually rendered:
+- A `page.getByRole("button", { name: "<file>.puml" }).click()` to pick the file.
+- A region to shoot: `page.getByAltText("preview")` for the rendered SVG, `page.getByRole("region", { name: "Source" })` for the source tab, or `page` for the whole viewport.
+- A wait for the region to settle. For the source tab: `await region.getByText("@startuml").first().waitFor()` then `await delay(800)` for the syntax highlighter. For the preview, wait until the SVG has actually rendered:
 
   ```js
   await page.waitForFunction(() => {
@@ -34,9 +34,9 @@ Reuse `screenshots.mjs`'s plumbing instead of repasting it — it exports `withP
   }, null, { timeout: 90_000 });
   ```
 
-- Calls `region.screenshot({ path })`. Use a `/tmp/` path so it stays out of the repo.
+- A `region.screenshot({ path: "/tmp/.../shot.png" })` — keep the output under `/tmp/` so it stays out of the repo.
 
-The full source — helper signatures, defaults, and the gallery loop's example usage — is right here for reference:
+The full source — the exact server spawn, cleanup wiring, `waitForServer`, and chromium launch — is right here for reference and copy-paste:
 
 @internal/frontend/scripts/screenshots.mjs
 
@@ -56,7 +56,7 @@ If the two PNGs come out identical (same MD5), the binary wasn't actually rebuil
 
 ## Recovering from failures
 
-- **`Chromium distribution 'chrome' is not found …`** — `withPumlvPage` defaults to `launchOptions: { channel: "chrome" }`. Try `cd internal/frontend && pnpm exec playwright install chrome`. If the sandbox blocks the download, point Playwright at a preinstalled chromium under `/opt/pw-browsers/<version>/chrome-linux/chrome` — pass `launchOptions: { executablePath: "<path>" }` to `withPumlvPage` for ad-hoc, or run `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=<path> make screenshot` for the gallery. Do **not** commit that path or bake it into `screenshots.mjs`.
+- **`Chromium distribution 'chrome' is not found …`** — `screenshots.mjs` uses `chromium.launch({ channel: "chrome" })`. Try `cd internal/frontend && pnpm exec playwright install chrome`. If the sandbox blocks the download, point Playwright at a preinstalled chromium under `/opt/pw-browsers/<version>/chrome-linux/chrome` — in the ad-hoc script, swap the launch for `chromium.launch({ executablePath: "<path>", headless: true })`; for the gallery, run `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=<path> make screenshot`. Do **not** commit that path or bake it into `screenshots.mjs`.
 
 - **`make build` fails with `pattern all:dist: no matching files found`** — the frontend bundle wasn't generated. Re-run `make build` from a clean tree (the `go:generate` directive runs `pnpm install && pnpm run build`).
 
