@@ -8,7 +8,7 @@ import { useServerEvents } from "./hooks/useServerEvents";
 import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./sourcePanel";
 
 export default function App(): JSX.Element {
-  const { files, active, setActive, reload: reloadFiles } = useFileList();
+  const { files, active, select, reload: reloadFiles } = useFileList();
   const { source, render, reload: reloadActive } = useActiveRender(active);
   const [sourceOpen, setSourceOpen] = useState<boolean>(true);
 
@@ -30,7 +30,7 @@ export default function App(): JSX.Element {
           <p className="text-xs text-slate-500">{files.length} file(s)</p>
         </div>
 
-        <FileTree files={files} active={active} onSelect={setActive} />
+        <FileTree files={files} active={active} onSelect={select} />
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">

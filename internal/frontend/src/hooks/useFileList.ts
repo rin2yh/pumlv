@@ -4,7 +4,7 @@ import { fetchFiles, type FileEntry } from "../api/files";
 export interface UseFileListResult {
   files: FileEntry[];
   active: string | null;
-  setActive: (path: string | null) => void;
+  select: (path: string) => void;
   reload: () => void;
 }
 
@@ -26,7 +26,7 @@ export function useFileList(): UseFileListResult {
   return {
     files,
     active,
-    setActive,
+    select: (path) => setActive(path),
     reload: () => setReloadKey((k) => k + 1),
   };
 }

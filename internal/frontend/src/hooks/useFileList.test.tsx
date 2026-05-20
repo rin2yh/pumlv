@@ -63,13 +63,13 @@ describe("useFileList", () => {
     expect(captured!.active).toBeNull();
   });
 
-  it("setActive updates the active path", async () => {
+  it("select updates the active path", async () => {
     mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml")]);
 
     render(<Harness />);
     await flush();
 
-    act(() => captured!.setActive("/b.puml"));
+    act(() => captured!.select("/b.puml"));
     expect(captured!.active).toBe("/b.puml");
   });
 
@@ -78,7 +78,7 @@ describe("useFileList", () => {
     render(<Harness />);
     await flush();
 
-    act(() => captured!.setActive("/b.puml"));
+    act(() => captured!.select("/b.puml"));
 
     mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml"), file("/c.puml")]);
     act(() => captured!.reload());
@@ -93,7 +93,7 @@ describe("useFileList", () => {
     render(<Harness />);
     await flush();
 
-    act(() => captured!.setActive("/b.puml"));
+    act(() => captured!.select("/b.puml"));
 
     mockedFetchFiles.mockResolvedValueOnce([file("/c.puml"), file("/d.puml")]);
     act(() => captured!.reload());
