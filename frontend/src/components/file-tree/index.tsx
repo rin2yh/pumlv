@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from "react";
+import type { JSX } from "react";
 import type { FileEntry } from "../../api/files";
 import { useToggleSet } from "../../hooks/useToggleSet";
 import { buildTree, flatten } from "./tree";
@@ -12,9 +12,9 @@ interface Props {
 }
 
 export function FileTree({ files, active, onSelect }: Props): JSX.Element {
-  const tree = useMemo(() => buildTree(files), [files]);
+  const tree = buildTree(files);
   const [collapsed, toggle] = useToggleSet<string>();
-  const rows = useMemo(() => flatten(tree, collapsed), [tree, collapsed]);
+  const rows = flatten(tree, collapsed);
 
   if (files.length === 0) {
     return <p className="px-4 py-3 text-sm text-slate-500">no files found</p>;
