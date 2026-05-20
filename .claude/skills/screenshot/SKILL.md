@@ -21,46 +21,24 @@ make screenshot
 
 When you just need one screenshot of a specific UI region (e.g. the Source tab after a fix, the preview of one file), write a one-off Playwright script under `/tmp/`. **Do not extend `screenshots.mjs`** — that script is the gallery generator and writes into a tracked directory.
 
-Reuse its server/browser plumbing instead of repasting it. `screenshots.mjs` exports `withPumlvPage`, `spawnPumlv`, and `waitForServer`; the ad-hoc script just describes what to click and shoot:
+Reuse `screenshots.mjs`'s plumbing instead of repasting it — it exports `withPumlvPage`, `spawnPumlv`, and `waitForServer`. The ad-hoc script imports `withPumlvPage` from `/home/user/pumlv/internal/frontend/scripts/screenshots.mjs` and inside its callback:
 
-```js
-import { withPumlvPage } from "/home/user/pumlv/internal/frontend/scripts/screenshots.mjs";
-import { setTimeout as delay } from "node:timers/promises";
+- Picks a file with `page.getByRole("button", { name: "<file>.puml" }).click()`.
+- Picks a region: `page.getByAltText("preview")` for the rendered SVG, `page.getByRole("region", { name: "Source" })` for the source tab, or `page` for the whole viewport.
+- Waits for the region to settle. For the source tab, `await region.getByText("@startuml").first().waitFor()` then `delay(800)` for the syntax highlighter. For the preview, wait until the SVG has actually rendered:
 
-const DIR = "/tmp/pumlv-shot";  // contains the .puml file(s) to render
-const OUT = `${DIR}/shot.png`;
+  ```js
+  await page.waitForFunction(() => {
+    const img = document.querySelector('img[alt="preview"]');
+    return img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0;
+  }, null, { timeout: 90_000 });
+  ```
 
-await withPumlvPage(
-  {
-    dir: DIR,
-    port: 8770,                                  // avoid the e2e default 8766
-    deviceScaleFactor: 2,
-    // launchOptions: { executablePath: "<path>" } // see Recovery below
-  },
-  async ({ page }) => {
-    await page.getByRole("button", { name: "<file>.puml" }).click();
+- Calls `region.screenshot({ path })`. Use a `/tmp/` path so it stays out of the repo.
 
-    // Pick the region to shoot:
-    //   page.getByAltText("preview")                 — the rendered SVG
-    //   page.getByRole("region", { name: "Source" }) — the source tab
-    //   page                                          — the whole viewport
-    const target = page.getByRole("region", { name: "Source" });
-    await target.getByText("@startuml").first().waitFor({ timeout: 30_000 });
-    await delay(800); // let the syntax highlighter settle
+The full source — helper signatures, defaults, and the gallery loop's example usage — is right here for reference:
 
-    await target.screenshot({ path: OUT });
-  },
-);
-```
-
-For the preview, wait until the SVG has actually rendered before shooting:
-
-```js
-await page.waitForFunction(() => {
-  const img = document.querySelector('img[alt="preview"]');
-  return img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0;
-}, null, { timeout: 90_000 });
-```
+@internal/frontend/scripts/screenshots.mjs
 
 After capturing, deliver the PNG to the user with the `SendUserFile` tool and a concise caption. Don't claim "screenshot taken" without actually sending the file.
 
