@@ -2,10 +2,9 @@
 
 A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the diagram opens in your browser, re-rendering automatically whenever you save the file. No Java, no Docker, no external server required.
 
-- File-change detection → automatic re-render over SSE
 - Browser UI with file tree, SVG preview, and syntax-highlighted source view
-- Works with files and directories (recursive); multiple arguments allowed
-- Configurable file extensions (`.puml`, `.plantuml`, `.iuml`, `.wsd` by default)
+- Pan/zoom on the preview and code folding on the source
+- Auto re-render over SSE on every save — no manual refresh
 
 ## Installation
 
