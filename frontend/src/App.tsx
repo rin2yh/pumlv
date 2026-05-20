@@ -22,6 +22,11 @@ export default function App(): JSX.Element {
   const [filesReloadKey, setFilesReloadKey] = useState(0);
   const [activeReloadKey, setActiveReloadKey] = useState(0);
 
+  // Synced during render so the SSE callback (which lives across active
+  // changes) reads the current path without re-subscribing per file switch.
+  const activeRef = useRef<string | null>(null);
+  activeRef.current = active;
+
   const renderSeq = useRef(0);
 
   useEffect(() => {
@@ -64,14 +69,14 @@ export default function App(): JSX.Element {
   useEffect(() => {
     const unsubscribe = subscribe((ev) => {
       if (ev.type === "changed") {
-        if (ev.path === active) setActiveReloadKey((k) => k + 1);
+        if (ev.path === activeRef.current) setActiveReloadKey((k) => k + 1);
       } else if (ev.type === "tree") {
         setFilesReloadKey((k) => k + 1);
       }
     });
 
     return unsubscribe;
-  }, [active]);
+  }, []);
 
   const activeName = files.find((f) => f.path === active)?.rel ?? "";
   const toggleLabel = sourceOpen ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
