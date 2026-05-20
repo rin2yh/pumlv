@@ -1,8 +1,9 @@
 import { loadPlantUMLModule } from "./bootstrap";
+import { splitLines } from "../utils/lines";
 
 export async function renderPlantUML(source: string): Promise<string> {
   const mod = await loadPlantUMLModule();
-  const lines = source.split(/\r\n|\r|\n/);
+  const lines = splitLines(source);
   const svg = await new Promise<string>((resolve, reject) => {
     mod.renderToString(lines, resolve, (msg) => reject(new Error(msg)));
   });

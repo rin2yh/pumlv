@@ -1,5 +1,6 @@
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
+import { splitLines } from "../../utils/lines";
 
 export interface ShikiToken {
   content: string;
@@ -41,7 +42,7 @@ export async function highlight(source: string): Promise<Highlighted | null> {
       theme: "github-light",
     });
     const tokens = (result.tokens as ShikiToken[][]).slice();
-    const lineCount = source.split(/\r?\n/).length;
+    const lineCount = splitLines(source).length;
     while (tokens.length < lineCount) tokens.push([{ content: "" }]);
     return {
       tokens,
