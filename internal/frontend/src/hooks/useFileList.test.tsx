@@ -2,6 +2,7 @@ import { act, type JSX } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFiles, type FileEntry } from "../api/files";
+import { flush } from "../test/flush";
 import { setupRender } from "../test/render";
 import { useFileList, type UseFileListResult } from "./useFileList";
 
@@ -26,12 +27,6 @@ const file = (path: string): FileEntry => ({
   name: path,
   source: "/",
 });
-
-const flush = async (): Promise<void> => {
-  await act(async () => {
-    await Promise.resolve();
-  });
-};
 
 beforeEach(() => {
   captured = null;

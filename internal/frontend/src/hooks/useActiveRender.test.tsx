@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFileSource } from "../api/files";
 import { renderPlantUML } from "../plantuml/renderer";
+import { flush } from "../test/flush";
 import { setupRender } from "../test/render";
 import { useActiveRender, type UseActiveRenderResult } from "./useActiveRender";
 
@@ -28,14 +29,6 @@ function Probe({ initial = null }: { initial?: string | null }): JSX.Element {
 }
 
 const render = setupRender();
-
-const flush = async (): Promise<void> => {
-  await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-  });
-};
 
 const deferred = <T,>(): {
   promise: Promise<T>;
@@ -75,7 +68,7 @@ describe("useActiveRender", () => {
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,svg");
 
     render(<Probe initial="/a.puml" />);
-    await flush();
+    await flush(3);
 
     expect(captured!.source).toBe("@startuml\n@enduml");
     expect(captured!.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,svg" });
@@ -124,7 +117,7 @@ describe("useActiveRender", () => {
   ])("reports error state when $name", async ({ setup, message }) => {
     setup();
     render(<Probe initial="/a.puml" />);
-    await flush();
+    await flush(3);
 
     expect(captured!.render).toEqual({ kind: "error", message });
   });
@@ -133,7 +126,7 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockResolvedValueOnce("source");
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,x");
     render(<Probe initial="/a.puml" />);
-    await flush();
+    await flush(3);
 
     act(() => setActiveExternal!(null));
     expect(captured!.source).toBe("");
@@ -167,12 +160,12 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockResolvedValue("source");
     mockedRenderPlantUML.mockResolvedValue("data:image/svg+xml,x");
     render(<Probe initial="/a.puml" />);
-    await flush();
+    await flush(3);
 
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(1);
 
     act(() => captured!.reload());
-    await flush();
+    await flush(3);
 
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(2);
   });
