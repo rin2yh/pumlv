@@ -83,24 +83,21 @@ interface HiddenCase {
   name: string;
   ranges: FoldRange[];
   folded: number[];
-  total: number;
-  expected: boolean[];
+  expected: number[];
 }
 
 const hiddenCases: HiddenCase[] = [
   {
-    name: "hides lines after a folded range's start through its end",
+    name: "hides lines from start+1 through end of a folded range",
     ranges: [{ startLine: 1, endLine: 4 }],
     folded: [1],
-    total: 6,
-    expected: [false, false, true, true, true, false],
+    expected: [2, 3, 4],
   },
   {
-    name: "returns all-false when nothing is folded",
+    name: "returns an empty set when nothing is folded",
     ranges: [{ startLine: 0, endLine: 2 }],
     folded: [],
-    total: 3,
-    expected: [false, false, false],
+    expected: [],
   },
   {
     name: "hides nested ranges when only the outer is folded",
@@ -109,22 +106,15 @@ const hiddenCases: HiddenCase[] = [
       { startLine: 1, endLine: 3 },
     ],
     folded: [0],
-    total: 5,
-    expected: [false, true, true, true, true],
-  },
-  {
-    name: "clamps end line to the available total",
-    ranges: [{ startLine: 0, endLine: 10 }],
-    folded: [0],
-    total: 3,
-    expected: [false, true, true],
+    expected: [1, 2, 3, 4],
   },
 ];
 
 describe("hiddenLines", () => {
-  for (const { name, ranges, folded, total, expected } of hiddenCases) {
+  for (const { name, ranges, folded, expected } of hiddenCases) {
     it(name, () => {
-      expect(hiddenLines(ranges, new Set(folded), total)).toEqual(expected);
+      const got = [...hiddenLines(ranges, new Set(folded))].toSorted((a, b) => a - b);
+      expect(got).toEqual(expected);
     });
   }
 });

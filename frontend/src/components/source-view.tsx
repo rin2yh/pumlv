@@ -44,11 +44,7 @@ export function SourceView({ source }: Props): JSX.Element {
 
   const lines = useMemo(() => source.split(/\r?\n/), [source]);
   const ranges = useMemo<FoldRange[]>(() => computeFoldRanges(source), [source]);
-  const rangeByStart = useMemo(() => {
-    const m = new Map<number, FoldRange>();
-    for (const r of ranges) m.set(r.startLine, r);
-    return m;
-  }, [ranges]);
+  const foldStarts = useMemo(() => new Set(ranges.map((r) => r.startLine)), [ranges]);
 
   const tokenLines = useMemo<ShikiToken[][]>(() => {
     const base = highlighted?.tokens ?? lines.map((l) => [{ content: l }]);
@@ -58,10 +54,7 @@ export function SourceView({ source }: Props): JSX.Element {
     return padded;
   }, [highlighted, lines]);
 
-  const hidden = useMemo(
-    () => hiddenLines(ranges, folded, lines.length),
-    [ranges, folded, lines.length],
-  );
+  const hidden = useMemo(() => hiddenLines(ranges, folded), [ranges, folded]);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,16 +107,16 @@ export function SourceView({ source }: Props): JSX.Element {
       }}
     >
       {tokenLines.map((tokens, i) => {
-        if (hidden[i]) return null;
-        const range = rangeByStart.get(i);
-        const isFolded = range !== undefined && folded.has(i);
+        if (hidden.has(i)) return null;
+        const isStart = foldStarts.has(i);
+        const isFolded = isStart && folded.has(i);
         return (
           <div key={i} className="flex items-start">
             <span
               className="inline-block w-4 shrink-0 select-none text-center text-slate-400"
-              aria-hidden={range === undefined}
+              aria-hidden={!isStart}
             >
-              {range !== undefined && (
+              {isStart && (
                 <button
                   type="button"
                   aria-label={isFolded ? UNFOLD_LABEL : FOLD_LABEL}

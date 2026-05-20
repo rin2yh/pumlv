@@ -6,23 +6,29 @@ export interface FoldRange {
 export const FOLD_LABEL = "fold block";
 export const UNFOLD_LABEL = "unfold block";
 
-// PlantUML block comments (/'...'/), strings ("..."), and line comments ('...).
-// Matched together so brace counting only sees structural braces.
-const STRING_OR_COMMENT = /\/'[\s\S]*?'\/|"(?:\\.|[^"\\])*"|'[^\n]*/g;
+// PlantUML block comments, strings, line comments, and structural braces /
+// newlines, in a single token alternation. Anything not matched (identifiers,
+// whitespace, etc.) is simply skipped between matches.
+const TOKEN = /\/'[\s\S]*?'\/|"(?:\\.|[^"\\])*"|'[^\n]*|[{}\n]/g;
 
 export function computeFoldRanges(source: string): FoldRange[] {
-  const masked = source.replace(STRING_OR_COMMENT, (m) => m.replace(/[^\n]/g, " "));
   const stack: number[] = [];
   const ranges: FoldRange[] = [];
   let line = 0;
 
-  for (const c of masked) {
-    if (c === "\n") line++;
-    else if (c === "{") stack.push(line);
-    else if (c === "}") {
+  for (const m of source.matchAll(TOKEN)) {
+    const tok = m[0];
+    if (tok === "{") {
+      stack.push(line);
+    } else if (tok === "}") {
       const start = stack.pop();
       if (start !== undefined && line > start) {
         ranges.push({ startLine: start, endLine: line });
+      }
+    } else {
+      // Newline token, or a string / block comment that may straddle lines.
+      for (let i = 0; i < tok.length; i++) {
+        if (tok.charCodeAt(i) === 10) line++;
       }
     }
   }
@@ -31,16 +37,11 @@ export function computeFoldRanges(source: string): FoldRange[] {
   return ranges;
 }
 
-export function hiddenLines(
-  ranges: FoldRange[],
-  folded: ReadonlySet<number>,
-  total: number,
-): boolean[] {
-  const hidden: boolean[] = Array.from({ length: total }, () => false);
+export function hiddenLines(ranges: FoldRange[], folded: ReadonlySet<number>): Set<number> {
+  const hidden = new Set<number>();
   for (const r of ranges) {
     if (!folded.has(r.startLine)) continue;
-    const end = Math.min(r.endLine, total - 1);
-    for (let i = r.startLine + 1; i <= end; i++) hidden[i] = true;
+    for (let i = r.startLine + 1; i <= r.endLine; i++) hidden.add(i);
   }
   return hidden;
 }
