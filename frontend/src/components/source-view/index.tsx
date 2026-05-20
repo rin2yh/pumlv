@@ -16,13 +16,10 @@ export function SourceView({ source }: Props): JSX.Element {
   const ranges = useMemo<FoldRange[]>(() => computeFoldRanges(source), [source]);
   const foldStarts = useMemo(() => new Set(ranges.map((r) => r.startLine)), [ranges]);
 
-  const tokenLines = useMemo<ShikiToken[][]>(() => {
-    const base = highlighted?.tokens ?? lines.map((l) => [{ content: l }]);
-    if (base.length >= lines.length) return base;
-    const padded = base.slice();
-    while (padded.length < lines.length) padded.push([{ content: "" }]);
-    return padded;
-  }, [highlighted, lines]);
+  const tokenLines = useMemo<ShikiToken[][]>(
+    () => highlighted?.tokens ?? lines.map((l) => [{ content: l }]),
+    [highlighted, lines],
+  );
 
   const hidden = useMemo(() => hiddenLines(ranges, folded), [ranges, folded]);
 

@@ -63,6 +63,23 @@ describe("highlight", () => {
     expect(await highlight("x")).toBeNull();
   });
 
+  it("returns null when createHighlighterCore rejects", async () => {
+    createHighlighterCoreMock.mockRejectedValue(new Error("wasm load failed"));
+    const { highlight } = await import("./highlighter");
+    expect(await highlight("x")).toBeNull();
+  });
+
+  it("retries createHighlighterCore after a rejection (does not poison the cache)", async () => {
+    createHighlighterCoreMock
+      .mockRejectedValueOnce(new Error("transient"))
+      .mockResolvedValueOnce({ codeToTokens: codeToTokensMock });
+    codeToTokensMock.mockReturnValue({ tokens: [], fg: "", bg: "" });
+    const { highlight } = await import("./highlighter");
+    expect(await highlight("a")).toBeNull();
+    expect(await highlight("b")).not.toBeNull();
+    expect(createHighlighterCoreMock).toHaveBeenCalledTimes(2);
+  });
+
   it("caches the highlighter across calls (createHighlighterCore runs once)", async () => {
     codeToTokensMock.mockReturnValue({ tokens: [], fg: "", bg: "" });
     const { highlight } = await import("./highlighter");
@@ -70,5 +87,27 @@ describe("highlight", () => {
     await highlight("b");
     await highlight("c");
     expect(createHighlighterCoreMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("pads tokens to match the source line count when shiki returns fewer rows", async () => {
+    codeToTokensMock.mockReturnValue({
+      tokens: [[{ content: "line0" }]],
+      fg: "",
+      bg: "",
+    });
+    const { highlight } = await import("./highlighter");
+    const result = await highlight("line0\nline1\nline2");
+    expect(result!.tokens).toHaveLength(3);
+    expect(result!.tokens[0]).toEqual([{ content: "line0" }]);
+    expect(result!.tokens[1]).toEqual([{ content: "" }]);
+    expect(result!.tokens[2]).toEqual([{ content: "" }]);
+  });
+
+  it("does not truncate when shiki returns at least the source line count", async () => {
+    const shikiTokens = [[{ content: "line0" }], [{ content: "line1" }], [{ content: "line2" }]];
+    codeToTokensMock.mockReturnValue({ tokens: shikiTokens, fg: "", bg: "" });
+    const { highlight } = await import("./highlighter");
+    const result = await highlight("line0\nline1\nline2");
+    expect(result!.tokens).toHaveLength(3);
   });
 });
