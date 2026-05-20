@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
+import { useToggleSet } from "../hooks/useToggleSet";
 import {
   computeFoldRanges,
   FOLD_LABEL,
@@ -9,7 +10,7 @@ import {
   type FoldRange,
 } from "./source-fold";
 
-interface ShikiToken {
+export interface ShikiToken {
   content: string;
   color?: string;
   fontStyle?: number;
@@ -40,7 +41,7 @@ interface Props {
 
 export function SourceView({ source }: Props): JSX.Element {
   const [highlighted, setHighlighted] = useState<Highlighted | null>(null);
-  const [folded, setFolded] = useState<Set<number>>(() => new Set());
+  const [folded, toggle] = useToggleSet<number>();
 
   const lines = useMemo(() => source.split(/\r?\n/), [source]);
   const ranges = useMemo<FoldRange[]>(() => computeFoldRanges(source), [source]);
@@ -88,15 +89,6 @@ export function SourceView({ source }: Props): JSX.Element {
   if (!source) {
     return <p className="px-4 py-3 text-sm text-slate-400">no source</p>;
   }
-
-  const toggle = (start: number): void => {
-    setFolded((prev) => {
-      const next = new Set(prev);
-      if (next.has(start)) next.delete(start);
-      else next.add(start);
-      return next;
-    });
-  };
 
   return (
     <pre

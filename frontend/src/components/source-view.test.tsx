@@ -2,11 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { setupRender } from "../test/render";
 import { FOLD_LABEL, UNFOLD_LABEL } from "./source-fold";
-
-interface ShikiToken {
-  content: string;
-  color?: string;
-}
+import type { ShikiToken } from "./source-view";
 
 let codeToTokensMock: ReturnType<typeof vi.fn>;
 
