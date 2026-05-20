@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { act } from "react";
+import { act, type ComponentProps } from "react";
 import { LineRow } from "./line-row";
 import { FOLD_LABEL, UNFOLD_LABEL } from "./source-fold";
 import { setupRender } from "../../test/render";
@@ -11,20 +11,33 @@ const tokens = [
   { content: "{", color: "#222" },
 ];
 
+const renderLine = (overrides: Partial<ComponentProps<typeof LineRow>> = {}): void => {
+  render(
+    <LineRow
+      tokens={tokens}
+      depth={0}
+      isFoldStart={false}
+      isFolded={false}
+      onToggle={() => {}}
+      {...overrides}
+    />,
+  );
+};
+
 describe("LineRow", () => {
   it("renders each token's content", () => {
-    render(<LineRow tokens={tokens} isFoldStart={false} isFolded={false} onToggle={() => {}} />);
+    renderLine();
     expect(document.body.textContent).toContain("class A {");
   });
 
   it("applies the token color as an inline style", () => {
-    render(<LineRow tokens={tokens} isFoldStart={false} isFolded={false} onToggle={() => {}} />);
+    renderLine();
     const colored = Array.from(document.querySelectorAll("span[style]"));
     expect(colored.some((s) => (s as HTMLElement).style.color === "rgb(17, 17, 17)")).toBe(true);
   });
 
   it("omits the gutter button when isFoldStart=false", () => {
-    render(<LineRow tokens={tokens} isFoldStart={false} isFolded={false} onToggle={() => {}} />);
+    renderLine();
     expect(document.querySelector("button")).toBeNull();
   });
 
@@ -34,7 +47,7 @@ describe("LineRow", () => {
   ])(
     "renders the $label toggle with chevron '$chevron' when isFolded=$isFolded",
     ({ isFolded, label, chevron, expanded }) => {
-      render(<LineRow tokens={tokens} isFoldStart isFolded={isFolded} onToggle={() => {}} />);
+      renderLine({ isFoldStart: true, isFolded });
       const button = document.querySelector(`button[aria-label="${label}"]`)!;
       expect(button).not.toBeNull();
       expect(button.getAttribute("aria-expanded")).toBe(expanded);
@@ -44,7 +57,7 @@ describe("LineRow", () => {
 
   it("calls onToggle when the gutter button is clicked", () => {
     const onToggle = vi.fn();
-    render(<LineRow tokens={tokens} isFoldStart isFolded={false} onToggle={onToggle} />);
+    renderLine({ isFoldStart: true, onToggle });
     act(() => {
       document.querySelector<HTMLButtonElement>("button")!.click();
     });
@@ -52,10 +65,20 @@ describe("LineRow", () => {
   });
 
   it("renders the fold ellipsis only when isFolded=true", () => {
-    render(<LineRow tokens={tokens} isFoldStart isFolded={false} onToggle={() => {}} />);
+    renderLine({ isFoldStart: true });
     expect(document.body.textContent).not.toContain("…");
 
-    render(<LineRow tokens={tokens} isFoldStart isFolded onToggle={() => {}} />);
+    renderLine({ isFoldStart: true, isFolded: true });
     expect(document.body.textContent).toContain("…");
+  });
+
+  it.each([
+    { depth: 0, expected: "0px" },
+    { depth: 1, expected: "12px" },
+    { depth: 2, expected: "24px" },
+  ])("applies paddingLeft $expected at depth $depth", ({ depth, expected }) => {
+    renderLine({ depth, isFoldStart: true });
+    const row = document.querySelector("button")!.closest("div") as HTMLElement;
+    expect(row.style.paddingLeft).toBe(expected);
   });
 });
