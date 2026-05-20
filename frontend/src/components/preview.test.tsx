@@ -6,7 +6,7 @@ import { setupRender } from "../test/render";
 const mockZoomIn = vi.fn();
 const mockZoomOut = vi.fn();
 const mockResetTransform = vi.fn();
-const mockSetTransform = vi.fn();
+const mockSetTransformState = vi.fn();
 
 let mockScale = 1;
 const mockTransformState = { scale: 1, positionX: 0, positionY: 0 };
@@ -18,11 +18,13 @@ vi.mock("react-zoom-pan-pinch", () => ({
     zoomIn: mockZoomIn,
     zoomOut: mockZoomOut,
     resetTransform: mockResetTransform,
-    setTransform: mockSetTransform,
   }),
   useTransformComponent: (cb: (s: { state: { scale: number } }) => unknown) =>
     cb({ state: { scale: mockScale } }),
-  useTransformContext: () => ({ transformState: mockTransformState }),
+  useTransformContext: () => ({
+    transformState: mockTransformState,
+    setTransformState: mockSetTransformState,
+  }),
 }));
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
@@ -118,20 +120,20 @@ describe("Preview", () => {
     ])("$key shifts the transform by ($dx, $dy)", ({ key, dx, dy }) => {
       render(<Preview svg={SAMPLE_SVG} />);
       pressKey(key);
-      expect(mockSetTransform).toHaveBeenCalledWith(100 + dx, 200 + dy, 1, 0);
+      expect(mockSetTransformState).toHaveBeenCalledWith(1, 100 + dx, 200 + dy);
     });
 
     it("uses a larger step when Shift is held", () => {
       render(<Preview svg={SAMPLE_SVG} />);
       pressKey("ArrowRight", { shiftKey: true });
-      expect(mockSetTransform).toHaveBeenCalledWith(100 - 200, 200, 1, 0);
+      expect(mockSetTransformState).toHaveBeenCalledWith(1, 100 - 200, 200);
     });
 
     it("ignores non-arrow keys", () => {
       render(<Preview svg={SAMPLE_SVG} />);
       pressKey("a");
       pressKey("Enter");
-      expect(mockSetTransform).not.toHaveBeenCalled();
+      expect(mockSetTransformState).not.toHaveBeenCalled();
     });
 
     it.each(["INPUT", "TEXTAREA"])("ignores arrows while typing in a %s", (tagName) => {
@@ -142,7 +144,7 @@ describe("Preview", () => {
       act(() => {
         editable.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       });
-      expect(mockSetTransform).not.toHaveBeenCalled();
+      expect(mockSetTransformState).not.toHaveBeenCalled();
       document.body.removeChild(editable);
     });
 
@@ -151,7 +153,7 @@ describe("Preview", () => {
       pressKey("ArrowRight");
       mockTransformState.positionX = 999;
       pressKey("ArrowRight");
-      expect(mockSetTransform).toHaveBeenNthCalledWith(2, 999 - 50, 200, 1, 0);
+      expect(mockSetTransformState).toHaveBeenNthCalledWith(2, 1, 999 - 50, 200);
     });
   });
 });

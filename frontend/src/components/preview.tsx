@@ -64,10 +64,10 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 function KeyboardPan(): null {
-  // useTransformContext exposes the live (non-reactive) ZoomPanPinch instance,
-  // so the handler reads the latest position without re-subscribing on every move.
+  // useTransformContext returns a stable instance, so the listener is registered
+  // exactly once. useControls returns a fresh object each render, which would
+  // cause the keydown listener to re-register on every parent re-render.
   const ctx = useTransformContext();
-  const { setTransform } = useControls();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -93,11 +93,11 @@ function KeyboardPan(): null {
       }
       e.preventDefault();
       const { positionX, positionY, scale } = ctx.transformState;
-      setTransform(positionX + dx, positionY + dy, scale, 0);
+      ctx.setTransformState(scale, positionX + dx, positionY + dy);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ctx, setTransform]);
+  }, [ctx]);
 
   return null;
 }
