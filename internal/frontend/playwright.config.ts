@@ -21,7 +21,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `../pumlv --no-open --host 127.0.0.1 --port ${PORT} ../examples`,
+    command: `../../pumlv --no-open --host 127.0.0.1 --port ${PORT} ../../examples`,
     url: `http://127.0.0.1:${PORT}/api/files`,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

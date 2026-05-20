@@ -8,7 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "@playwright/test";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(here, "..", "..");
+const ROOT = resolve(here, "..", "..", "..");
 const BIN = resolve(ROOT, "pumlv");
 const EXAMPLES = resolve(ROOT, "examples");
 const IMAGES_DIR = resolve(ROOT, "images");

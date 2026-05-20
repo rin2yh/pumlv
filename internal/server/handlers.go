@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rin2yh/pumlv/static"
+	"github.com/rin2yh/pumlv/internal/static"
 )
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
