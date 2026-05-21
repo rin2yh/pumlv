@@ -30,6 +30,12 @@ describe("LineRow", () => {
     expect(document.body.textContent).toContain("class A {");
   });
 
+  it("applies the token color as an inline style", () => {
+    renderLine();
+    const colored = Array.from(document.querySelectorAll("span[style]"));
+    expect(colored.some((s) => (s as HTMLElement).style.color === "rgb(17, 17, 17)")).toBe(true);
+  });
+
   it("omits the gutter button when isFoldStart=false", () => {
     renderLine();
     expect(document.querySelector("button")).toBeNull();
@@ -64,5 +70,15 @@ describe("LineRow", () => {
 
     renderLine({ isFoldStart: true, isFolded: true });
     expect(document.body.textContent).toContain("…");
+  });
+
+  it.each([
+    { depth: 0, expected: "0px" },
+    { depth: 1, expected: "12px" },
+    { depth: 2, expected: "24px" },
+  ])("applies paddingLeft $expected at depth $depth", ({ depth, expected }) => {
+    renderLine({ depth, isFoldStart: true });
+    const row = document.querySelector("button")!.closest("div") as HTMLElement;
+    expect(row.style.paddingLeft).toBe(expected);
   });
 });

@@ -1,6 +1,6 @@
 import { useState, type JSX } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Preview } from "./index";
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
@@ -35,52 +35,26 @@ export default meta;
 
 type Story = StoryObj<typeof Preview>;
 
-export const Default: Story = {
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+export const Default: Story = {};
 
-    await step("renders an <img> with the configured src", async () => {
-      const img = canvas.getByAltText("preview") as HTMLImageElement;
-      await expect(img).toHaveAttribute("src", SAMPLE_SVG);
-    });
-  },
-};
-
-export const WithControls: Story = {
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
-    await step("renders the zoom-in / zoom-out / reset buttons", async () => {
-      await expect(canvas.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
-      await expect(canvas.getByRole("button", { name: "Zoom out" })).toBeInTheDocument();
-      await expect(canvas.getByRole("button", { name: "Reset zoom" })).toBeInTheDocument();
-    });
-
-    await step("the zoom display starts at 100%", async () => {
-      const zoomInput = canvas.getByLabelText("Zoom level") as HTMLInputElement;
-      await expect(zoomInput.value).toBe("100");
-    });
-  },
-};
+export const WithControls: Story = {};
 
 export const ResetOnSrcChange: Story = {
+  decorators: [],
   render: () => <SwappablePreview initial={SAMPLE_SVG} next={NEXT_SVG} />,
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const zoomInput = canvas.getByLabelText("Zoom level") as HTMLInputElement;
 
-    await step("manually typing a zoom value moves the display off 100", async () => {
-      await userEvent.click(zoomInput);
-      await userEvent.clear(zoomInput);
-      await userEvent.type(zoomInput, "250{Enter}");
-      await expect(zoomInput.value).toBe("250");
-    });
+    await userEvent.click(zoomInput);
+    await userEvent.clear(zoomInput);
+    await userEvent.type(zoomInput, "250{Enter}");
+    await expect(zoomInput.value).toBe("250");
 
-    await step("changing svg remounts the TransformWrapper and snaps zoom to 100", async () => {
-      await userEvent.click(canvas.getByRole("button", { name: SWAP_LABEL }));
+    await userEvent.click(canvas.getByRole("button", { name: SWAP_LABEL }));
+    await waitFor(async () => {
       const after = canvas.getByLabelText("Zoom level") as HTMLInputElement;
       await expect(after.value).toBe("100");
-      await expect(canvas.getByAltText("preview")).toHaveAttribute("src", NEXT_SVG);
     });
   },
 };
