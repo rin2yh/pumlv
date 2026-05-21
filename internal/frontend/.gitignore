@@ -144,3 +144,7 @@ vite.config.ts.timestamp-*
 
 # PlantUML TeaVM assets fetched by scripts/fetch-plantuml-core.mjs
 public/plantuml/
+
+# Storybook
+storybook-static/
+
