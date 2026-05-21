@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
-import { useState } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useRef, useState } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { subscribe, type EventHandler, type ServerEvent } from "../api/events";
 import { useServerEvents } from "./use-server-events";
@@ -36,10 +36,6 @@ beforeEach(() => {
     subscriptions.push({ handler, cleanup });
     return cleanup;
   });
-});
-
-afterEach(() => {
-  subscriptions = [];
 });
 
 const emit = (ev: ServerEvent): void => {
@@ -101,30 +97,28 @@ describe("useServerEvents", () => {
   });
 
   it("sees updated closure values through the ref (active path swap)", () => {
-    let changedForActive = 0;
-    let setActiveExternal!: (path: string | null) => void;
-
-    renderHook(() => {
+    const { result } = renderHook(() => {
       const [active, setActive] = useState<string | null>("/a.puml");
-      setActiveExternal = setActive;
+      const changedForActive = useRef(0);
       useServerEvents({
         onTree: () => {},
         onChanged: (path) => {
-          if (path === active) changedForActive++;
+          if (path === active) changedForActive.current++;
         },
       });
+      return { setActive, changedForActive };
     });
 
     emit({ type: "changed", path: "/a.puml" });
-    expect(changedForActive).toBe(1);
+    expect(result.current.changedForActive.current).toBe(1);
 
-    act(() => setActiveExternal("/b.puml"));
+    act(() => result.current.setActive("/b.puml"));
 
     emit({ type: "changed", path: "/a.puml" });
-    expect(changedForActive).toBe(1);
+    expect(result.current.changedForActive.current).toBe(1);
 
     emit({ type: "changed", path: "/b.puml" });
-    expect(changedForActive).toBe(2);
+    expect(result.current.changedForActive.current).toBe(2);
   });
 
   it("invokes the cleanup returned by subscribe on unmount", () => {

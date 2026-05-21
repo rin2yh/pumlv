@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFileSource } from "../api/files";
 import { renderPlantUML } from "../plantuml/renderer";
@@ -37,10 +37,6 @@ const renderActive = (initial: string | null = null) =>
   });
 
 beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-afterEach(() => {
   vi.clearAllMocks();
 });
 

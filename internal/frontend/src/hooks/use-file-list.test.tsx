@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFiles, type FileEntry } from "../api/files";
 import { flush } from "../test/flush";
@@ -20,10 +20,6 @@ const file = (path: string): FileEntry => ({
 });
 
 beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-afterEach(() => {
   vi.clearAllMocks();
 });
 
