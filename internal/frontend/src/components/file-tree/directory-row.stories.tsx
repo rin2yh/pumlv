@@ -5,6 +5,8 @@ import type { DirNode } from "./tree";
 
 const dir: DirNode = { kind: "dir", key: "/r/sub", name: "sub", children: [] };
 const nameMatcher = new RegExp(dir.name);
+const TEXT_XS_PX = 12;
+const TEXT_SM_PX = 14;
 
 const meta: Meta<typeof DirectoryRow> = {
   component: DirectoryRow,
@@ -23,6 +25,10 @@ type Story = StoryObj<typeof DirectoryRow>;
 export const Expanded: Story = {
   play: async ({ canvasElement, args, step }) => {
     const button = within(canvasElement).getByRole("button", { name: nameMatcher });
+
+    await step("rel-style tooltip exposes the directory name", async () => {
+      await expect(button).toHaveAttribute("title", dir.name);
+    });
 
     await step("exposes aria-expanded=true and a down chevron", async () => {
       await expect(button).toHaveAttribute("aria-expanded", "true");
@@ -53,7 +59,7 @@ export const Depth0: Story = {
   play: async ({ canvasElement }) => {
     const button = within(canvasElement).getByRole("button", { name: nameMatcher });
     const fontSize = parseFloat(window.getComputedStyle(button).fontSize);
-    await expect(fontSize).toBeLessThan(14);
+    await expect(fontSize).toBe(TEXT_XS_PX);
   },
 };
 
@@ -62,6 +68,6 @@ export const Depth1: Story = {
   play: async ({ canvasElement }) => {
     const button = within(canvasElement).getByRole("button", { name: nameMatcher });
     const fontSize = parseFloat(window.getComputedStyle(button).fontSize);
-    await expect(fontSize).toBeGreaterThanOrEqual(14);
+    await expect(fontSize).toBe(TEXT_SM_PX);
   },
 };
