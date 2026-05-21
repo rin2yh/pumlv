@@ -1,10 +1,9 @@
-import { act, type JSX } from "react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFiles, type FileEntry } from "../api/files";
 import { flush } from "../test/flush";
-import { setupRender } from "../test/render";
-import { useFileList, type UseFileListResult } from "./use-file-list";
+import { useFileList } from "./use-file-list";
 
 vi.mock("../api/files", async () => {
   const actual = await vi.importActual<typeof import("../api/files")>("../api/files");
@@ -12,15 +11,6 @@ vi.mock("../api/files", async () => {
 });
 
 const mockedFetchFiles = vi.mocked(fetchFiles);
-
-let captured: UseFileListResult | null;
-
-function Probe(): JSX.Element {
-  captured = useFileList();
-  return <div />;
-}
-
-const render = setupRender();
 
 const file = (path: string): FileEntry => ({
   path,
@@ -30,12 +20,11 @@ const file = (path: string): FileEntry => ({
 });
 
 beforeEach(() => {
-  captured = null;
   vi.clearAllMocks();
 });
 
 afterEach(() => {
-  captured = null;
+  vi.clearAllMocks();
 });
 
 describe("useFileList", () => {
@@ -49,21 +38,21 @@ describe("useFileList", () => {
   ])("initial load $name", async ({ files: initial, expected }) => {
     mockedFetchFiles.mockResolvedValueOnce(initial);
 
-    render(<Probe />);
+    const { result } = renderHook(() => useFileList());
     await flush();
 
-    expect(captured!.files).toEqual(initial);
-    expect(captured!.active).toBe(expected);
+    expect(result.current.files).toEqual(initial);
+    expect(result.current.active).toBe(expected);
   });
 
   it("select updates the active path", async () => {
     mockedFetchFiles.mockResolvedValueOnce([file("/a.puml"), file("/b.puml")]);
 
-    render(<Probe />);
+    const { result } = renderHook(() => useFileList());
     await flush();
 
-    act(() => captured!.select("/b.puml"));
-    expect(captured!.active).toBe("/b.puml");
+    act(() => result.current.select("/b.puml"));
+    expect(result.current.active).toBe("/b.puml");
   });
 
   it.each([
@@ -90,16 +79,16 @@ describe("useFileList", () => {
     },
   ])("on reload $name", async ({ initial, selected, reloaded, expected }) => {
     mockedFetchFiles.mockResolvedValueOnce(initial);
-    render(<Probe />);
+    const { result } = renderHook(() => useFileList());
     await flush();
 
-    act(() => captured!.select(selected));
+    act(() => result.current.select(selected));
 
     mockedFetchFiles.mockResolvedValueOnce(reloaded);
-    act(() => captured!.reload());
+    act(() => result.current.reload());
     await flush();
 
-    expect(captured!.active).toBe(expected);
+    expect(result.current.active).toBe(expected);
   });
 
   it.each([
@@ -107,11 +96,11 @@ describe("useFileList", () => {
     { name: "once per reload", reloads: 2, expected: 3 },
   ])("fetchFiles is called $name", async ({ reloads, expected }) => {
     mockedFetchFiles.mockResolvedValue([file("/a.puml")]);
-    render(<Probe />);
+    const { result } = renderHook(() => useFileList());
     await flush();
 
     for (let i = 0; i < reloads; i++) {
-      act(() => captured!.reload());
+      act(() => result.current.reload());
       await flush();
     }
 

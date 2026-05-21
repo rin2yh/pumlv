@@ -1,7 +1,6 @@
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type JSX } from "react";
 import { useKeyboardPan } from "./use-keyboard-pan";
-import { setupRender } from "../../test/render";
 
 const mockSetTransformState = vi.fn();
 const mockTransformState = { scale: 1, positionX: 0, positionY: 0 };
@@ -12,13 +11,6 @@ vi.mock("react-zoom-pan-pinch", () => ({
     setTransformState: mockSetTransformState,
   }),
 }));
-
-function Harness(): JSX.Element {
-  useKeyboardPan();
-  return <div />;
-}
-
-const render = setupRender();
 
 beforeEach(() => {
   mockTransformState.scale = 1;
@@ -40,26 +32,26 @@ describe("useKeyboardPan", () => {
     { key: "ArrowUp", dx: 0, dy: 50 },
     { key: "ArrowDown", dx: 0, dy: -50 },
   ])("$key shifts the transform by ($dx, $dy)", ({ key, dx, dy }) => {
-    render(<Harness />);
+    renderHook(() => useKeyboardPan());
     pressKey(key);
     expect(mockSetTransformState).toHaveBeenCalledWith(1, 100 + dx, 200 + dy);
   });
 
   it("uses a larger step when Shift is held", () => {
-    render(<Harness />);
+    renderHook(() => useKeyboardPan());
     pressKey("ArrowRight", { shiftKey: true });
     expect(mockSetTransformState).toHaveBeenCalledWith(1, 100 - 200, 200);
   });
 
   it("ignores non-arrow keys", () => {
-    render(<Harness />);
+    renderHook(() => useKeyboardPan());
     pressKey("a");
     pressKey("Enter");
     expect(mockSetTransformState).not.toHaveBeenCalled();
   });
 
   it.each(["INPUT", "TEXTAREA"])("ignores arrows while typing in a %s", (tagName) => {
-    render(<Harness />);
+    renderHook(() => useKeyboardPan());
     const editable = document.createElement(tagName.toLowerCase()) as HTMLElement;
     document.body.appendChild(editable);
     editable.focus();
@@ -71,7 +63,7 @@ describe("useKeyboardPan", () => {
   });
 
   it("reads the latest position on each keypress", () => {
-    render(<Harness />);
+    renderHook(() => useKeyboardPan());
     pressKey("ArrowRight");
     mockTransformState.positionX = 999;
     pressKey("ArrowRight");
@@ -79,8 +71,8 @@ describe("useKeyboardPan", () => {
   });
 
   it("removes the listener on unmount", () => {
-    render(<Harness />);
-    render(<div />);
+    const { unmount } = renderHook(() => useKeyboardPan());
+    unmount();
     pressKey("ArrowRight");
     expect(mockSetTransformState).not.toHaveBeenCalled();
   });

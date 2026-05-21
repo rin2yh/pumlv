@@ -1,11 +1,10 @@
-import { act, useState, type JSX } from "react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFileSource } from "../api/files";
 import { renderPlantUML } from "../plantuml/renderer";
 import { flush } from "../test/flush";
-import { setupRender } from "../test/render";
-import { useActiveRender, type UseActiveRenderResult } from "./use-active-render";
+import { useActiveRender } from "./use-active-render";
 
 vi.mock("../api/files", () => ({
   fetchFileSource: vi.fn(),
@@ -17,18 +16,6 @@ vi.mock("../plantuml/renderer", () => ({
 
 const mockedFetchFileSource = vi.mocked(fetchFileSource);
 const mockedRenderPlantUML = vi.mocked(renderPlantUML);
-
-let captured: UseActiveRenderResult | null;
-let setActiveExternal: ((path: string | null) => void) | null;
-
-function Probe({ initial = null }: { initial?: string | null }): JSX.Element {
-  const [active, setActive] = useState<string | null>(initial);
-  setActiveExternal = setActive;
-  captured = useActiveRender(active);
-  return <div />;
-}
-
-const render = setupRender();
 
 const deferred = <T,>(): {
   promise: Promise<T>;
@@ -44,22 +31,24 @@ const deferred = <T,>(): {
   return { promise, resolve, reject };
 };
 
+const renderActive = (initial: string | null = null) =>
+  renderHook(({ active }: { active: string | null }) => useActiveRender(active), {
+    initialProps: { active: initial },
+  });
+
 beforeEach(() => {
-  captured = null;
-  setActiveExternal = null;
   vi.clearAllMocks();
 });
 
 afterEach(() => {
-  captured = null;
-  setActiveExternal = null;
+  vi.clearAllMocks();
 });
 
 describe("useActiveRender", () => {
   it("starts idle with no active path", () => {
-    render(<Probe initial={null} />);
-    expect(captured!.render).toEqual({ kind: "idle" });
-    expect(captured!.source).toBe("");
+    const { result } = renderActive(null);
+    expect(result.current.render).toEqual({ kind: "idle" });
+    expect(result.current.source).toBe("");
     expect(mockedFetchFileSource).not.toHaveBeenCalled();
   });
 
@@ -67,11 +56,11 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockResolvedValueOnce("@startuml\n@enduml");
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,svg");
 
-    render(<Probe initial="/a.puml" />);
+    const { result } = renderActive("/a.puml");
     await flush(3);
 
-    expect(captured!.source).toBe("@startuml\n@enduml");
-    expect(captured!.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,svg" });
+    expect(result.current.source).toBe("@startuml\n@enduml");
+    expect(result.current.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,svg" });
     expect(mockedFetchFileSource).toHaveBeenCalledWith("/a.puml", expect.any(AbortSignal));
   });
 
@@ -80,15 +69,15 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockReturnValueOnce(src.promise);
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,x");
 
-    render(<Probe initial="/a.puml" />);
-    expect(captured!.render).toEqual({ kind: "loading" });
+    const { result } = renderActive("/a.puml");
+    expect(result.current.render).toEqual({ kind: "loading" });
 
     await act(async () => {
       src.resolve("body");
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(captured!.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,x" });
+    expect(result.current.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,x" });
   });
 
   it.each([
@@ -116,21 +105,21 @@ describe("useActiveRender", () => {
     },
   ])("reports error state when $name", async ({ setup, message }) => {
     setup();
-    render(<Probe initial="/a.puml" />);
+    const { result } = renderActive("/a.puml");
     await flush(3);
 
-    expect(captured!.render).toEqual({ kind: "error", message });
+    expect(result.current.render).toEqual({ kind: "error", message });
   });
 
   it("returns to idle and clears source when active becomes null", async () => {
     mockedFetchFileSource.mockResolvedValueOnce("source");
     mockedRenderPlantUML.mockResolvedValueOnce("data:image/svg+xml,x");
-    render(<Probe initial="/a.puml" />);
+    const { result, rerender } = renderActive("/a.puml");
     await flush(3);
 
-    act(() => setActiveExternal!(null));
-    expect(captured!.source).toBe("");
-    expect(captured!.render).toEqual({ kind: "idle" });
+    rerender({ active: null });
+    expect(result.current.source).toBe("");
+    expect(result.current.render).toEqual({ kind: "idle" });
   });
 
   it("discards results from a stale fetch when active changes rapidly", async () => {
@@ -139,8 +128,8 @@ describe("useActiveRender", () => {
     mockedFetchFileSource.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
     mockedRenderPlantUML.mockResolvedValue("data:image/svg+xml,svg");
 
-    render(<Probe initial="/a.puml" />);
-    act(() => setActiveExternal!("/b.puml"));
+    const { result, rerender } = renderActive("/a.puml");
+    rerender({ active: "/b.puml" });
 
     await act(async () => {
       first.resolve("first body");
@@ -150,8 +139,8 @@ describe("useActiveRender", () => {
       await Promise.resolve();
     });
 
-    expect(captured!.source).toBe("second body");
-    expect(captured!.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,svg" });
+    expect(result.current.source).toBe("second body");
+    expect(result.current.render).toEqual({ kind: "ok", svg: "data:image/svg+xml,svg" });
     // The stale `/a.puml` fetch resolved first but must not reach renderPlantUML.
     expect(mockedRenderPlantUML).toHaveBeenCalledTimes(1);
   });
@@ -159,12 +148,12 @@ describe("useActiveRender", () => {
   it("re-fetches when reload is invoked", async () => {
     mockedFetchFileSource.mockResolvedValue("source");
     mockedRenderPlantUML.mockResolvedValue("data:image/svg+xml,x");
-    render(<Probe initial="/a.puml" />);
+    const { result } = renderActive("/a.puml");
     await flush(3);
 
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(1);
 
-    act(() => captured!.reload());
+    act(() => result.current.reload());
     await flush(3);
 
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(2);
