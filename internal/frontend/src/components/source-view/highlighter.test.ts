@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { splitLines } from "../../lib/lines";
 
-afterEach(() => {
-  vi.resetModules();
-  vi.doUnmock("shiki/core");
-  vi.doUnmock("shiki/engine/oniguruma");
-  vi.doUnmock("shiki/themes/github-light.mjs");
-  vi.doUnmock("shiki/langs/yaml.mjs");
-  vi.doUnmock("shiki/wasm");
-});
+const SHIKI_MODULES = [
+  "shiki/core",
+  "shiki/engine/oniguruma",
+  "shiki/themes/github-light.mjs",
+  "shiki/langs/yaml.mjs",
+  "shiki/wasm",
+] as const;
 
 describe("highlight (real shiki)", () => {
   it("returns tokens with hex fg/bg for non-empty input", async () => {
@@ -42,6 +41,7 @@ describe("highlight error and cache behavior", () => {
   let createHighlighterCoreMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.resetModules();
     codeToTokensMock = vi.fn();
     createHighlighterCoreMock = vi.fn(async () => ({
       codeToTokens: codeToTokensMock,
@@ -55,6 +55,11 @@ describe("highlight error and cache behavior", () => {
     vi.doMock("shiki/themes/github-light.mjs", () => ({ default: {} }));
     vi.doMock("shiki/langs/yaml.mjs", () => ({ default: {} }));
     vi.doMock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
+  });
+
+  afterEach(() => {
+    SHIKI_MODULES.forEach((m) => vi.doUnmock(m));
+    vi.resetModules();
   });
 
   it("returns null when shiki throws", async () => {
