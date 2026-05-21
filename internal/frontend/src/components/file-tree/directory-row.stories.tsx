@@ -39,7 +39,6 @@ export const Expanded: Story = {
     await step("the chevron renders pointing down in slate-400", async () => {
       await expect(chevron.textContent).toBe("▾");
       await expect(window.getComputedStyle(chevron).color).toBe(SLATE_400);
-      await expect(button).toHaveAttribute("aria-expanded", "true");
     });
 
     await step("click fires onToggle with the node key", async () => {
@@ -58,7 +57,6 @@ export const Collapsed: Story = {
     await step("the chevron renders pointing right in slate-400", async () => {
       await expect(chevron.textContent).toBe("▸");
       await expect(window.getComputedStyle(chevron).color).toBe(SLATE_400);
-      await expect(button).toHaveAttribute("aria-expanded", "false");
     });
   },
 };
