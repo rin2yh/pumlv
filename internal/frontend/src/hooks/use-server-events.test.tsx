@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { subscribe, type EventHandler, type ServerEvent } from "../api/events";
 import { setupRender } from "../test/render";
-import { useServerEvents } from "./useServerEvents";
+import { useServerEvents } from "./use-server-events";
 
 vi.mock("../api/events", () => ({
   subscribe: vi.fn(),

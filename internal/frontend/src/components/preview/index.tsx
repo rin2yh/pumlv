@@ -1,5 +1,6 @@
 import { useState, type JSX } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import { Minimap } from "./minimap";
 import { MAX_SCALE, MIN_SCALE } from "./zoom";
 import { ZoomControls } from "./zoom-controls";
 
@@ -16,6 +17,7 @@ export function Preview({ svg }: { svg: string }): JSX.Element {
         onPanningStart={() => setIsPanning(true)}
         onPanningStop={() => setIsPanning(false)}
       >
+        <Minimap svg={svg} />
         <ZoomControls />
         <TransformComponent
           wrapperStyle={{ width: "100%", height: "100%" }}

@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import App from "./App";
+import App from "./app";
 import { fetchFileSource, fetchFiles, type FileEntry } from "./api/files";
 import { subscribe, type EventHandler } from "./api/events";
 import { renderPlantUML } from "./plantuml/renderer";
 import { flush } from "./test/flush";
 import { setupRender } from "./test/render";
-import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./sourcePanel";
+import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./source-panel";
 
 vi.mock("./api/files", async () => {
   const actual = await vi.importActual<typeof import("./api/files")>("./api/files");

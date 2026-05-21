@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX } from "react";
-import { useToggleSet } from "../../hooks/useToggleSet";
+import { useToggleSet } from "../../hooks/use-toggle-set";
 import { splitLines } from "../../lib/lines";
 import { highlight, type Highlighted, type ShikiToken } from "./highlighter";
 import { computeFoldRanges, computeLineDepths, hiddenLines } from "./source-fold";

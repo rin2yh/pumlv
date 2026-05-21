@@ -7,9 +7,14 @@ let mockScale = 1;
 
 let lastPanningStart: (() => void) | undefined;
 let lastPanningStop: (() => void) | undefined;
+let lastWrapperClass: string | undefined;
 
 vi.mock("./use-keyboard-pan", () => ({
   useKeyboardPan: () => {},
+}));
+
+vi.mock("./minimap", () => ({
+  Minimap: () => null,
 }));
 
 vi.mock("react-zoom-pan-pinch", () => ({
@@ -32,11 +37,10 @@ vi.mock("react-zoom-pan-pinch", () => ({
   }: {
     children: ReactNode;
     wrapperClass?: string;
-  }) => (
-    <div data-testid="transform-wrapper" className={wrapperClass}>
-      {children}
-    </div>
-  ),
+  }) => {
+    lastWrapperClass = wrapperClass;
+    return <div className={wrapperClass}>{children}</div>;
+  },
   useControls: () => ({
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -50,7 +54,7 @@ vi.mock("react-zoom-pan-pinch", () => ({
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
-const panWrapper = () => document.querySelector('[data-testid="transform-wrapper"]')!;
+const previewImg = () => document.querySelector<HTMLImageElement>('img[alt="preview"]')!;
 
 const render = setupRender();
 
@@ -58,6 +62,7 @@ beforeEach(() => {
   mockScale = 1;
   lastPanningStart = undefined;
   lastPanningStop = undefined;
+  lastWrapperClass = undefined;
   vi.clearAllMocks();
 });
 
@@ -66,15 +71,13 @@ describe("Preview", () => {
     "renders an img with src=$svg",
     ({ svg }) => {
       render(<Preview svg={svg} />);
-      const img = document.querySelector("img");
-      expect(img).not.toBeNull();
-      expect(img!.getAttribute("src")).toBe(svg);
+      expect(previewImg().getAttribute("src")).toBe(svg);
     },
   );
 
   it("uses 'preview' as the alt text", () => {
     render(<Preview svg={SAMPLE_SVG} />);
-    expect(document.querySelector("img")!.getAttribute("alt")).toBe("preview");
+    expect(previewImg().getAttribute("alt")).toBe("preview");
   });
 
   it.each([
@@ -83,7 +86,7 @@ describe("Preview", () => {
   ])("updates src from $from to $to when svg prop changes", ({ from, to }) => {
     render(<Preview svg={from} />);
     render(<Preview svg={to} />);
-    expect(document.querySelector("img")!.getAttribute("src")).toBe(to);
+    expect(previewImg().getAttribute("src")).toBe(to);
   });
 
   it("resets the zoom display when svg changes (TransformWrapper remounts on key)", () => {
@@ -117,7 +120,7 @@ describe("Preview", () => {
       for (const action of actions) {
         act(() => action());
       }
-      expect(panWrapper().className).toBe(expected);
+      expect(lastWrapperClass).toBe(expected);
     });
   });
 });
