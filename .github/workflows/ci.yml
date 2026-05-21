@@ -16,6 +16,7 @@ on:
       - '.octocov.yml'
       - '.github/workflows/ci.yml'
       - '.github/actions/setup-frontend/**'
+      - '.github/actions/setup-playwright/**'
   pull_request:
     paths:
       - 'cmd/**'
@@ -29,6 +30,7 @@ on:
       - '.octocov.yml'
       - '.github/workflows/ci.yml'
       - '.github/actions/setup-frontend/**'
+      - '.github/actions/setup-playwright/**'
 
 permissions:
   contents: read
@@ -80,18 +82,10 @@ jobs:
       - name: Lint
         run: make lint-frontend
 
-      # Storybook stories run via @storybook/addon-vitest in a real
-      # Chromium browser, so the unit + story projects together need
-      # Playwright's bundled chromium available.
-      - name: Cache Playwright browsers
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      # Storybook stories run in a real browser via @storybook/addon-vitest.
+      - uses: ./.github/actions/setup-playwright
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('internal/frontend/pnpm-lock.yaml') }}
-
-      - name: Install Playwright Chromium
-        working-directory: internal/frontend
-        run: pnpm exec playwright install --with-deps chromium chromium-headless-shell
+          browsers: chromium chromium-headless-shell
 
       - name: Test
         run: make test-frontend
@@ -118,15 +112,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - uses: ./.github/actions/setup-playwright
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('internal/frontend/pnpm-lock.yaml') }}
-
-      - name: Install Playwright Chrome
-        working-directory: internal/frontend
-        run: pnpm exec playwright install --with-deps chrome
+          browsers: chrome
 
       - name: E2E tests
         run: make e2e

@@ -1,0 +1,21 @@
+name: Setup Playwright
+description: Restore the Playwright browser cache and install the requested browsers.
+
+inputs:
+  browsers:
+    description: Space-separated browser names passed to `playwright install` (e.g. `chrome` or `chromium chromium-headless-shell`).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Playwright browsers
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ inputs.browsers }}-${{ hashFiles('internal/frontend/pnpm-lock.yaml') }}
+
+    - name: Install Playwright browsers
+      working-directory: internal/frontend
+      shell: bash
+      run: pnpm exec playwright install --with-deps ${{ inputs.browsers }}

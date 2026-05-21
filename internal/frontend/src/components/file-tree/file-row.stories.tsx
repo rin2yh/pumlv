@@ -1,13 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { FileRow } from "./file-row";
+import { flatFiles } from "./test/fixtures";
 
-const ENTRY = {
-  path: "/a/x.puml",
-  rel: "x.puml",
-  name: "x.puml",
-  source: "/a",
-};
+const ENTRY = flatFiles[0]!;
 
 const meta: Meta<typeof FileRow> = {
   component: FileRow,
@@ -23,22 +19,16 @@ export default meta;
 
 type Story = StoryObj<typeof FileRow>;
 
-const TRANSPARENT_BG = /^(rgba\(0, 0, 0, 0\)|transparent)$/;
-
-const getButton = (canvasElement: HTMLElement): HTMLButtonElement => {
-  const c = within(canvasElement);
-  return c.getByRole("button", { name: ENTRY.name });
-};
+const pageBg = () => window.getComputedStyle(document.body).backgroundColor;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
-    const button = getButton(canvasElement);
+    const button = within(canvasElement).getByRole("button", { name: ENTRY.name });
 
-    await expect(button).toHaveAccessibleName(ENTRY.name);
     await expect(button).toHaveAttribute("title", ENTRY.rel);
 
     const styles = window.getComputedStyle(button);
-    await expect(styles.backgroundColor).toMatch(TRANSPARENT_BG);
+    await expect(styles.backgroundColor).toBe(pageBg());
     await expect(styles.fontWeight).toBe("400");
 
     await userEvent.click(button);
@@ -49,16 +39,12 @@ export const Default: Story = {
 export const Selected: Story = {
   args: { isSelected: true },
   play: async ({ canvasElement }) => {
-    const button = getButton(canvasElement);
+    const button = within(canvasElement).getByRole("button", { name: ENTRY.name });
     const styles = window.getComputedStyle(button);
 
-    // The selected row is highlighted with a non-transparent background and bolder text.
-    // Asserting on the rendered styles (not the className string) makes this fail if the
-    // Tailwind class is renamed without re-skinning, or if the highlight is lost entirely.
-    await expect(styles.backgroundColor).not.toMatch(TRANSPARENT_BG);
+    // Compare to the page background instead of "transparent": this fails if
+    // Tailwind's bg-violet utility is renamed, dropped, or never loaded.
+    await expect(styles.backgroundColor).not.toBe(pageBg());
     await expect(styles.fontWeight).toBe("500");
-
-    const defaultBg = window.getComputedStyle(document.body).backgroundColor;
-    await expect(styles.backgroundColor).not.toBe(defaultBg);
   },
 };
