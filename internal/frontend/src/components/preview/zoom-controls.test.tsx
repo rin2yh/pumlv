@@ -56,6 +56,8 @@ describe("ZoomControls", () => {
   it.each([
     { input: "150", expected: "150" },
     { input: "75", expected: "75" },
+    { input: "50", expected: "50" },
+    { input: "250", expected: "250" },
     { input: "200%", expected: "200" },
   ])("committing '$input' updates the displayed zoom to $expected%", ({ input, expected }) => {
     render(<Wrapped />);
