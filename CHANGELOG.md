@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.3.2](https://github.com/rin2yh/pumlv/compare/v0.3.1...v0.3.2) - 2026-05-21
+- feat(frontend): add minimap overlay to the preview by @rin2yh in https://github.com/rin2yh/pumlv/pull/41
+- refactor(frontend): standardize filenames to kebab-case by @rin2yh in https://github.com/rin2yh/pumlv/pull/44
+- test: drop e2e specs that duplicate unit coverage by @rin2yh in https://github.com/rin2yh/pumlv/pull/42
+- test: drop unnecessary react-zoom-pan-pinch and shiki mocks by @rin2yh in https://github.com/rin2yh/pumlv/pull/46
+- test(frontend): test custom hooks via @testing-library/react renderHook by @rin2yh in https://github.com/rin2yh/pumlv/pull/47
+- test(frontend): add Storybook + addon-vitest with FileRow as prototype by @rin2yh in https://github.com/rin2yh/pumlv/pull/48
+- test(frontend): add Storybook play for DirectoryRow by @rin2yh in https://github.com/rin2yh/pumlv/pull/58
+- test(frontend): add Storybook play for FileTree by @rin2yh in https://github.com/rin2yh/pumlv/pull/61
+- test(frontend): roll out Storybook play for remaining components by @rin2yh in https://github.com/rin2yh/pumlv/pull/64
+
 ## [v0.3.1](https://github.com/rin2yh/pumlv/compare/v0.3.0...v0.3.1) - 2026-05-20
 - perf(frontend): skip setFiles when fetched list matches current state by @rin2yh in https://github.com/rin2yh/pumlv/pull/35
 - refactor(frontend): extract splitLines helper by @rin2yh in https://github.com/rin2yh/pumlv/pull/36
