@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, type JSX } from "react";
-import { ZoomControlsHarness } from "./test/wrappers";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { zoomInput } from "./test/queries";
 import { ZoomControls } from "./zoom-controls";
-import { MIN_SCALE } from "./zoom";
+import { MAX_SCALE, MIN_SCALE } from "./zoom";
 import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
 
@@ -12,9 +12,12 @@ const typeAndCommit = (value: string, options?: { key?: string }) =>
 
 function Wrapped(): JSX.Element {
   return (
-    <ZoomControlsHarness>
+    <TransformWrapper minScale={MIN_SCALE} maxScale={MAX_SCALE}>
       <ZoomControls />
-    </ZoomControlsHarness>
+      <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+        <div />
+      </TransformComponent>
+    </TransformWrapper>
   );
 }
 

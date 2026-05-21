@@ -1,15 +1,23 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { JSX } from "react";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { ZoomControlsHarness } from "./test/wrappers";
-import { MAX_SCALE } from "./zoom";
+import { MAX_SCALE, MIN_SCALE } from "./zoom";
 import { ZOOM_INPUT_LABEL, ZoomControls } from "./zoom-controls";
 
+// "use no memo" — React Compiler runtime in browser-test can't resolve
+// useMemoCache for story-local components.
 function Wrapped(): JSX.Element {
+  "use no memo";
   return (
-    <ZoomControlsHarness>
-      <ZoomControls />
-    </ZoomControlsHarness>
+    <div style={{ position: "relative", height: 320, width: 480 }}>
+      <TransformWrapper minScale={MIN_SCALE} maxScale={MAX_SCALE}>
+        <ZoomControls />
+        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+          <div style={{ width: 200, height: 200 }} />
+        </TransformComponent>
+      </TransformWrapper>
+    </div>
   );
 }
 
@@ -24,9 +32,7 @@ type Story = StoryObj<typeof Wrapped>;
 const getInput = (canvasElement: HTMLElement): HTMLInputElement =>
   within(canvasElement).getByLabelText(ZOOM_INPUT_LABEL) as HTMLInputElement;
 
-// Lets react-zoom-pan-pinch finish initializing its layout-derived state
-// before the first programmatic click — without this, zoom buttons can
-// resolve into no-op transforms.
+// rzpp silently drops zoom calls before its first layout pass.
 const settleMount = () => new Promise((r) => setTimeout(r, 100));
 
 export const Default: Story = {};
