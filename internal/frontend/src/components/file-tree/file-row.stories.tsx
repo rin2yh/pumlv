@@ -19,7 +19,12 @@ export default meta;
 
 type Story = StoryObj<typeof FileRow>;
 
-const pageBg = () => window.getComputedStyle(document.body).backgroundColor;
+// Storybook's browser-test runner shares one Playwright page across stories,
+// so a previous story's cursor position can leave the row in :hover and the
+// computed background no longer matches the page background. Compare against
+// the Selected highlight color instead — that flag flips with isSelected
+// without being affected by cursor hover.
+const SELECTED_BG = "oklch(0.969 0.016 293.756)"; // bg-violet-50
 
 export const Default: Story = {
   play: async ({ canvasElement, args, step }) => {
@@ -31,7 +36,7 @@ export const Default: Story = {
 
     await step("renders without the selected-row highlight", async () => {
       const styles = window.getComputedStyle(button);
-      await expect(styles.backgroundColor).toBe(pageBg());
+      await expect(styles.backgroundColor).not.toBe(SELECTED_BG);
       await expect(styles.fontWeight).toBe("400");
     });
 
@@ -49,7 +54,7 @@ export const Selected: Story = {
 
     await step("selected row is visually highlighted", async () => {
       const styles = window.getComputedStyle(button);
-      await expect(styles.backgroundColor).not.toBe(pageBg());
+      await expect(styles.backgroundColor).toBe(SELECTED_BG);
       await expect(styles.fontWeight).toBe("500");
     });
   },

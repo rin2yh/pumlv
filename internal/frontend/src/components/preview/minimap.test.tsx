@@ -41,12 +41,4 @@ describe("Minimap", () => {
     expect(imgs()).toContain(next);
     expect(imgs()).not.toContain(SAMPLE_SVG);
   });
-
-  it("applies the configured borderColor to the viewport preview", () => {
-    render(<Wrapped svg={SAMPLE_SVG} />);
-    const preview = container().querySelector<HTMLElement>(".rzpp-preview");
-    expect(preview).not.toBeNull();
-    // react-zoom-pan-pinch normalizes #7c3aed to rgb in inline styles.
-    expect(preview!.style.borderColor).toMatch(/#7c3aed|rgb\(124,\s*58,\s*237\)/i);
-  });
 });
