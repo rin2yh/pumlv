@@ -20,8 +20,13 @@ dev: generate
 
 test: test-frontend test-backend
 
-test-frontend: $(FRONTEND)/node_modules
-	cd $(FRONTEND) && pnpm test
+test-frontend: test-frontend-unit test-frontend-integration
+
+test-frontend-unit: $(FRONTEND)/node_modules
+	cd $(FRONTEND) && pnpm test:unit
+
+test-frontend-integration: $(FRONTEND)/node_modules
+	cd $(FRONTEND) && pnpm test:integration
 
 test-backend:
 	go test -race -coverprofile=coverage.out -covermode=atomic ./...
@@ -76,7 +81,7 @@ clean:
 	rm -rf dist
 
 .PHONY: default ci generate build dev \
-	test test-frontend test-backend \
+	test test-frontend test-frontend-unit test-frontend-integration test-backend \
 	e2e screenshot \
 	lint lint-frontend lint-backend \
 	fmt fmt-frontend fmt-backend \
