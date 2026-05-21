@@ -82,7 +82,6 @@ jobs:
       - name: Lint
         run: make lint-frontend
 
-      # Storybook stories run in a real browser via @storybook/addon-vitest.
       - uses: ./.github/actions/setup-playwright
         with:
           browsers: chromium chromium-headless-shell

@@ -42,8 +42,6 @@ export const Selected: Story = {
     const button = within(canvasElement).getByRole("button", { name: ENTRY.name });
     const styles = window.getComputedStyle(button);
 
-    // Compare to the page background instead of "transparent": this fails if
-    // Tailwind's bg-violet utility is renamed, dropped, or never loaded.
     await expect(styles.backgroundColor).not.toBe(pageBg());
     await expect(styles.fontWeight).toBe("500");
   },
