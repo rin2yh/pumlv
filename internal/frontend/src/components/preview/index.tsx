@@ -26,7 +26,7 @@ export function Preview({ svg }: { svg: string }): JSX.Element {
           className="pointer-events-none absolute bottom-14 right-3 z-20 overflow-hidden rounded border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm"
         >
           <MiniMap width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} borderColor={MINIMAP_BORDER}>
-            <img src={svg} alt="" draggable={false} />
+            <img src={svg} alt="minimap thumbnail" draggable={false} />
           </MiniMap>
         </div>
         <ZoomControls />
