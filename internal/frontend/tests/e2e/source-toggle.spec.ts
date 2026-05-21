@@ -3,7 +3,7 @@ import {
   SOURCE_PANEL_NAME,
   SOURCE_TOGGLE_LABEL,
   type SourceToggleLabel,
-} from "../../src/sourcePanel";
+} from "../../src/source-panel";
 
 const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
