@@ -8,10 +8,13 @@ let mockScale = 1;
 let lastPanningStart: (() => void) | undefined;
 let lastPanningStop: (() => void) | undefined;
 let lastWrapperClass: string | undefined;
-let lastMiniMapProps: { width?: number; height?: number; borderColor?: string } = {};
 
 vi.mock("./use-keyboard-pan", () => ({
   useKeyboardPan: () => {},
+}));
+
+vi.mock("./minimap", () => ({
+  Minimap: () => null,
 }));
 
 vi.mock("react-zoom-pan-pinch", () => ({
@@ -38,20 +41,6 @@ vi.mock("react-zoom-pan-pinch", () => ({
     lastWrapperClass = wrapperClass;
     return <div className={wrapperClass}>{children}</div>;
   },
-  MiniMap: ({
-    children,
-    width,
-    height,
-    borderColor,
-  }: {
-    children: ReactNode;
-    width?: number;
-    height?: number;
-    borderColor?: string;
-  }) => {
-    lastMiniMapProps = { width, height, borderColor };
-    return <div>{children}</div>;
-  },
   useControls: () => ({
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
@@ -66,9 +55,6 @@ const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
 const previewImg = () => document.querySelector<HTMLImageElement>('img[alt="preview"]')!;
-const minimap = () => document.querySelector('[aria-label="diagram minimap"]')!;
-const minimapImgs = () =>
-  Array.from(minimap().querySelectorAll("img")).map((el) => el.getAttribute("src"));
 
 const render = setupRender();
 
@@ -77,7 +63,6 @@ beforeEach(() => {
   lastPanningStart = undefined;
   lastPanningStop = undefined;
   lastWrapperClass = undefined;
-  lastMiniMapProps = {};
   vi.clearAllMocks();
 });
 
@@ -112,33 +97,6 @@ describe("Preview", () => {
     mockScale = 1;
     render(<Preview svg="data:image/png;base64,BBBB" />);
     expect(zoomInput().value).toBe("100");
-  });
-
-  describe("minimap", () => {
-    it("renders the minimap container as an overlay", () => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      expect(minimap()).not.toBeNull();
-    });
-
-    it("passes a thumbnail of the current svg to MiniMap", () => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      expect(minimapImgs()).toContain(SAMPLE_SVG);
-    });
-
-    it("forwards configured width/height/borderColor to MiniMap", () => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      expect(lastMiniMapProps.width).toBe(160);
-      expect(lastMiniMapProps.height).toBe(120);
-      expect(lastMiniMapProps.borderColor).toBe("#7c3aed");
-    });
-
-    it("updates the minimap thumbnail when svg changes", () => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      const next = "data:image/png;base64,NEXT";
-      render(<Preview svg={next} />);
-      expect(minimapImgs()).toContain(next);
-      expect(minimapImgs()).not.toContain(SAMPLE_SVG);
-    });
   });
 
   describe("drag cursor", () => {
