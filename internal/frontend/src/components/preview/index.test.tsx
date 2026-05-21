@@ -1,14 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Preview } from "./index";
 import { setupRender } from "../../test/render";
-
-vi.mock("./use-keyboard-pan", () => ({
-  useKeyboardPan: () => {},
-}));
-
-vi.mock("./minimap", () => ({
-  Minimap: () => null,
-}));
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
 

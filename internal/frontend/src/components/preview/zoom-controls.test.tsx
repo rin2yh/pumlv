@@ -5,10 +5,6 @@ import { ZoomControls } from "./zoom-controls";
 import { MAX_SCALE, MIN_SCALE } from "./zoom";
 import { setupRender } from "../../test/render";
 
-vi.mock("./use-keyboard-pan", () => ({
-  useKeyboardPan: () => {},
-}));
-
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
 
 const button = (label: string) =>
