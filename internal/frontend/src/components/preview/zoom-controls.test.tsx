@@ -1,117 +1,88 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, type JSX } from "react";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { ZoomControls } from "./zoom-controls";
+import { MAX_SCALE, MIN_SCALE } from "./zoom";
+import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
-
-const mockZoomIn = vi.fn();
-const mockZoomOut = vi.fn();
-const mockResetTransform = vi.fn();
-const mockCenterView = vi.fn();
-
-let mockScale = 1;
-
-vi.mock("./use-keyboard-pan", () => ({
-  useKeyboardPan: () => {},
-}));
-
-vi.mock("react-zoom-pan-pinch", () => ({
-  useControls: () => ({
-    zoomIn: mockZoomIn,
-    zoomOut: mockZoomOut,
-    resetTransform: mockResetTransform,
-    centerView: mockCenterView,
-  }),
-  useTransformComponent: (cb: (s: { state: { scale: number } }) => unknown) =>
-    cb({ state: { scale: mockScale } }),
-}));
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
 
-const typeAndCommit = (value: string, { key = "Enter" } = {}) => {
-  const input = zoomInput();
-  act(() => {
-    input.focus();
-  });
-  act(() => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-    setter.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  act(() => {
-    input.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
-  });
-};
+const button = (label: string) =>
+  document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
+
+const typeAndCommit = (value: string, options?: { key?: string }) =>
+  typeAndCommitInput(zoomInput(), value, options);
+
+function Wrapped(): JSX.Element {
+  return (
+    <TransformWrapper minScale={MIN_SCALE} maxScale={MAX_SCALE}>
+      <ZoomControls />
+      <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+        <div />
+      </TransformComponent>
+    </TransformWrapper>
+  );
+}
 
 const render = setupRender();
 
 beforeEach(() => {
-  mockScale = 1;
   vi.clearAllMocks();
 });
 
 describe("ZoomControls", () => {
   it.each(["Zoom in", "Zoom out", "Reset zoom"])("renders the '%s' button", (label) => {
-    render(<ZoomControls />);
-    expect(document.querySelector(`[aria-label="${label}"]`)).not.toBeNull();
+    render(<Wrapped />);
+    expect(button(label)).not.toBeNull();
   });
 
-  it.each([
-    { label: "Zoom in", mock: mockZoomIn },
-    { label: "Zoom out", mock: mockZoomOut },
-    { label: "Reset zoom", mock: mockResetTransform },
-  ])("clicking '$label' button calls its handler", ({ label, mock }) => {
-    render(<ZoomControls />);
-    act(() => {
-      document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
-    });
-    expect(mock).toHaveBeenCalledOnce();
-  });
-
-  it.each([
-    { scale: 1, expected: "100" },
-    { scale: 0.5, expected: "50" },
-    { scale: 2.5, expected: "250" },
-  ])("displays zoom level as $expected% when scale is $scale", ({ scale, expected }) => {
-    mockScale = scale;
-    render(<ZoomControls />);
-    expect(zoomInput().value).toBe(expected);
-  });
-
-  it.each([
-    { input: "150", expectedScale: 1.5 },
-    { input: "75", expectedScale: 0.75 },
-    { input: "200%", expectedScale: 2 },
-    { input: "5", expectedScale: 0.1 },
-    { input: "10000", expectedScale: 50 },
-  ])(
-    "typing '$input' commits scale=$expectedScale via centerView (clamped to MIN/MAX)",
-    ({ input, expectedScale }) => {
-      render(<ZoomControls />);
-      typeAndCommit(input);
-      expect(mockCenterView).toHaveBeenCalledWith(expectedScale, 0);
-    },
-  );
-
-  it.each(["abc", "", "-50", "0"])(
-    "ignores invalid input '%s' without calling centerView",
-    (value) => {
-      render(<ZoomControls />);
-      typeAndCommit(value);
-      expect(mockCenterView).not.toHaveBeenCalled();
-    },
-  );
-
-  it("pressing Escape reverts the draft and does not call centerView", () => {
-    mockScale = 1;
-    render(<ZoomControls />);
-    typeAndCommit("250", { key: "Escape" });
-    expect(mockCenterView).not.toHaveBeenCalled();
+  it("displays 100% on initial render", () => {
+    render(<Wrapped />);
     expect(zoomInput().value).toBe("100");
   });
 
-  it("focusing then blurring without typing commits the current scale", () => {
-    mockScale = 1;
-    render(<ZoomControls />);
+  it.each([
+    { input: "150", expected: "150" },
+    { input: "75", expected: "75" },
+    { input: "50", expected: "50" },
+    { input: "250", expected: "250" },
+    { input: "200%", expected: "200" },
+  ])("committing '$input' updates the displayed zoom to $expected%", ({ input, expected }) => {
+    render(<Wrapped />);
+    typeAndCommit(input);
+    expect(zoomInput().value).toBe(expected);
+  });
+
+  it(`clamps inputs below MIN_SCALE to the minimum (${MIN_SCALE * 100}%)`, () => {
+    render(<Wrapped />);
+    typeAndCommit("5");
+    expect(zoomInput().value).toBe(String(MIN_SCALE * 100));
+  });
+
+  it(`clamps inputs above MAX_SCALE to the maximum (${MAX_SCALE * 100}%)`, () => {
+    render(<Wrapped />);
+    typeAndCommit("10000");
+    expect(zoomInput().value).toBe(String(MAX_SCALE * 100));
+  });
+
+  it.each(["abc", "", "-50", "0"])(
+    "ignores invalid input '%s' and keeps the display at the current scale",
+    (value) => {
+      render(<Wrapped />);
+      typeAndCommit(value);
+      expect(zoomInput().value).toBe("100");
+    },
+  );
+
+  it("pressing Escape reverts the draft without changing the zoom", () => {
+    render(<Wrapped />);
+    typeAndCommit("250", { key: "Escape" });
+    expect(zoomInput().value).toBe("100");
+  });
+
+  it("focusing then blurring without typing keeps the displayed scale unchanged", () => {
+    render(<Wrapped />);
     const input = zoomInput();
     act(() => {
       input.focus();
@@ -119,6 +90,55 @@ describe("ZoomControls", () => {
     act(() => {
       input.blur();
     });
-    expect(mockCenterView).toHaveBeenCalledWith(1, 0);
+    expect(zoomInput().value).toBe("100");
+  });
+
+  // react-zoom-pan-pinch's zoomIn/zoomOut/resetTransform animate over ~200–300 ms
+  // via requestAnimationFrame; advance fake timers so the displayed scale lands
+  // on its final value within the test.
+  describe("animated controls", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const settleAnimation = async () => {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+      });
+    };
+
+    it("clicking 'Zoom in' increases the displayed zoom above 100%", async () => {
+      render(<Wrapped />);
+      act(() => {
+        button("Zoom in").click();
+      });
+      await settleAnimation();
+      expect(Number(zoomInput().value)).toBeGreaterThan(100);
+    });
+
+    it("clicking 'Zoom out' decreases the displayed zoom below 100%", async () => {
+      render(<Wrapped />);
+      act(() => {
+        button("Zoom out").click();
+      });
+      await settleAnimation();
+      expect(Number(zoomInput().value)).toBeLessThan(100);
+    });
+
+    it("clicking 'Reset zoom' restores 100% after the zoom was changed", async () => {
+      render(<Wrapped />);
+      typeAndCommit("250");
+      expect(zoomInput().value).toBe("250");
+
+      act(() => {
+        button("Reset zoom").click();
+      });
+      await settleAnimation();
+      expect(zoomInput().value).toBe("100");
+    });
   });
 });
