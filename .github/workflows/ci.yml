@@ -86,8 +86,13 @@ jobs:
         with:
           browsers: chromium chromium-headless-shell
 
-      - name: Test
-        run: make test-frontend
+      - name: Unit tests
+        working-directory: internal/frontend
+        run: pnpm test:unit
+
+      - name: Integration tests (Storybook)
+        working-directory: internal/frontend
+        run: pnpm test:integration
 
   e2e:
     name: E2E (${{ matrix.os }})

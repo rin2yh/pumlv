@@ -14,7 +14,7 @@
     "fmt:check": "oxfmt --check src",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
-    "test:storybook": "vitest run --project storybook",
+    "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",
     "screenshots": "node scripts/screenshots.mjs",
     "storybook": "storybook dev -p 6006 --no-open",

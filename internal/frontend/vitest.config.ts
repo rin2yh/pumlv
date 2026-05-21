@@ -23,7 +23,7 @@ export default defineConfig({
         extends: "./vite.config.ts",
         plugins: [storybookTest({ configDir: path.join(dirname, ".storybook") })],
         test: {
-          name: "storybook",
+          name: "integration",
           browser: {
             enabled: true,
             headless: true,
