@@ -1,31 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type JSX } from "react";
+import { act, renderHook } from "@testing-library/react";
+import type { JSX, ReactNode } from "react";
+import { TransformComponent, TransformWrapper, useTransformContext } from "react-zoom-pan-pinch";
+import { describe, expect, it } from "vitest";
 import { useKeyboardPan } from "./use-keyboard-pan";
-import { setupRender } from "../../test/render";
 
-const mockSetTransformState = vi.fn();
-const mockTransformState = { scale: 1, positionX: 0, positionY: 0 };
+const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
+  <TransformWrapper>
+    {children}
+    <TransformComponent>
+      <div />
+    </TransformComponent>
+  </TransformWrapper>
+);
 
-vi.mock("react-zoom-pan-pinch", () => ({
-  useTransformContext: () => ({
-    transformState: mockTransformState,
-    setTransformState: mockSetTransformState,
-  }),
-}));
-
-function Harness(): JSX.Element {
-  useKeyboardPan();
-  return <div />;
-}
-
-const render = setupRender();
-
-beforeEach(() => {
-  mockTransformState.scale = 1;
-  mockTransformState.positionX = 100;
-  mockTransformState.positionY = 200;
-  vi.clearAllMocks();
-});
+const mountHarness = () =>
+  renderHook(
+    () => {
+      useKeyboardPan();
+      return useTransformContext();
+    },
+    { wrapper },
+  );
 
 const pressKey = (key: string, init: KeyboardEventInit = {}) => {
   act(() => {
@@ -40,48 +35,57 @@ describe("useKeyboardPan", () => {
     { key: "ArrowUp", dx: 0, dy: 50 },
     { key: "ArrowDown", dx: 0, dy: -50 },
   ])("$key shifts the transform by ($dx, $dy)", ({ key, dx, dy }) => {
-    render(<Harness />);
+    const { result } = mountHarness();
     pressKey(key);
-    expect(mockSetTransformState).toHaveBeenCalledWith(1, 100 + dx, 200 + dy);
+    expect(result.current.transformState.positionX).toBe(dx);
+    expect(result.current.transformState.positionY).toBe(dy);
+    expect(result.current.transformState.scale).toBe(1);
   });
 
   it("uses a larger step when Shift is held", () => {
-    render(<Harness />);
+    const { result } = mountHarness();
     pressKey("ArrowRight", { shiftKey: true });
-    expect(mockSetTransformState).toHaveBeenCalledWith(1, 100 - 200, 200);
+    expect(result.current.transformState.positionX).toBe(-200);
+    expect(result.current.transformState.positionY).toBe(0);
   });
 
   it("ignores non-arrow keys", () => {
-    render(<Harness />);
+    const { result } = mountHarness();
     pressKey("a");
     pressKey("Enter");
-    expect(mockSetTransformState).not.toHaveBeenCalled();
+    expect(result.current.transformState.positionX).toBe(0);
+    expect(result.current.transformState.positionY).toBe(0);
   });
 
   it.each(["INPUT", "TEXTAREA"])("ignores arrows while typing in a %s", (tagName) => {
-    render(<Harness />);
+    const { result } = mountHarness();
     const editable = document.createElement(tagName.toLowerCase()) as HTMLElement;
     document.body.appendChild(editable);
-    editable.focus();
-    act(() => {
-      editable.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
-    });
-    expect(mockSetTransformState).not.toHaveBeenCalled();
-    document.body.removeChild(editable);
+    try {
+      editable.focus();
+      act(() => {
+        editable.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      });
+      expect(result.current.transformState.positionX).toBe(0);
+      expect(result.current.transformState.positionY).toBe(0);
+    } finally {
+      editable.remove();
+    }
   });
 
   it("reads the latest position on each keypress", () => {
-    render(<Harness />);
+    const { result } = mountHarness();
     pressKey("ArrowRight");
-    mockTransformState.positionX = 999;
+    expect(result.current.transformState.positionX).toBe(-50);
     pressKey("ArrowRight");
-    expect(mockSetTransformState).toHaveBeenNthCalledWith(2, 1, 999 - 50, 200);
+    expect(result.current.transformState.positionX).toBe(-100);
   });
 
   it("removes the listener on unmount", () => {
-    render(<Harness />);
-    render(<div />);
+    const { result, unmount } = mountHarness();
+    const ctx = result.current;
+    unmount();
     pressKey("ArrowRight");
-    expect(mockSetTransformState).not.toHaveBeenCalled();
+    expect(ctx.transformState.positionX).toBe(0);
   });
 });
