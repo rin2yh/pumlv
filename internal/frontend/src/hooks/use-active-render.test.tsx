@@ -5,7 +5,7 @@ import { fetchFileSource } from "../api/files";
 import { renderPlantUML } from "../plantuml/renderer";
 import { flush } from "../test/flush";
 import { setupRender } from "../test/render";
-import { useActiveRender, type UseActiveRenderResult } from "./useActiveRender";
+import { useActiveRender, type UseActiveRenderResult } from "./use-active-render";
 
 vi.mock("../api/files", () => ({
   fetchFileSource: vi.fn(),

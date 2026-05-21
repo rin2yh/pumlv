@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { FileEntry } from "../../api/files";
-import { useToggleSet } from "../../hooks/useToggleSet";
+import { useToggleSet } from "../../hooks/use-toggle-set";
 import { buildTree, flatten } from "./tree";
 import { DirectoryRow } from "./directory-row";
 import { FileRow } from "./file-row";

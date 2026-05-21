@@ -2,10 +2,10 @@ import { useState, type JSX } from "react";
 import { FileTree } from "./components/file-tree";
 import { Preview } from "./components/preview";
 import { SourceView } from "./components/source-view";
-import { useActiveRender } from "./hooks/useActiveRender";
-import { useFileList } from "./hooks/useFileList";
-import { useServerEvents } from "./hooks/useServerEvents";
-import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./sourcePanel";
+import { useActiveRender } from "./hooks/use-active-render";
+import { useFileList } from "./hooks/use-file-list";
+import { useServerEvents } from "./hooks/use-server-events";
+import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./source-panel";
 
 export default function App(): JSX.Element {
   const { files, active, select, reload: reloadFiles } = useFileList();

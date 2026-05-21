@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { act } from "react";
 import { FileTree } from ".";
-import { flatFiles, nestedFiles } from "./__test__/fixtures";
+import { flatFiles, nestedFiles } from "./test/fixtures";
 import { setupRender } from "../../test/render";
 
 const render = setupRender();

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchFiles, type FileEntry } from "../api/files";
 import { flush } from "../test/flush";
 import { setupRender } from "../test/render";
-import { useFileList, type UseFileListResult } from "./useFileList";
+import { useFileList, type UseFileListResult } from "./use-file-list";
 
 vi.mock("../api/files", async () => {
   const actual = await vi.importActual<typeof import("../api/files")>("../api/files");
