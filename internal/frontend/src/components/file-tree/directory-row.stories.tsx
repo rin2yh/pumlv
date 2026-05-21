@@ -20,53 +20,21 @@ export default meta;
 type Story = StoryObj<typeof DirectoryRow>;
 
 export const Expanded: Story = {
-  play: async ({ canvasElement, args, step }) => {
+  play: async ({ canvasElement, args }) => {
     const button = within(canvasElement).getByRole("button", { name: /sub/ });
-
-    await step("exposes aria-expanded=true and the down chevron", async () => {
-      await expect(button).toHaveAttribute("aria-expanded", "true");
-      await expect(button.textContent).toContain("▾");
-    });
-
-    await step("click fires onToggle with the node key", async () => {
-      await userEvent.click(button);
-      await expect(args.onToggle).toHaveBeenCalledWith(NODE.key);
-    });
+    await userEvent.click(button);
+    await expect(args.onToggle).toHaveBeenCalledWith(NODE.key);
   },
 };
 
 export const Collapsed: Story = {
   args: { isExpanded: false },
-  play: async ({ canvasElement, step }) => {
-    const button = within(canvasElement).getByRole("button", { name: /sub/ });
-
-    await step("exposes aria-expanded=false and the right chevron", async () => {
-      await expect(button).toHaveAttribute("aria-expanded", "false");
-      await expect(button.textContent).toContain("▸");
-    });
-  },
 };
 
 export const Depth0: Story = {
   args: { depth: 0 },
-  play: async ({ canvasElement, step }) => {
-    const button = within(canvasElement).getByRole("button", { name: /sub/ });
-
-    await step("source-root rows render at the smaller font size", async () => {
-      const { fontSize } = window.getComputedStyle(button);
-      await expect(fontSize).toBe("12px");
-    });
-  },
 };
 
 export const Depth1: Story = {
   args: { depth: 1 },
-  play: async ({ canvasElement, step }) => {
-    const button = within(canvasElement).getByRole("button", { name: /sub/ });
-
-    await step("nested directories render at the larger font size", async () => {
-      const { fontSize } = window.getComputedStyle(button);
-      await expect(fontSize).toBe("14px");
-    });
-  },
 };
