@@ -89,7 +89,7 @@ jobs:
       - name: Unit tests
         run: make test-frontend-unit
 
-      - name: Integration tests (Storybook)
+      - name: Integration tests
         run: make test-frontend-integration
 
   e2e:
