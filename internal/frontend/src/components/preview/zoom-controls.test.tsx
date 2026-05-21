@@ -1,26 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type JSX } from "react";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
-import { ZoomControls } from "./zoom-controls";
-import { MAX_SCALE, MIN_SCALE } from "./zoom";
+import { act } from "react";
+import { ZoomControlsHarness } from "./test/wrappers";
+import { ZOOM_INPUT_LABEL, ZoomControls } from "./zoom-controls";
+import { MIN_SCALE } from "./zoom";
 import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
 
-const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
+const zoomInput = () =>
+  document.querySelector<HTMLInputElement>(`input[aria-label="${ZOOM_INPUT_LABEL}"]`)!;
 
 const typeAndCommit = (value: string, options?: { key?: string }) =>
   typeAndCommitInput(zoomInput(), value, options);
 
-function Wrapped(): JSX.Element {
-  return (
-    <TransformWrapper minScale={MIN_SCALE} maxScale={MAX_SCALE}>
-      <ZoomControls />
-      <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-        <div />
-      </TransformComponent>
-    </TransformWrapper>
-  );
-}
+const Wrapped = () => (
+  <ZoomControlsHarness>
+    <ZoomControls />
+  </ZoomControlsHarness>
+);
 
 const render = setupRender();
 

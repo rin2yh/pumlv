@@ -1,24 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { JSX } from "react";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { MAX_SCALE, MIN_SCALE } from "./zoom";
-import { ZoomControls } from "./zoom-controls";
+import { ZoomControlsHarness } from "./test/wrappers";
+import { MAX_SCALE } from "./zoom";
+import { ZOOM_INPUT_LABEL, ZoomControls } from "./zoom-controls";
 
-// The react-compiler runtime in browser-test can't always resolve
-// useMemoCache for story-local components; disabling memo on this thin
-// wrapper avoids touching production code.
 function Wrapped(): JSX.Element {
-  "use no memo";
   return (
-    <div style={{ position: "relative", height: 320, width: 480 }}>
-      <TransformWrapper minScale={MIN_SCALE} maxScale={MAX_SCALE}>
-        <ZoomControls />
-        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-          <div style={{ width: 200, height: 200 }} />
-        </TransformComponent>
-      </TransformWrapper>
-    </div>
+    <ZoomControlsHarness>
+      <ZoomControls />
+    </ZoomControlsHarness>
   );
 }
 
@@ -31,7 +22,7 @@ export default meta;
 type Story = StoryObj<typeof Wrapped>;
 
 const getInput = (canvasElement: HTMLElement): HTMLInputElement =>
-  within(canvasElement).getByLabelText("Zoom level") as HTMLInputElement;
+  within(canvasElement).getByLabelText(ZOOM_INPUT_LABEL) as HTMLInputElement;
 
 // Lets react-zoom-pan-pinch finish initializing its layout-derived state
 // before the first programmatic click — without this, zoom buttons can

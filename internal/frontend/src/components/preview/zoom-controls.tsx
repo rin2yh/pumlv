@@ -6,6 +6,8 @@ import { useKeyboardPan } from "./use-keyboard-pan";
 const BASE_BTN =
   "flex h-8 cursor-pointer items-center rounded border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur-sm hover:bg-white active:bg-slate-100";
 
+export const ZOOM_INPUT_LABEL = "Zoom level";
+
 export function ZoomControls(): JSX.Element {
   const { zoomIn, zoomOut, resetTransform, centerView } = useControls();
   // useTransformComponent re-renders on every transform change (wheel/pinch
@@ -78,7 +80,7 @@ export function ZoomControls(): JSX.Element {
           onBlur={commit}
           onKeyDown={handleKeyDown}
           className="h-full w-8 cursor-text bg-transparent text-right outline-none"
-          aria-label="Zoom level"
+          aria-label={ZOOM_INPUT_LABEL}
         />
         <span aria-hidden="true">%</span>
       </div>
