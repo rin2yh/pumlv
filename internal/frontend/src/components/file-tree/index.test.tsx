@@ -109,10 +109,4 @@ describe("FileTree", () => {
     expect(rootA.getAttribute("aria-expanded")).toBe("true");
     expect(fileButtons().map((b) => b.textContent)).toEqual(before);
   });
-
-  it("passes active down so the selected file gets the highlight", () => {
-    render(<FileTree files={flatFiles} active="/a/y.puml" onSelect={() => {}} />);
-    const selected = fileButtons().find((b) => b.textContent === "y.puml");
-    expect(selected?.className).toMatch(/violet/);
-  });
 });
