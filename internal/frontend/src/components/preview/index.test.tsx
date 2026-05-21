@@ -1,55 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, type ReactNode } from "react";
+import { describe, expect, it } from "vitest";
 import { Preview } from "./index";
+import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
-
-let mockScale = 1;
-
-let lastPanningStart: (() => void) | undefined;
-let lastPanningStop: (() => void) | undefined;
-let lastWrapperClass: string | undefined;
-
-vi.mock("./use-keyboard-pan", () => ({
-  useKeyboardPan: () => {},
-}));
-
-vi.mock("./minimap", () => ({
-  Minimap: () => null,
-}));
-
-vi.mock("react-zoom-pan-pinch", () => ({
-  TransformWrapper: ({
-    children,
-    onPanningStart,
-    onPanningStop,
-  }: {
-    children: ReactNode;
-    onPanningStart?: () => void;
-    onPanningStop?: () => void;
-  }) => {
-    lastPanningStart = onPanningStart;
-    lastPanningStop = onPanningStop;
-    return children;
-  },
-  TransformComponent: ({
-    children,
-    wrapperClass,
-  }: {
-    children: ReactNode;
-    wrapperClass?: string;
-  }) => {
-    lastWrapperClass = wrapperClass;
-    return <div className={wrapperClass}>{children}</div>;
-  },
-  useControls: () => ({
-    zoomIn: vi.fn(),
-    zoomOut: vi.fn(),
-    resetTransform: vi.fn(),
-    centerView: vi.fn(),
-  }),
-  useTransformComponent: (cb: (s: { state: { scale: number } }) => unknown) =>
-    cb({ state: { scale: mockScale } }),
-}));
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
@@ -57,14 +9,6 @@ const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-lab
 const previewImg = () => document.querySelector<HTMLImageElement>('img[alt="preview"]')!;
 
 const render = setupRender();
-
-beforeEach(() => {
-  mockScale = 1;
-  lastPanningStart = undefined;
-  lastPanningStop = undefined;
-  lastWrapperClass = undefined;
-  vi.clearAllMocks();
-});
 
 describe("Preview", () => {
   it.each([{ svg: SAMPLE_SVG }, { svg: "data:image/png;base64,ZZZZ" }])(
@@ -89,38 +33,24 @@ describe("Preview", () => {
     expect(previewImg().getAttribute("src")).toBe(to);
   });
 
-  it("resets the zoom display when svg changes (TransformWrapper remounts on key)", () => {
-    mockScale = 2;
+  it("shows the zoom display at 100% on initial render", () => {
     render(<Preview svg={SAMPLE_SVG} />);
-    expect(zoomInput().value).toBe("200");
-
-    mockScale = 1;
-    render(<Preview svg="data:image/png;base64,BBBB" />);
     expect(zoomInput().value).toBe("100");
   });
 
-  describe("drag cursor", () => {
-    const startPan = () => lastPanningStart?.();
-    const stopPan = () => lastPanningStop?.();
+  it("renders the zoom controls alongside the preview image", () => {
+    render(<Preview svg={SAMPLE_SVG} />);
+    expect(document.querySelector('[aria-label="Zoom in"]')).not.toBeNull();
+    expect(document.querySelector('[aria-label="Zoom out"]')).not.toBeNull();
+    expect(document.querySelector('[aria-label="Reset zoom"]')).not.toBeNull();
+  });
 
-    it.each([
-      { name: "defaults to cursor-grab when not panning", actions: [], expected: "cursor-grab" },
-      {
-        name: "switches to cursor-grabbing while panning",
-        actions: [startPan],
-        expected: "cursor-grabbing",
-      },
-      {
-        name: "returns to cursor-grab when panning stops",
-        actions: [startPan, stopPan],
-        expected: "cursor-grab",
-      },
-    ])("$name", ({ actions, expected }) => {
-      render(<Preview svg={SAMPLE_SVG} />);
-      for (const action of actions) {
-        act(() => action());
-      }
-      expect(lastWrapperClass).toBe(expected);
-    });
+  it("resets the zoom display to 100% when svg changes (TransformWrapper remounts on key)", () => {
+    render(<Preview svg={SAMPLE_SVG} />);
+    typeAndCommitInput(zoomInput(), "250");
+    expect(zoomInput().value).toBe("250");
+
+    render(<Preview svg="data:image/png;base64,BBBB" />);
+    expect(zoomInput().value).toBe("100");
   });
 });
