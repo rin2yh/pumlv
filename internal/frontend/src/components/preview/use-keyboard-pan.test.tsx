@@ -13,7 +13,7 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   </TransformWrapper>
 );
 
-const mountHarness = () =>
+const mount = () =>
   renderHook(
     () => {
       useKeyboardPan();
@@ -35,7 +35,7 @@ describe("useKeyboardPan", () => {
     { key: "ArrowUp", dx: 0, dy: 50 },
     { key: "ArrowDown", dx: 0, dy: -50 },
   ])("$key shifts the transform by ($dx, $dy)", ({ key, dx, dy }) => {
-    const { result } = mountHarness();
+    const { result } = mount();
     pressKey(key);
     expect(result.current.transformState.positionX).toBe(dx);
     expect(result.current.transformState.positionY).toBe(dy);
@@ -43,14 +43,14 @@ describe("useKeyboardPan", () => {
   });
 
   it("uses a larger step when Shift is held", () => {
-    const { result } = mountHarness();
+    const { result } = mount();
     pressKey("ArrowRight", { shiftKey: true });
     expect(result.current.transformState.positionX).toBe(-200);
     expect(result.current.transformState.positionY).toBe(0);
   });
 
   it("ignores non-arrow keys", () => {
-    const { result } = mountHarness();
+    const { result } = mount();
     pressKey("a");
     pressKey("Enter");
     expect(result.current.transformState.positionX).toBe(0);
@@ -58,7 +58,7 @@ describe("useKeyboardPan", () => {
   });
 
   it.each(["INPUT", "TEXTAREA"])("ignores arrows while typing in a %s", (tagName) => {
-    const { result } = mountHarness();
+    const { result } = mount();
     const editable = document.createElement(tagName.toLowerCase()) as HTMLElement;
     document.body.appendChild(editable);
     try {
@@ -74,7 +74,7 @@ describe("useKeyboardPan", () => {
   });
 
   it("reads the latest position on each keypress", () => {
-    const { result } = mountHarness();
+    const { result } = mount();
     pressKey("ArrowRight");
     expect(result.current.transformState.positionX).toBe(-50);
     pressKey("ArrowRight");
@@ -82,7 +82,7 @@ describe("useKeyboardPan", () => {
   });
 
   it("removes the listener on unmount", () => {
-    const { result, unmount } = mountHarness();
+    const { result, unmount } = mount();
     const ctx = result.current;
     unmount();
     pressKey("ArrowRight");

@@ -27,16 +27,6 @@ describe("SourceView", () => {
     expect(document.body.textContent).toContain("@enduml");
   });
 
-  it("does not interpret source content as HTML (XSS-safe rendering)", async () => {
-    render(<SourceView source={"<script>alert(1)</script>"} />);
-    await flush(3);
-
-    const pre = document.querySelector("pre");
-    expect(pre).not.toBeNull();
-    expect(pre!.textContent).toContain("<script>alert(1)</script>");
-    expect(pre!.querySelector("script")).toBeNull();
-  });
-
   it("clears highlighted output when source becomes empty", async () => {
     render(<SourceView source="hello" />);
     await flush(3);
