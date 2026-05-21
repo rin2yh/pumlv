@@ -1,58 +1,65 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { splitLines } from "../../lib/lines";
 
-let codeToTokensMock: ReturnType<typeof vi.fn>;
-let createHighlighterCoreMock: ReturnType<typeof vi.fn>;
+const SHIKI_MODULES = [
+  "shiki/core",
+  "shiki/engine/oniguruma",
+  "shiki/themes/github-light.mjs",
+  "shiki/langs/yaml.mjs",
+  "shiki/wasm",
+] as const;
 
-vi.mock("shiki/core", () => ({
-  createHighlighterCore: (...args: unknown[]) => createHighlighterCoreMock(...args),
-}));
-
-vi.mock("shiki/engine/oniguruma", () => ({
-  createOnigurumaEngine: vi.fn(async () => ({})),
-}));
-
-vi.mock("shiki/themes/github-light.mjs", () => ({ default: {} }));
-vi.mock("shiki/langs/yaml.mjs", () => ({ default: {} }));
-vi.mock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
-
-beforeEach(() => {
-  codeToTokensMock = vi.fn();
-  createHighlighterCoreMock = vi.fn(async () => ({
-    codeToTokens: codeToTokensMock,
-  }));
-});
-
-afterEach(() => {
-  vi.resetModules();
-});
-
-describe("highlight", () => {
-  it("calls shiki with lang=yaml and theme=github-light", async () => {
-    codeToTokensMock.mockReturnValue({ tokens: [], fg: "", bg: "" });
+describe("highlight (real shiki)", () => {
+  it("returns tokens with hex fg/bg for non-empty input", async () => {
     const { highlight } = await import("./highlighter");
-    await highlight("@startuml\n@enduml");
-    expect(codeToTokensMock).toHaveBeenCalledWith("@startuml\n@enduml", {
-      lang: "yaml",
-      theme: "github-light",
-    });
-  });
-
-  it("returns the tokens, fg, and bg from shiki", async () => {
-    const tokens = [[{ content: "x", color: "#111" }]];
-    codeToTokensMock.mockReturnValue({ tokens, fg: "#222", bg: "#fff" });
-    const { highlight } = await import("./highlighter");
-    expect(await highlight("x")).toEqual({ tokens, fg: "#222", bg: "#fff" });
-  });
-
-  it.each([
-    { name: "missing fg defaults to empty string", field: "fg" as const },
-    { name: "missing bg defaults to empty string", field: "bg" as const },
-  ])("$name", async ({ field }) => {
-    codeToTokensMock.mockReturnValue({ tokens: [], fg: undefined, bg: undefined });
-    const { highlight } = await import("./highlighter");
-    const result = await highlight("x");
+    const result = await highlight("@startuml\nactor A\n@enduml");
     expect(result).not.toBeNull();
-    expect(result![field]).toBe("");
+    expect(result!.fg).toMatch(/^#[0-9a-f]{3,8}$/i);
+    expect(result!.bg).toMatch(/^#[0-9a-f]{3,8}$/i);
+    expect(result!.tokens.length).toBeGreaterThan(0);
+    expect(
+      result!.tokens
+        .flat()
+        .map((t) => t.content)
+        .join(""),
+    ).toContain("startuml");
+  });
+
+  it.each(["a", "line0\nline1\nline2", "@startuml\nactor A\n@enduml", "a\n", "a\n\n", ""])(
+    "token row count matches splitLines for %p",
+    async (source) => {
+      const { highlight } = await import("./highlighter");
+      const result = await highlight(source);
+      expect(result).not.toBeNull();
+      expect(result!.tokens).toHaveLength(splitLines(source).length);
+    },
+  );
+});
+
+describe("highlight error and cache behavior", () => {
+  let codeToTokensMock: ReturnType<typeof vi.fn>;
+  let createHighlighterCoreMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.resetModules();
+    codeToTokensMock = vi.fn();
+    createHighlighterCoreMock = vi.fn(async () => ({
+      codeToTokens: codeToTokensMock,
+    }));
+    vi.doMock("shiki/core", () => ({
+      createHighlighterCore: (...args: unknown[]) => createHighlighterCoreMock(...args),
+    }));
+    vi.doMock("shiki/engine/oniguruma", () => ({
+      createOnigurumaEngine: vi.fn(async () => ({})),
+    }));
+    vi.doMock("shiki/themes/github-light.mjs", () => ({ default: {} }));
+    vi.doMock("shiki/langs/yaml.mjs", () => ({ default: {} }));
+    vi.doMock("shiki/wasm", () => ({ default: new ArrayBuffer(0) }));
+  });
+
+  afterEach(() => {
+    SHIKI_MODULES.forEach((m) => vi.doUnmock(m));
+    vi.resetModules();
   });
 
   it("returns null when shiki throws", async () => {
@@ -101,13 +108,5 @@ describe("highlight", () => {
     expect(result!.tokens[0]).toEqual([{ content: "line0" }]);
     expect(result!.tokens[1]).toEqual([{ content: "" }]);
     expect(result!.tokens[2]).toEqual([{ content: "" }]);
-  });
-
-  it("does not truncate when shiki returns at least the source line count", async () => {
-    const shikiTokens = [[{ content: "line0" }], [{ content: "line1" }], [{ content: "line2" }]];
-    codeToTokensMock.mockReturnValue({ tokens: shikiTokens, fg: "", bg: "" });
-    const { highlight } = await import("./highlighter");
-    const result = await highlight("line0\nline1\nline2");
-    expect(result!.tokens).toHaveLength(3);
   });
 });
