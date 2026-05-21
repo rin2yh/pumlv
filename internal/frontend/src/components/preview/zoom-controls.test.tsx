@@ -3,6 +3,7 @@ import { act, type JSX } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { ZoomControls } from "./zoom-controls";
 import { MAX_SCALE, MIN_SCALE } from "./zoom";
+import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
@@ -10,20 +11,8 @@ const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-lab
 const button = (label: string) =>
   document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
 
-const typeAndCommit = (value: string, { key = "Enter" } = {}) => {
-  const input = zoomInput();
-  act(() => {
-    input.focus();
-  });
-  act(() => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-    setter.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  act(() => {
-    input.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
-  });
-};
+const typeAndCommit = (value: string, options?: { key?: string }) =>
+  typeAndCommitInput(zoomInput(), value, options);
 
 function Wrapped(): JSX.Element {
   return (
@@ -65,13 +54,13 @@ describe("ZoomControls", () => {
     expect(zoomInput().value).toBe(expected);
   });
 
-  it("clamps inputs below MIN_SCALE to the minimum (10%)", () => {
+  it(`clamps inputs below MIN_SCALE to the minimum (${MIN_SCALE * 100}%)`, () => {
     render(<Wrapped />);
     typeAndCommit("5");
     expect(zoomInput().value).toBe(String(MIN_SCALE * 100));
   });
 
-  it("clamps inputs above MAX_SCALE to the maximum (5000%)", () => {
+  it(`clamps inputs above MAX_SCALE to the maximum (${MAX_SCALE * 100}%)`, () => {
     render(<Wrapped />);
     typeAndCommit("10000");
     expect(zoomInput().value).toBe(String(MAX_SCALE * 100));

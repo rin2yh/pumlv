@@ -1,29 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { act } from "react";
 import { Preview } from "./index";
+import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
 
 const SAMPLE_SVG = "data:image/png;base64,AAAA";
 
 const zoomInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Zoom level"]')!;
 const previewImg = () => document.querySelector<HTMLImageElement>('img[alt="preview"]')!;
-
-const setZoom = (value: string) => {
-  const input = zoomInput();
-  act(() => {
-    input.focus();
-  });
-  act(() => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-    setter.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  act(() => {
-    input.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
-    );
-  });
-};
 
 const render = setupRender();
 
@@ -64,7 +47,7 @@ describe("Preview", () => {
 
   it("resets the zoom display to 100% when svg changes (TransformWrapper remounts on key)", () => {
     render(<Preview svg={SAMPLE_SVG} />);
-    setZoom("250");
+    typeAndCommitInput(zoomInput(), "250");
     expect(zoomInput().value).toBe("250");
 
     render(<Preview svg="data:image/png;base64,BBBB" />);
