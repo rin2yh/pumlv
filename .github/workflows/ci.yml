@@ -80,6 +80,19 @@ jobs:
       - name: Lint
         run: make lint-frontend
 
+      # Storybook stories run via @storybook/addon-vitest in a real
+      # Chromium browser, so the unit + story projects together need
+      # Playwright's bundled chromium available.
+      - name: Cache Playwright browsers
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('internal/frontend/pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        working-directory: internal/frontend
+        run: pnpm exec playwright install --with-deps chromium chromium-headless-shell
+
       - name: Test
         run: make test-frontend
 
