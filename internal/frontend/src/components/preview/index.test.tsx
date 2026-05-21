@@ -3,10 +3,7 @@ import { Preview } from "./index";
 import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
 import { NEXT_SVG, SAMPLE_SVG } from "./test/fixtures";
-import { ZOOM_INPUT_LABEL } from "./zoom-controls";
-
-const zoomInput = () =>
-  document.querySelector<HTMLInputElement>(`input[aria-label="${ZOOM_INPUT_LABEL}"]`)!;
+import { zoomInput } from "./test/queries";
 
 const render = setupRender();
 

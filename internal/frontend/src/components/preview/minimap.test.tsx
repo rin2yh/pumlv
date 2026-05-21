@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MinimapHarness } from "./test/wrappers";
-import { SAMPLE_SVG } from "./test/fixtures";
+import { NEXT_SVG, SAMPLE_SVG } from "./test/fixtures";
 import { setupRender } from "../../test/render";
 
 const container = () => document.querySelector('[aria-label="diagram minimap"]')!;
@@ -22,9 +22,8 @@ describe("Minimap", () => {
 
   it("updates the thumbnail when svg changes", () => {
     render(<MinimapHarness svg={SAMPLE_SVG} />);
-    const next = "data:image/png;base64,NEXT";
-    render(<MinimapHarness svg={next} />);
-    expect(imgs()).toContain(next);
+    render(<MinimapHarness svg={NEXT_SVG} />);
+    expect(imgs()).toContain(NEXT_SVG);
     expect(imgs()).not.toContain(SAMPLE_SVG);
   });
 });

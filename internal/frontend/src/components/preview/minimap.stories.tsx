@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { MinimapHarness } from "./test/wrappers";
-import { SAMPLE_SVG } from "./test/fixtures";
-
-const UPDATED_SVG = "data:image/png;base64,NEXT";
+import { NEXT_SVG, SAMPLE_SVG } from "./test/fixtures";
 
 const meta: Meta<typeof MinimapHarness> = {
   component: MinimapHarness,
@@ -16,5 +14,5 @@ type Story = StoryObj<typeof MinimapHarness>;
 export const Default: Story = {};
 
 export const Updated: Story = {
-  args: { svg: UPDATED_SVG },
+  args: { svg: NEXT_SVG },
 };

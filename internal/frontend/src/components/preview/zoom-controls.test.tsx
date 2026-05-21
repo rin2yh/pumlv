@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act } from "react";
+import { act, type JSX } from "react";
 import { ZoomControlsHarness } from "./test/wrappers";
-import { ZOOM_INPUT_LABEL, ZoomControls } from "./zoom-controls";
+import { zoomInput } from "./test/queries";
+import { ZoomControls } from "./zoom-controls";
 import { MIN_SCALE } from "./zoom";
 import { typeAndCommitInput } from "../../test/input";
 import { setupRender } from "../../test/render";
 
-const zoomInput = () =>
-  document.querySelector<HTMLInputElement>(`input[aria-label="${ZOOM_INPUT_LABEL}"]`)!;
-
 const typeAndCommit = (value: string, options?: { key?: string }) =>
   typeAndCommitInput(zoomInput(), value, options);
 
-const Wrapped = () => (
-  <ZoomControlsHarness>
-    <ZoomControls />
-  </ZoomControlsHarness>
-);
+function Wrapped(): JSX.Element {
+  return (
+    <ZoomControlsHarness>
+      <ZoomControls />
+    </ZoomControlsHarness>
+  );
+}
 
 const render = setupRender();
 
