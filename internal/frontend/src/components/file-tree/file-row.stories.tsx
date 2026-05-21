@@ -22,27 +22,35 @@ type Story = StoryObj<typeof FileRow>;
 const pageBg = () => window.getComputedStyle(document.body).backgroundColor;
 
 export const Default: Story = {
-  play: async ({ canvasElement, args }) => {
+  play: async ({ canvasElement, args, step }) => {
     const button = within(canvasElement).getByRole("button", { name: ENTRY.name });
 
-    await expect(button).toHaveAttribute("title", ENTRY.rel);
+    await step("rel path is exposed as the tooltip", async () => {
+      await expect(button).toHaveAttribute("title", ENTRY.rel);
+    });
 
-    const styles = window.getComputedStyle(button);
-    await expect(styles.backgroundColor).toBe(pageBg());
-    await expect(styles.fontWeight).toBe("400");
+    await step("renders without the selected-row highlight", async () => {
+      const styles = window.getComputedStyle(button);
+      await expect(styles.backgroundColor).toBe(pageBg());
+      await expect(styles.fontWeight).toBe("400");
+    });
 
-    await userEvent.click(button);
-    await expect(args.onSelect).toHaveBeenCalledWith(ENTRY.path);
+    await step("click fires onSelect with the file path", async () => {
+      await userEvent.click(button);
+      await expect(args.onSelect).toHaveBeenCalledWith(ENTRY.path);
+    });
   },
 };
 
 export const Selected: Story = {
   args: { isSelected: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, step }) => {
     const button = within(canvasElement).getByRole("button", { name: ENTRY.name });
-    const styles = window.getComputedStyle(button);
 
-    await expect(styles.backgroundColor).not.toBe(pageBg());
-    await expect(styles.fontWeight).toBe("500");
+    await step("selected row is visually highlighted", async () => {
+      const styles = window.getComputedStyle(button);
+      await expect(styles.backgroundColor).not.toBe(pageBg());
+      await expect(styles.fontWeight).toBe("500");
+    });
   },
 };
