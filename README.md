@@ -8,11 +8,7 @@ A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the di
 
 ## Installation
 
-Download a pre-built binary from the [releases page](https://github.com/rin2yh/pumlv/releases), or install with Go:
-
-```sh
-go install github.com/rin2yh/pumlv@latest
-```
+Download a pre-built binary from the [releases page](https://github.com/rin2yh/pumlv/releases).
 
 Or with [mise](https://mise.jdx.dev/) ([GitHub backend](https://mise.jdx.dev/dev-tools/backends/github.html)):
 
