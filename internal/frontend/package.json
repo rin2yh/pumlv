@@ -24,7 +24,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-zoom-pan-pinch": "^3.7.0",
-    "shiki": "^1.29.0"
+    "shiki": "^4.1.0"
   },
   "devDependencies": {
     "@playwright/test": "1.56.0",
