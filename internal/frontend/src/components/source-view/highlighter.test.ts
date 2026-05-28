@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { splitLines } from "../../lib/lines";
 
 const SHIKI_MODULES = [
@@ -37,8 +37,8 @@ describe("highlight (real shiki)", () => {
 });
 
 describe("highlight error and cache behavior", () => {
-  let codeToTokensMock: ReturnType<typeof vi.fn>;
-  let createHighlighterCoreMock: ReturnType<typeof vi.fn>;
+  let codeToTokensMock: Mock<(...args: unknown[]) => unknown>;
+  let createHighlighterCoreMock: Mock<(...args: unknown[]) => Promise<unknown>>;
 
   beforeEach(() => {
     vi.resetModules();

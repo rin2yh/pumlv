@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 import { loadPlantUMLModule } from "./bootstrap";
 import { renderPlantUML } from "./renderer";
@@ -7,7 +7,9 @@ vi.mock("./bootstrap", () => ({
   loadPlantUMLModule: vi.fn(),
 }));
 
-let renderToString: ReturnType<typeof vi.fn>;
+let renderToString: Mock<
+  (lines: string[], onSuccess: (svg: string) => void, onError: (message: string) => void) => void
+>;
 
 beforeEach(() => {
   vi.clearAllMocks();
