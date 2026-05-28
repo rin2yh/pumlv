@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.3.3](https://github.com/rin2yh/pumlv/compare/v0.3.2...v0.3.3) - 2026-05-28
+- build(deps): bump goreleaser/goreleaser-action from 7.2.1 to 7.2.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/66
+- build(deps): bump shiki from 1.29.2 to 4.1.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/67
+- build(deps-dev): bump @storybook/react-vite from 10.4.0 to 10.4.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/71
+- build(deps-dev): bump @types/react from 19.2.14 to 19.2.15 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/69
+- build(deps-dev): bump vitest stack to v4 by @rin2yh in https://github.com/rin2yh/pumlv/pull/72
+
 ## [v0.3.2](https://github.com/rin2yh/pumlv/compare/v0.3.1...v0.3.2) - 2026-05-21
 - feat(frontend): add minimap overlay to the preview by @rin2yh in https://github.com/rin2yh/pumlv/pull/41
 - refactor(frontend): standardize filenames to kebab-case by @rin2yh in https://github.com/rin2yh/pumlv/pull/44
