@@ -29,10 +29,14 @@ const REQUIRED_FILES = ["plantuml.js", "viz-global.js"];
 // sequence diagrams (observed max: ~56 000px) while still bounding pathological
 // inputs. SVG is vector, so coordinate-system size has no meaningful effect on
 // memory or rendering performance.
-const PLANTUML_PATCHES = [
-  { from: "p<=4096.0", to: "p<=65536.0" },
-  { from: "q<=4096.0", to: "q<=65536.0" },
-];
+//
+// The limit appears as two `4096.0` literals — one per axis — inside the
+// dimension guard (currently minified to `if(!(p>4096.0)){...if(!(q>4096.0))`).
+// We match the bare `4096.0` constant rather than the surrounding expression so
+// the patch survives the minifier renaming variables or flipping the comparison
+// operator (both have happened across upstream snapshot builds). The constant is
+// unique to this guard, so replacing every occurrence is safe.
+const PLANTUML_PATCHES = [{ from: "4096.0", to: "65536.0" }];
 
 function patchPlantumlJs(filePath) {
   let src = readFileSync(filePath, "utf8");
