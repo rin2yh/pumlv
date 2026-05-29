@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.3.4](https://github.com/rin2yh/pumlv/compare/v0.3.3...v0.3.4) - 2026-05-29
+- fix(frontend): make plantuml.js dimension-limit patch resilient to minifier changes by @rin2yh in https://github.com/rin2yh/pumlv/pull/73
+
 ## [v0.3.3](https://github.com/rin2yh/pumlv/compare/v0.3.2...v0.3.3) - 2026-05-28
 - build(deps): bump goreleaser/goreleaser-action from 7.2.1 to 7.2.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/66
 - build(deps): bump shiki from 1.29.2 to 4.1.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/67
