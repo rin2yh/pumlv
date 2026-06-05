@@ -36,7 +36,7 @@
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "@vitest/browser": "^4.1.7",
+    "@vitest/browser": "^4.1.8",
     "@vitest/browser-playwright": "^4.1.7",
     "babel-plugin-react-compiler": "^1.0.0",
     "fflate": "^0.8.3",
