@@ -10,7 +10,7 @@ The suite lives in `internal/frontend/tests/e2e/` and is driven by `make e2e`, w
 1. Runs `make build` — `go generate ./...` (which builds the embedded SPA via `pnpm run build`) then `go build -trimpath -o pumlv .`.
 2. Runs `cd internal/frontend && pnpm test:e2e` (i.e. `playwright test`). Playwright's `webServer` spec spawns the freshly-built `./pumlv` on `127.0.0.1:8766` against `../../examples` and tears it down after the run.
 
-The configured project is `chromium` only, and it launches with `channel: "chrome"`.
+The configured project is `chromium` only, and it launches Playwright's bundled Chromium (no branded `channel`), so the browser comes from `playwright install chromium` rather than a system Google Chrome.
 
 ## Run it
 
@@ -22,7 +22,7 @@ That is the whole happy path. Run from the repo root.
 
 ## Recovering from failures
 
-- **`Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome`** — Playwright is set to `channel: "chrome"` and Chrome isn't installed. Try `cd internal/frontend && pnpm exec playwright install chrome`. If the sandbox blocks the download (e.g. apt mirrors return 403), find a preinstalled chromium under `/opt/pw-browsers/<version>/chrome-linux/chrome` and symlink it to the path Playwright is checking: `mkdir -p /opt/google/chrome && ln -sf /opt/pw-browsers/<version>/chrome-linux/chrome /opt/google/chrome/chrome`, then re-run `make e2e`. Note that `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` does **not** work here — it only overrides `channel: "chromium"`, not `channel: "chrome"`. Do **not** edit `playwright.config.ts` to bake in a sandbox-local path.
+- **`Executable doesn't exist at .../chrome-linux/chrome`** — the bundled Chromium isn't installed. Run `cd internal/frontend && pnpm exec playwright install chromium chromium-headless-shell`. In sandboxes the browsers are usually preinstalled under `/opt/pw-browsers` (with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` already set), so Playwright finds them without a download. Do **not** edit `playwright.config.ts` to bake in a sandbox-local path.
 
 - **Server didn't come up within 30 s** — the binary is missing or stale. Confirm `./pumlv --no-open --port 8766 ./examples` boots by hand. If `make build` fails earlier with `pattern all:dist: no matching files found` from `internal/static/embed.go`, the frontend bundle wasn't produced — re-run `make build` from a clean tree (the `go:generate` directive runs `pnpm install && pnpm run build`).
 

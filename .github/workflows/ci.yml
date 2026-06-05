@@ -116,7 +116,7 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
         with:
-          browsers: chrome
+          browsers: chromium chromium-headless-shell
 
       - name: E2E tests
         run: make e2e

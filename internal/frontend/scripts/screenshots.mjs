@@ -76,7 +76,7 @@ async function waitForServer(url, timeoutMs = 30_000) {
 const baseURL = `http://127.0.0.1:${PORT}`;
 await waitForServer(`${baseURL}/api/files`);
 
-const browser = await chromium.launch({ channel: "chrome" });
+const browser = await chromium.launch();
 try {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
