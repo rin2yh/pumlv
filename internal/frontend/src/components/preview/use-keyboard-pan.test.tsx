@@ -37,24 +37,24 @@ describe("useKeyboardPan", () => {
   ])("$key shifts the transform by ($dx, $dy)", ({ key, dx, dy }) => {
     const { result } = mount();
     pressKey(key);
-    expect(result.current.transformState.positionX).toBe(dx);
-    expect(result.current.transformState.positionY).toBe(dy);
-    expect(result.current.transformState.scale).toBe(1);
+    expect(result.current.state.positionX).toBe(dx);
+    expect(result.current.state.positionY).toBe(dy);
+    expect(result.current.state.scale).toBe(1);
   });
 
   it("uses a larger step when Shift is held", () => {
     const { result } = mount();
     pressKey("ArrowRight", { shiftKey: true });
-    expect(result.current.transformState.positionX).toBe(-200);
-    expect(result.current.transformState.positionY).toBe(0);
+    expect(result.current.state.positionX).toBe(-200);
+    expect(result.current.state.positionY).toBe(0);
   });
 
   it("ignores non-arrow keys", () => {
     const { result } = mount();
     pressKey("a");
     pressKey("Enter");
-    expect(result.current.transformState.positionX).toBe(0);
-    expect(result.current.transformState.positionY).toBe(0);
+    expect(result.current.state.positionX).toBe(0);
+    expect(result.current.state.positionY).toBe(0);
   });
 
   it.each(["INPUT", "TEXTAREA"])("ignores arrows while typing in a %s", (tagName) => {
@@ -66,8 +66,8 @@ describe("useKeyboardPan", () => {
       act(() => {
         editable.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       });
-      expect(result.current.transformState.positionX).toBe(0);
-      expect(result.current.transformState.positionY).toBe(0);
+      expect(result.current.state.positionX).toBe(0);
+      expect(result.current.state.positionY).toBe(0);
     } finally {
       editable.remove();
     }
@@ -76,9 +76,9 @@ describe("useKeyboardPan", () => {
   it("reads the latest position on each keypress", () => {
     const { result } = mount();
     pressKey("ArrowRight");
-    expect(result.current.transformState.positionX).toBe(-50);
+    expect(result.current.state.positionX).toBe(-50);
     pressKey("ArrowRight");
-    expect(result.current.transformState.positionX).toBe(-100);
+    expect(result.current.state.positionX).toBe(-100);
   });
 
   it("removes the listener on unmount", () => {
@@ -86,6 +86,6 @@ describe("useKeyboardPan", () => {
     const ctx = result.current;
     unmount();
     pressKey("ArrowRight");
-    expect(ctx.transformState.positionX).toBe(0);
+    expect(ctx.state.positionX).toBe(0);
   });
 });
