@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.3.5](https://github.com/rin2yh/pumlv/compare/v0.3.4...v0.3.5) - 2026-06-05
+
+- build(deps): bump Songmu/tagpr from 1.19.0 to 1.20.0 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/78
+- build(deps): bump actions/checkout from 6.0.2 to 6.0.3 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/77
+- build(deps-dev): bump @vitest/browser from 4.1.7 to 4.1.8 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/80
+- ci(e2e): use bundled Chromium instead of branded Chrome channel by @rin2yh in https://github.com/rin2yh/pumlv/pull/84
+- build(deps-dev): bump vite from 6.4.2 to 8.0.16 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/75
+- build(deps-dev): bump jsdom from 25.0.1 to 29.1.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/79
+- build(deps): bump react and react-dom from 19.2.6 to 19.2.7 by @rin2yh in https://github.com/rin2yh/pumlv/pull/85
+- build(deps): bump react-zoom-pan-pinch from 3.7.0 to 4.0.3 by @rin2yh in https://github.com/rin2yh/pumlv/pull/86
+
 ## [v0.3.4](https://github.com/rin2yh/pumlv/compare/v0.3.3...v0.3.4) - 2026-05-29
 - fix(frontend): make plantuml.js dimension-limit patch resilient to minifier changes by @rin2yh in https://github.com/rin2yh/pumlv/pull/73
 
