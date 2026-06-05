@@ -39,8 +39,8 @@ export function useKeyboardPan(): void {
           return;
       }
       e.preventDefault();
-      const { positionX, positionY, scale } = ctx.transformState;
-      ctx.setTransformState(scale, positionX + dx, positionY + dy);
+      const { positionX, positionY, scale } = ctx.state;
+      ctx.setState(scale, positionX + dx, positionY + dy);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
