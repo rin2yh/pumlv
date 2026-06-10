@@ -27,7 +27,9 @@
     "shiki": "^4.2.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
     "@playwright/test": "1.56.0",
+    "@rolldown/plugin-babel": "^0.2.0",
     "@storybook/addon-vitest": "10.4.0",
     "@storybook/react-vite": "10.4.2",
     "@tailwindcss/vite": "^4.1.0",
@@ -35,7 +37,7 @@
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/browser": "^4.1.8",
     "@vitest/browser-playwright": "^4.1.7",
     "babel-plugin-react-compiler": "^1.0.0",
