@@ -14,6 +14,15 @@ jobs:
   tagpr:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Serialize tagpr runs per branch. Rapid pushes to main (e.g. a burst of
+    # Dependabot auto-merges) would otherwise start multiple tagpr jobs that
+    # race to update the same release branch/PR via the git data API, and the
+    # losers fail with "git/trees: 401 Requires authentication". Queueing keeps
+    # only the latest pending run; cancel-in-progress: false never aborts a run
+    # that may already be producing a tag/release.
+    concurrency:
+      group: tagpr-${{ github.ref }}
+      cancel-in-progress: false
     outputs:
       tag: ${{ steps.tagpr.outputs.tag }}
     steps:
