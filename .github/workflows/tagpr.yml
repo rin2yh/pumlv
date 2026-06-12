@@ -14,6 +14,10 @@ jobs:
   tagpr:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Serialize runs so concurrent pushes don't race the git data API (401).
+    concurrency:
+      group: tagpr-${{ github.ref }}
+      cancel-in-progress: false
     outputs:
       tag: ${{ steps.tagpr.outputs.tag }}
     steps:
