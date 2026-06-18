@@ -45,7 +45,7 @@
     "jsdom": "^29.1.1",
     "oxfmt": "^0.55.0",
     "oxlint": "^1.10.0",
-    "playwright": "1.56.0",
+    "playwright": "1.61.0",
     "storybook": "10.4.6",
     "tailwindcss": "^4.1.0",
     "typescript": "^6.0.3",
