@@ -39,3 +39,6 @@ go.work.sum
 /internal/frontend/test-results/
 /internal/frontend/playwright-report/
 /internal/frontend/.playwright/
+
+# Claude Code agent worktrees
+/.claude/worktrees/
