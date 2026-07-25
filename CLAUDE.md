@@ -33,6 +33,7 @@ Go module: `github.com/rin2yh/pumlv`
 
 - `internal/frontend/src/plantuml/renderer.ts` — SVG generation via plantuml.js (TeaVM) + viz-global.js (Graphviz/Viz.js)
 - `internal/frontend/scripts/vendor-plantuml-core.mjs` — copies `plantuml.js` + `viz-global.js` out of the `@plantuml/core` npm package (MIT flavor) and patches the 4096px dimension limit up to 65536px
+- `internal/frontend/scripts/generate-frontend-credits.mjs` — generates `credits/frontend.txt` from the SPA's production npm dependencies
 - `internal/static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
 
 ## HTTP API
@@ -47,7 +48,7 @@ Internal endpoints (browser ↔ server). `/api/file` enforces a whitelist to pre
 
 ## CI/CD
 
-Uses **octocov** for coverage reporting. Releases automated via **tagpr** and **goreleaser**. `make check-credits` keeps CREDITS in sync with go.sum.
+Uses **octocov** for coverage reporting. Releases automated via **tagpr** and **goreleaser**. `credits/` holds the bundled third-party license texts: `go.txt` and `frontend.txt` are generated, `vendored.txt` is hand-written.
 
 ## Pull Requests
 

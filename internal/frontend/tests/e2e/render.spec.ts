@@ -72,9 +72,8 @@ test.describe("PlantUML rendering", () => {
     });
   });
 
-  // The upstream TeaVM build rejects any diagram whose layout exceeds 4096px on
-  // either axis, and vendor-plantuml-core.mjs patches that limit up to 65536px at
-  // build time. Guards against the patch silently ceasing to apply (issue #9).
+  // Guards vendor-plantuml-core.mjs's dimension-limit patch (issue #9): without it
+  // the engine refuses to render past 4096px, so nothing above that can appear.
   test("renders a diagram larger than the upstream 4096px limit", async ({ page }) => {
     test.setTimeout(240_000);
 

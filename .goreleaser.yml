@@ -39,8 +39,7 @@ archives:
           - zip
     files:
       - LICENSE
-      - CREDITS
-      - CREDITS-vendored
+      - credits/*
       - README.md
 
 checksum:

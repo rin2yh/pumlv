@@ -22,7 +22,7 @@ var (
 	flagExt    []string
 )
 
-// Credits は main から注入される CREDITS ファイルの内容（第三者ライブラリのライセンス全文）。
+// Credits holds the bundled third-party license texts, injected from main.
 var Credits string
 
 var creditsCmd = &cobra.Command{

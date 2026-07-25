@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "vendor:plantuml": "node scripts/vendor-plantuml-core.mjs",
-    "build": "node scripts/vendor-plantuml-core.mjs && tsc --noEmit && vite build",
+    "credits": "node scripts/generate-frontend-credits.mjs",
+    "build": "node scripts/vendor-plantuml-core.mjs && node scripts/generate-frontend-credits.mjs && tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "oxlint src",
     "fmt": "oxfmt --write src",
