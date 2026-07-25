@@ -72,6 +72,48 @@ test.describe("PlantUML rendering", () => {
     });
   });
 
+  // Guards vendor-plantuml-core.mjs's dimension-limit patch (issue #9): without it
+  // the engine refuses to render past 4096px, so nothing above that can appear.
+  test("renders a diagram larger than the upstream 4096px limit", async ({ page }) => {
+    test.setTimeout(240_000);
+
+    const preview = page.getByAltText("preview");
+    const errorPanel = page.locator("pre").filter({ hasText: /error|failed|too large/i });
+
+    await test.step("loads the SPA", async () => {
+      await page.goto("/");
+      await expect(preview).toBeVisible({ timeout: 60_000 });
+    });
+
+    await test.step("selects the large ER example", async () => {
+      await page.locator("aside nav").getByRole("button", { name: "large-er.puml" }).click();
+    });
+
+    await test.step("the rendered layout exceeds 4096px on at least one axis", async () => {
+      const longestAxis = () =>
+        preview.evaluate((img: HTMLImageElement) =>
+          img.complete ? Math.max(img.naturalWidth, img.naturalHeight) : 0,
+        );
+
+      try {
+        await expect.poll(longestAxis, { timeout: 120_000 }).toBeGreaterThan(4096);
+      } catch (cause) {
+        // The panel text ("Diagram too large for browser rendering: WxH") names the
+        // actual cause, which the polled number alone doesn't.
+        const errText = await errorPanel
+          .first()
+          .textContent({ timeout: 1_000 })
+          .catch(() => "(none)");
+        throw new Error(
+          `large-er.puml did not render above 4096px — the plantuml.js dimension ` +
+            `limit patch may have stopped applying (see vendor-plantuml-core.mjs).\n` +
+            `Error panel: ${errText}`,
+          { cause },
+        );
+      }
+    });
+  });
+
   test("collapses and re-expands a directory from its toggle header", async ({ page }) => {
     const dirToggles = page.locator("aside nav button[aria-expanded]");
     const fileButtons = page.locator("aside nav button:not([aria-expanded])");

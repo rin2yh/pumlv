@@ -66,10 +66,10 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 	@touch $@
 
 credits:
-	$(GOCREDITS) -w .
+	$(GOCREDITS) . > credits/go.txt
 
 prerelease_for_tagpr: credits
-	git add CREDITS go.sum
+	git add credits go.sum
 
 release-snapshot: generate
 	goreleaser release --snapshot --clean
