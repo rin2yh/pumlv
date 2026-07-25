@@ -53,7 +53,7 @@ pumlv aims to remove all of these pain points.
 
 To keep everything in the browser, this project bundles PlantUML's official TeaVM build (`plantuml.js` ~7 MB + `viz-global.js` ~1.4 MB) from the [`@plantuml/core`](https://www.npmjs.com/package/@plantuml/core) npm package. `internal/frontend/scripts/vendor-plantuml-core.mjs` copies the two files into `internal/frontend/public/plantuml/`, Vite copies them into `internal/static/dist/`, and `go:embed` then bundles them into the final binary. PlantUML source is never sent to any external service.
 
-pumlv modifies `plantuml.js` while vendoring it: the script raises PlantUML's hard-coded diagram dimension limit from 4096 px to 65536 px so that large ER / sequence diagrams render instead of being rejected. See [`CREDITS-frontend`](./CREDITS-frontend) for the full notice.
+pumlv modifies `plantuml.js` while vendoring it: the script raises PlantUML's hard-coded diagram dimension limit from 4096 px to 65536 px so that large ER / sequence diagrams render instead of being rejected. See [`CREDITS-vendored`](./CREDITS-vendored) for the full notice.
 
 ## License
 
@@ -61,4 +61,4 @@ MIT. See [LICENSE](./LICENSE).
 
 The bundled browser assets are third-party: PlantUML (`plantuml.js`) is MIT, as is Viz.js (`viz-global.js`), which embeds Graphviz under the EPL-2.0.
 
-Third-party license texts are bundled in [`CREDITS`](./CREDITS) for the Go dependencies and [`CREDITS-frontend`](./CREDITS-frontend) for the browser assets. Run `pumlv credits` to print them all.
+Third-party license texts are bundled in [`CREDITS`](./CREDITS) for the Go dependencies and [`CREDITS-vendored`](./CREDITS-vendored) for the vendored browser engine (PlantUML, Viz.js, Graphviz). Run `pumlv credits` to print them all.

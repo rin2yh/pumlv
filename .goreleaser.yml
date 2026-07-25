@@ -40,7 +40,7 @@ archives:
     files:
       - LICENSE
       - CREDITS
-      - CREDITS-frontend
+      - CREDITS-vendored
       - README.md
 
 checksum:

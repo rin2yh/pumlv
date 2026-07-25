@@ -14,7 +14,6 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
-    channel: "chrome",
     launchOptions: {
       args: ["--disable-dev-shm-usage"],
     },

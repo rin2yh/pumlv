@@ -13,14 +13,15 @@ import (
 //go:embed CREDITS
 var credits string
 
-// CREDITS はGoの依存から gocredits が自動生成するため、ブラウザへ配信する
-// 同梱物（plantuml.js / viz-global.js）のライセンスは別ファイルで管理する。
+// CREDITS はGoの依存から gocredits が自動生成し go generate のたびに上書きされる
+// ため、vendoring したブラウザ同梱物（plantuml.js / viz-global.js）のライセンスは
+// 手書きの別ファイルで管理する。
 //
-//go:embed CREDITS-frontend
-var creditsFrontend string
+//go:embed CREDITS-vendored
+var creditsVendored string
 
 func main() {
-	cmd.Credits = credits + "\n" + creditsFrontend
+	cmd.Credits = credits + "\n" + creditsVendored
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

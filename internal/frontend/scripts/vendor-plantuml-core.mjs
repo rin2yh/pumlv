@@ -9,7 +9,7 @@
 // functional difference is that the Sudoku diagram is absent from the MIT build.
 import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REQUIRED_FILES = ["plantuml.js", "viz-global.js"];
@@ -55,7 +55,28 @@ function patchDimensionLimit(filePath) {
     process.exit(1);
   }
   writeFileSync(filePath, src.replaceAll(LIMIT_FROM, LIMIT_TO));
-  console.log("plantuml.js: raised dimension limit from 4096 to 65536px");
+  console.log(`plantuml.js: raised dimension limit ${LIMIT_FROM} -> ${LIMIT_TO}`);
+}
+
+// CREDITS-vendored carries the license texts for exactly the files vendored here,
+// plus the modification notice naming the raised limit. Both are hand-written, so
+// nothing but this check stops them from drifting out of sync with the code — and
+// a stale modification notice is a false license-compliance statement, not just a
+// stale comment.
+function verifyCreditsCoverage(creditsPath) {
+  const credits = readFileSync(creditsPath, "utf8");
+  // The notice spells the limit as a plain pixel count ("65536 px"), not as the
+  // float literal this script substitutes.
+  const limit = LIMIT_TO.replace(/\.0$/, "");
+  const missing = [...REQUIRED_FILES, limit].filter((needle) => !credits.includes(needle));
+  if (missing.length > 0) {
+    console.error(
+      `${basename(creditsPath)} does not mention: ${missing.join(", ")}.\n` +
+        "Every vendored file needs its license there, and the modification notice must " +
+        "state the limit this script actually applies.",
+    );
+    process.exit(1);
+  }
 }
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -72,3 +93,4 @@ for (const name of REQUIRED_FILES) {
 }
 
 patchDimensionLimit(resolve(dest, "plantuml.js"));
+verifyCreditsCoverage(resolve(here, "..", "..", "..", "CREDITS-vendored"));

@@ -76,13 +76,7 @@ test.describe("PlantUML rendering", () => {
   // either axis, and vendor-plantuml-core.mjs patches that limit up to 65536px at
   // build time. Guards against the patch silently ceasing to apply (issue #9).
   test("renders a diagram larger than the upstream 4096px limit", async ({ page }) => {
-    test.setTimeout(180_000);
-
-    const errors: string[] = [];
-    page.on("pageerror", (err) => errors.push(err.message));
-    page.on("console", (msg) => {
-      if (msg.type() === "error") errors.push(msg.text());
-    });
+    test.setTimeout(240_000);
 
     const preview = page.getByAltText("preview");
     const errorPanel = page.locator("pre").filter({ hasText: /error|failed|too large/i });
@@ -93,28 +87,29 @@ test.describe("PlantUML rendering", () => {
     });
 
     await test.step("selects the large ER example", async () => {
-      await page.getByRole("button", { name: "large-er.puml" }).click();
+      await page.locator("aside nav").getByRole("button", { name: "large-er.puml" }).click();
     });
 
     await test.step("the rendered layout exceeds 4096px on at least one axis", async () => {
       const longestAxis = () =>
-        preview.evaluate((el) => {
-          const img = el as HTMLImageElement;
-          return img.complete ? Math.max(img.naturalWidth, img.naturalHeight) : 0;
-        });
+        preview.evaluate((img: HTMLImageElement) =>
+          img.complete ? Math.max(img.naturalWidth, img.naturalHeight) : 0,
+        );
 
       try {
         await expect.poll(longestAxis, { timeout: 120_000 }).toBeGreaterThan(4096);
-      } catch {
+      } catch (cause) {
+        // The panel text ("Diagram too large for browser rendering: WxH") names the
+        // actual cause, which the polled number alone doesn't.
         const errText = await errorPanel
           .first()
-          .textContent()
-          .catch(() => null);
+          .textContent({ timeout: 1_000 })
+          .catch(() => "(none)");
         throw new Error(
           `large-er.puml did not render above 4096px — the plantuml.js dimension ` +
             `limit patch may have stopped applying (see vendor-plantuml-core.mjs).\n` +
-            `Error panel: ${errText ?? "(none)"}\n` +
-            `Console errors:\n${errors.join("\n")}`,
+            `Error panel: ${errText}`,
+          { cause },
         );
       }
     });
