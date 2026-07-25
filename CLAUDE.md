@@ -32,7 +32,7 @@ Go module: `github.com/rin2yh/pumlv`
 **Frontend (Vite + React 19 + Tailwind v4):**
 
 - `internal/frontend/src/plantuml/renderer.ts` — SVG generation via plantuml.js (TeaVM) + viz-global.js (Graphviz/Viz.js)
-- `internal/frontend/scripts/fetch-plantuml-core.mjs` — downloads `js-plantuml-SNAPSHOT.zip` from plantuml/plantuml releases and extracts `plantuml.js` + `viz-global.js`
+- `internal/frontend/scripts/vendor-plantuml-core.mjs` — copies `plantuml.js` + `viz-global.js` out of the `@plantuml/core` npm package (MIT flavor) and patches the 4096px dimension limit up to 65536px
 - `internal/static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
 
 ## HTTP API

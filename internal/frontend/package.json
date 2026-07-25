@@ -6,8 +6,8 @@
   "packageManager": "pnpm@11.0.8",
   "scripts": {
     "dev": "vite",
-    "fetch:plantuml": "node scripts/fetch-plantuml-core.mjs",
-    "build": "node scripts/fetch-plantuml-core.mjs && tsc --noEmit && vite build",
+    "vendor:plantuml": "node scripts/vendor-plantuml-core.mjs",
+    "build": "node scripts/vendor-plantuml-core.mjs && tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "oxlint src",
     "fmt": "oxfmt --write src",
@@ -27,6 +27,7 @@
     "shiki": "^4.1.0"
   },
   "devDependencies": {
+    "@plantuml/core": "^1.2026.6",
     "@playwright/test": "1.56.0",
     "@storybook/addon-vitest": "10.4.0",
     "@storybook/react-vite": "10.4.0",
@@ -38,7 +39,6 @@
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/browser": "^3.2.4",
     "babel-plugin-react-compiler": "^1.0.0",
-    "fflate": "^0.8.3",
     "jsdom": "^25.0.0",
     "oxfmt": "^0.49.0",
     "oxlint": "^1.10.0",
