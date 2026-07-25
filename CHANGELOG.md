@@ -1,5 +1,28 @@
 # Changelog
 
+## [v0.3.7](https://github.com/rin2yh/pumlv/compare/v0.3.6...v0.3.7) - 2026-07-25
+
+- build(deps-dev): bump oxlint from 1.72.0 to 1.73.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/109
+- build(deps-dev): bump oxfmt from 0.55.0 to 0.58.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/110
+- build(deps-dev): bump @vitest/browser-playwright from 4.1.9 to 4.1.10 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/111
+- build(deps-dev): bump @storybook/react-vite from 10.4.2 to 10.4.6 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/113
+- build(deps-dev): bump @tailwindcss/vite from 4.3.0 to 4.3.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/112
+- build(deps): bump Songmu/tagpr from 1.20.0 to 1.20.1 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/116
+- build(deps-dev): bump vite from 8.0.16 to 8.1.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/118
+- build(deps-dev): bump typescript from 6.0.3 to 7.0.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/117
+- build(deps-dev): bump vitest from 4.1.9 to 4.1.10 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/119
+- build(deps-dev): bump @types/react from 19.2.15 to 19.2.17 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/120
+- build(deps-dev): bump @vitest/browser from 4.1.8 to 4.1.10 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/121
+- build(deps-dev): bump oxfmt from 0.58.0 to 0.59.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/128
+- build(deps-dev): bump vite from 8.1.4 to 8.1.5 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/124
+- build(deps): bump actions/checkout from 7.0.0 to 7.0.1 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/122
+- build(deps): bump actions/setup-go from 6.5.0 to 7.0.0 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/123
+- build(deps-dev): bump storybook from 10.4.6 to 10.5.3 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/125
+- build(deps-dev): bump @babel/core from 7.29.7 to 8.0.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/127
+- Ignore .claude/worktrees/ directory by @rin2yh in https://github.com/rin2yh/pumlv/pull/129
+- build(deps-dev): bump @storybook/addon-vitest from 10.4.0 to 10.5.3 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/126
+- Vendor plantuml.js from the MIT @plantuml/core package by @rin2yh in https://github.com/rin2yh/pumlv/pull/130
+
 ## [v0.3.6](https://github.com/rin2yh/pumlv/compare/v0.3.5...v0.3.6) - 2026-07-02
 
 - build(deps-dev): bump vitest from 4.1.7 to 4.1.8 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/89
