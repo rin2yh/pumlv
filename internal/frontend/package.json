@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "react": "^19.2.8",
-    "react-dom": "^19.2.7",
+    "react-dom": "^19.2.8",
     "react-zoom-pan-pinch": "^4.0.3",
     "shiki": "^4.2.0"
   },
