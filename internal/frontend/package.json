@@ -30,7 +30,7 @@
   "devDependencies": {
     "@babel/core": "^8.0.1",
     "@plantuml/core": "^1.2026.6",
-    "@playwright/test": "1.62.0",
+    "@playwright/test": "1.62.1",
     "@rolldown/plugin-babel": "^0.2.0",
     "@storybook/addon-vitest": "10.5.3",
     "@storybook/react-vite": "10.5.5",
@@ -46,7 +46,7 @@
     "jsdom": "^29.1.1",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.76.0",
-    "playwright": "1.62.0",
+    "playwright": "1.62.1",
     "storybook": "10.5.5",
     "tailwindcss": "^4.1.0",
     "typescript": "^7.0.2",
