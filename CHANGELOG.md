@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.9](https://github.com/rin2yh/pumlv/compare/v0.3.8...v0.3.9) - 2026-08-28
+
+- ci: restore release generation and verify generated files by @rin2yh in https://github.com/rin2yh/pumlv/pull/161
+
 ## [v0.3.8](https://github.com/rin2yh/pumlv/compare/v0.3.7...v0.3.8) - 2026-08-28
 
 - build(deps): bump k1LoW/octocov-action from 1.5.1 to 1.5.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/131
