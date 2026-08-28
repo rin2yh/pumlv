@@ -879,7 +879,7 @@ SOFTWARE.
 ================================================================
 
 react-zoom-pan-pinch
-https://github.com/prc5/react-zoom-pan-pinch#readme
+https://github.com/BetterTyped/react-zoom-pan-pinch#readme
 ----------------------------------------------------------------
 MIT License
 
