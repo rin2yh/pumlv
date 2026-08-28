@@ -1,5 +1,34 @@
 # Changelog
 
+## [v0.3.8](https://github.com/rin2yh/pumlv/compare/v0.3.7...v0.3.8) - 2026-08-28
+
+- build(deps): bump k1LoW/octocov-action from 1.5.1 to 1.5.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/131
+- build(deps-dev): bump oxlint from 1.74.0 to 1.76.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/132
+- build(deps-dev): bump @types/node from 26.1.1 to 26.1.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/134
+- build(deps-dev): bump storybook from 10.5.3 to 10.5.5 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/136
+- build(deps-dev): bump @vitejs/plugin-react from 6.0.3 to 6.0.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/137
+- build(deps): bump react from 19.2.7 to 19.2.8 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/133
+- build(deps-dev): bump playwright from 1.61.1 to 1.62.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/135
+- build(deps-dev): bump @storybook/react-vite from 10.5.3 to 10.5.5 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/140
+- build(deps-dev): bump @vitejs/plugin-react from 6.0.4 to 6.0.5 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/142
+- build(deps-dev): bump playwright from 1.62.0 to 1.62.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/139
+- build(deps-dev): bump @types/react from 19.2.17 to 19.2.18 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/143
+- build(deps-dev): bump vite from 8.1.5 to 8.2.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/141
+- build(deps-dev): bump jsdom from 29.1.1 to 30.0.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/144
+- build(deps): bump shiki from 4.3.1 to 4.4.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/145
+- build(deps-dev): bump vite from 8.2.0 to 8.2.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/146
+- build(deps-dev): bump oxlint from 1.76.0 to 1.77.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/147
+- build(deps-dev): bump storybook from 10.5.5 to 10.5.7 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/148
+- build(deps-dev): bump @types/node from 26.1.2 to 26.2.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/149
+- build(deps-dev): bump oxlint from 1.77.0 to 1.78.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/151
+- build(deps-dev): bump @types/react-dom from 19.2.3 to 19.2.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/153
+- build(deps): bump react-zoom-pan-pinch from 4.0.3 to 4.0.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/152
+- build(deps-dev): bump storybook from 10.5.7 to 10.5.8 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/154
+- build(deps): bump shiki from 4.4.2 to 4.4.3 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/150
+- build(deps-dev): bump @vitejs/plugin-react from 6.0.5 to 6.1.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/155
+- build(deps-dev): bump @storybook/react-vite from 10.5.5 to 10.5.8 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/157
+- build(deps-dev): bump oxlint from 1.78.0 to 1.79.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/158
+
 ## [v0.3.7](https://github.com/rin2yh/pumlv/compare/v0.3.6...v0.3.7) - 2026-07-25
 
 - build(deps-dev): bump oxlint from 1.72.0 to 1.73.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/109
