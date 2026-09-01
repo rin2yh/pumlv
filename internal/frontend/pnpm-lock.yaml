@@ -25,8 +25,8 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1
       '@plantuml/core':
-        specifier: ^1.2026.6
-        version: 1.2026.6
+        specifier: ^1.2026.7
+        version: 1.2026.7
       '@playwright/test':
         specifier: 1.62.1
         version: 1.62.1
@@ -977,8 +977,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@plantuml/core@1.2026.6':
-    resolution: {integrity: sha512-e+s8jtAKT6kb7yvOCXv0exXOp7FvyKYDcpv+aQrThwXUQgdTGP+fb9hPZQr7jbeEMuUHbxjH1HYLwNZZxw3hJg==}
+  '@plantuml/core@1.2026.7':
+    resolution: {integrity: sha512-1yzQmABM9LmbVlCjBW+nxldnk0sAZqyYc927kwz63+PkOH3r26MARSJiz6aui6vZCYlorAE54vhlXskW92VzpA==}
 
   '@playwright/test@1.62.1':
     resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==}
@@ -3320,7 +3320,7 @@ snapshots:
   '@oxlint/binding-win32-x64-msvc@1.79.0':
     optional: true
 
-  '@plantuml/core@1.2026.6': {}
+  '@plantuml/core@1.2026.7': {}
 
   '@playwright/test@1.62.1':
     dependencies:
