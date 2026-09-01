@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.3.10](https://github.com/rin2yh/pumlv/compare/v0.3.9...v0.3.10) - 2026-09-01
+
+- build(deps-dev): bump vite from 8.2.1 to 8.2.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/156
+- build(deps-dev): bump oxfmt from 0.59.0 to 0.65.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/159
+- build(deps): bump Songmu/tagpr from 1.20.1 to 1.20.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/164
+- build(deps-dev): bump storybook from 10.5.8 to 10.5.10 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/167
+- build(deps-dev): bump @testing-library/react from 16.3.2 to 16.3.3 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/170
+- build(deps-dev): bump @types/node from 26.2.0 to 26.4.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/168
+- build(deps-dev): bump @types/react-dom from 19.2.4 to 19.2.5 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/169
+- build(deps-dev): bump @plantuml/core from 1.2026.6 to 1.2026.7 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/165
+
 ## [v0.3.9](https://github.com/rin2yh/pumlv/compare/v0.3.8...v0.3.9) - 2026-08-28
 
 - ci: restore release generation and verify generated files by @rin2yh in https://github.com/rin2yh/pumlv/pull/161
