@@ -28,7 +28,7 @@
     "shiki": "^4.4.3"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.1",
+    "@babel/core": "^8.0.5",
     "@plantuml/core": "^1.2026.7",
     "@playwright/test": "1.63.0",
     "@rolldown/plugin-babel": "^0.2.0",
