@@ -72,8 +72,9 @@ test.describe("PlantUML rendering", () => {
     });
   });
 
-  // Guards vendor-plantuml-core.mjs's dimension-limit patch (issue #9): without it
-  // the engine refuses to render past 4096px, so nothing above that can appear.
+  // Guards the maxSvgSize render option renderer.ts passes to plantuml.js (issue #9):
+  // without it the engine refuses to render past its default limit, so nothing above
+  // 4096px (the limit prior to @plantuml/core 1.2026.8) can appear.
   test("renders a diagram larger than the upstream 4096px limit", async ({ page }) => {
     test.setTimeout(240_000);
 
@@ -105,8 +106,8 @@ test.describe("PlantUML rendering", () => {
           .textContent({ timeout: 1_000 })
           .catch(() => "(none)");
         throw new Error(
-          `large-er.puml did not render above 4096px — the plantuml.js dimension ` +
-            `limit patch may have stopped applying (see vendor-plantuml-core.mjs).\n` +
+          `large-er.puml did not render above 4096px — the maxSvgSize render option ` +
+            `(see renderer.ts) may have stopped applying.\n` +
             `Error panel: ${errText}`,
           { cause },
         );

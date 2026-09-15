@@ -5,11 +5,12 @@ Vendored from the @plantuml/core npm package, which the PlantUML project
 publishes from the MIT-licensed flavor of its TeaVM build
 (see https://github.com/plantuml/plantuml/issues/2740).
 
-pumlv modifies this file while vendoring it: the hard-coded diagram
-dimension limit is raised from 4096 px to 65536 px on both axes, so that
-large ER / sequence diagrams render instead of being rejected. The change
-is applied by internal/frontend/scripts/vendor-plantuml-core.mjs, which is
-part of the pumlv source distribution.
+pumlv vendors this file unmodified (copied by
+internal/frontend/scripts/vendor-plantuml-core.mjs). The engine's default
+diagram dimension limit is raised from 8192 px to 65536 px on both axes,
+so that large ER / sequence diagrams render instead of being rejected, via
+the `maxSvgSize` render option that internal/frontend/src/plantuml/renderer.ts
+passes at render time.
 
 /* +=======================================================================
  * |
@@ -413,4 +414,3 @@ version(s), and exceptions or additional permissions here}."
   look for such a notice.
 
   You may add additional accurate notices of copyright ownership.
-
