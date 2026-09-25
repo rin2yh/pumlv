@@ -91,7 +91,6 @@ func init() {
 	rootCmd.Flags().BoolVar(&flagNoOpen, "no-open", false, "Do not open the browser automatically")
 	rootCmd.Flags().StringSliceVar(&flagExt, "ext", []string{".puml", ".plantuml", ".iuml", ".wsd"}, "File extensions to watch")
 	rootCmd.AddCommand(creditsCmd)
-	rootCmd.AddCommand(completionCmd)
 }
 
 // Execute runs the root command.
