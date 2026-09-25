@@ -36,6 +36,19 @@ pumlv ./docs ./design/seq.puml    # multiple arguments are allowed
 
 On startup pumlv prints `pumlv listening on http://127.0.0.1:<port>` and opens the URL in your default browser. Press `Ctrl+C` for a graceful shutdown.
 
+### Shell completion
+
+Generate a completion script with `pumlv completion bash`, `zsh`, `fish`, or `powershell`. For the current session:
+
+```sh
+source <(pumlv completion bash)     # Bash
+source <(pumlv completion zsh)      # Zsh
+pumlv completion fish | source      # Fish
+```
+
+In PowerShell, run `pumlv completion powershell | Out-String | Invoke-Expression`.
+To enable completion in future sessions, add the corresponding command to your shell startup file.
+
 ## Background
 
 Existing PlantUML preview options have a few rough edges:
