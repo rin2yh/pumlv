@@ -45,7 +45,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
     "oxfmt": "^0.68.0",
-    "oxlint": "^1.81.0",
+    "oxlint": "^1.85.0",
     "playwright": "1.63.0",
     "storybook": "10.5.10",
     "tailwindcss": "^4.1.0",
