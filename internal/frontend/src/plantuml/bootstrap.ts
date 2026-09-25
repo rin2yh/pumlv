@@ -5,10 +5,18 @@
 const VIZ_URL = "/plantuml/viz-global.js";
 const PLANTUML_MODULE_URL = "/plantuml/plantuml.js";
 
+interface RenderOptions {
+  // @plantuml/core refuses to render past 8192px on either axis by default;
+  // this raises that to match the limit pumlv used to patch into plantuml.js
+  // by hand before @plantuml/core 1.2026.8 added this option.
+  maxSvgSize?: number;
+}
+
 type RenderToString = (
   lines: string[],
   onSuccess: (svg: string) => void,
   onError: (message: string) => void,
+  opts?: RenderOptions,
 ) => void;
 
 export interface PlantUMLModule {
