@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.11](https://github.com/rin2yh/pumlv/compare/v0.3.10...v0.3.11) - 2026-09-25
+
+- docs: document built-in shell completion by @rin2yh in https://github.com/rin2yh/pumlv/pull/187
+
 ## [v0.3.10](https://github.com/rin2yh/pumlv/compare/v0.3.9...v0.3.10) - 2026-09-25
 
 - build(deps-dev): bump vite from 8.2.1 to 8.2.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/156
