@@ -11,28 +11,17 @@ import (
 
 var update = flag.Bool("update", false, "update renderer asset golden files")
 
-func writeFixture(t *testing.T, path, contents string) {
+func setupInput(t *testing.T) (string, string, string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	root := t.TempDir()
+	if err := os.CopyFS(root, os.DirFS(filepath.Join("testdata", "input"))); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	return root, filepath.Join(root, "frontend"), filepath.Join(root, "assets")
 }
 
 func TestRun(t *testing.T) {
-	root := t.TempDir()
-	frontend := filepath.Join(root, "frontend")
-	assets := filepath.Join(root, "assets")
-	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
-		"const D=()=>{};export{C as render,D as renderToString};")
-	writeFixture(t, filepath.Join(root, "js", "buffer.js"),
-		"globalThis.bufferReady = true;")
-	writeFixture(t, filepath.Join(root, "js", "shared.js"),
-		"export const value = 42;")
-	writeFixture(t, filepath.Join(root, "js", "dom.js"),
-		"import { value } from './shared.js'; globalThis.domReady = value;")
+	_, frontend, assets := setupInput(t)
 
 	if err := run(frontend, assets); err != nil {
 		t.Fatal(err)
@@ -59,22 +48,20 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunRejectsChangedExports(t *testing.T) {
-	root := t.TempDir()
-	frontend := filepath.Join(root, "frontend")
-	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"), "export{changed};")
-	if err := run(frontend, filepath.Join(root, "assets")); err == nil || !strings.Contains(err.Error(), "exports changed") {
+	_, frontend, assets := setupInput(t)
+	if err := os.WriteFile(filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"), []byte("export{changed};"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(frontend, assets); err == nil || !strings.Contains(err.Error(), "exports changed") {
 		t.Fatalf("expected changed exports error, got %v", err)
 	}
 }
 
 func TestRunReportsBundleErrors(t *testing.T) {
-	root := t.TempDir()
-	frontend := filepath.Join(root, "frontend")
-	assets := filepath.Join(root, "assets")
-	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
-		"export{C as render,D as renderToString};")
-	writeFixture(t, filepath.Join(root, "js", "buffer.js"),
-		"import './missing.js';")
+	root, frontend, assets := setupInput(t)
+	if err := os.WriteFile(filepath.Join(root, "js", "buffer.js"), []byte("import './missing.js';"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := run(frontend, assets); err == nil || !strings.Contains(err.Error(), "bundle buffer.js") {
 		t.Fatalf("expected bundle error, got %v", err)
 	}

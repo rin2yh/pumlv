@@ -136,7 +136,7 @@ func (r *Renderer) newInterpreter(ctx context.Context) (*spidermonkey.JS, error)
 		if len(args) < 2 {
 			return nil, errors.New("expected text and font")
 		}
-		return spidermonkey.ValueOf(r.textWidth(args[0].String(), args[1].String())), nil
+		return spidermonkey.ValueOf(r.measureText(args[0].String(), args[1].String())), nil
 	}); err != nil {
 		return nil, err
 	}

@@ -1,0 +1,1 @@
+import { value } from './shared.js'; globalThis.domReady = value;

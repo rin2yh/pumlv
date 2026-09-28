@@ -1,0 +1,699 @@
+@startuml EC Platform ER Diagram
+!define PK <b><color:goldenrod>PK</color></b>
+!define FK <color:royalblue>FK</color>
+!define NN <color:red>NN</color>
+
+hide circle
+skinparam linetype ortho
+
+entity users {
+  * PK id : bigint
+  --
+  NN email : varchar(255)
+  NN password_hash : varchar(255)
+  first_name : varchar(100)
+  last_name : varchar(100)
+  phone : varchar(20)
+  date_of_birth : date
+  gender : enum('m','f','other')
+  avatar_url : varchar(512)
+  locale : varchar(10)
+  timezone : varchar(50)
+  is_email_verified : boolean
+  is_active : boolean
+  last_login_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity user_addresses {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  label : varchar(50)
+  NN recipient_name : varchar(200)
+  NN phone : varchar(20)
+  NN postal_code : varchar(20)
+  NN prefecture : varchar(50)
+  NN city : varchar(100)
+  NN street : varchar(255)
+  building : varchar(255)
+  is_default : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity user_sessions {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  NN token_hash : varchar(255)
+  ip_address : varchar(45)
+  user_agent : text
+  expires_at : timestamp
+  created_at : timestamp
+}
+
+entity sellers {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  NN shop_name : varchar(255)
+  shop_slug : varchar(255)
+  description : text
+  logo_url : varchar(512)
+  banner_url : varchar(512)
+  contact_email : varchar(255)
+  contact_phone : varchar(20)
+  NN postal_code : varchar(20)
+  NN prefecture : varchar(50)
+  NN city : varchar(100)
+  NN street : varchar(255)
+  building : varchar(255)
+  bank_account_name : varchar(200)
+  bank_account_number : varchar(50)
+  bank_branch_code : varchar(20)
+  rating : decimal(3,2)
+  review_count : int
+  is_verified : boolean
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity brands {
+  * PK id : bigint
+  --
+  NN name : varchar(255)
+  slug : varchar(255)
+  description : text
+  logo_url : varchar(512)
+  website_url : varchar(512)
+  country_of_origin : varchar(100)
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity categories {
+  * PK id : bigint
+  --
+  FK parent_id : bigint
+  NN name : varchar(255)
+  slug : varchar(255)
+  description : text
+  image_url : varchar(512)
+  sort_order : int
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity products {
+  * PK id : bigint
+  --
+  FK seller_id : bigint
+  FK brand_id : bigint
+  FK category_id : bigint
+  NN name : varchar(500)
+  slug : varchar(500)
+  description : text
+  short_description : varchar(1000)
+  status : enum('draft','active','inactive','deleted')
+  condition : enum('new','used','refurbished')
+  is_digital : boolean
+  weight_g : int
+  length_mm : int
+  width_mm : int
+  height_mm : int
+  rating : decimal(3,2)
+  review_count : int
+  sales_count : int
+  view_count : int
+  created_at : timestamp
+  updated_at : timestamp
+  published_at : timestamp
+}
+
+entity product_images {
+  * PK id : bigint
+  --
+  FK product_id : bigint
+  FK variant_id : bigint
+  NN image_url : varchar(512)
+  alt_text : varchar(255)
+  sort_order : int
+  is_primary : boolean
+  created_at : timestamp
+}
+
+entity product_attribute_groups {
+  * PK id : bigint
+  --
+  FK category_id : bigint
+  NN name : varchar(100)
+  sort_order : int
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity product_attributes {
+  * PK id : bigint
+  --
+  FK group_id : bigint
+  NN name : varchar(100)
+  input_type : enum('text','number','select','multi_select','boolean')
+  unit : varchar(20)
+  is_required : boolean
+  is_variant_defining : boolean
+  sort_order : int
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity product_attribute_values {
+  * PK id : bigint
+  --
+  FK product_id : bigint
+  FK attribute_id : bigint
+  value_text : text
+  value_number : decimal(15,4)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity product_variants {
+  * PK id : bigint
+  --
+  FK product_id : bigint
+  NN sku : varchar(100)
+  NN price : decimal(12,2)
+  compare_at_price : decimal(12,2)
+  cost_price : decimal(12,2)
+  barcode : varchar(100)
+  weight_g : int
+  image_url : varchar(512)
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity variant_attribute_values {
+  * PK id : bigint
+  --
+  FK variant_id : bigint
+  FK attribute_id : bigint
+  NN value : varchar(255)
+}
+
+entity warehouses {
+  * PK id : bigint
+  --
+  FK seller_id : bigint
+  NN name : varchar(255)
+  NN postal_code : varchar(20)
+  NN prefecture : varchar(50)
+  NN city : varchar(100)
+  NN street : varchar(255)
+  building : varchar(255)
+  contact_phone : varchar(20)
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity inventory {
+  * PK id : bigint
+  --
+  FK variant_id : bigint
+  FK warehouse_id : bigint
+  NN quantity_on_hand : int
+  quantity_reserved : int
+  quantity_available : int
+  reorder_point : int
+  reorder_quantity : int
+  updated_at : timestamp
+}
+
+entity inventory_transactions {
+  * PK id : bigint
+  --
+  FK inventory_id : bigint
+  type : enum('receive','sell','adjust','return','transfer')
+  quantity_change : int
+  quantity_before : int
+  quantity_after : int
+  reference_type : varchar(50)
+  reference_id : bigint
+  note : text
+  created_by : bigint
+  created_at : timestamp
+}
+
+entity carts {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  session_id : varchar(255)
+  expires_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity cart_items {
+  * PK id : bigint
+  --
+  FK cart_id : bigint
+  FK variant_id : bigint
+  NN quantity : int
+  unit_price : decimal(12,2)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity wishlists {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  NN name : varchar(255)
+  is_public : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity wishlist_items {
+  * PK id : bigint
+  --
+  FK wishlist_id : bigint
+  FK product_id : bigint
+  FK variant_id : bigint
+  note : varchar(500)
+  created_at : timestamp
+}
+
+entity orders {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  FK shipping_address_id : bigint
+  NN order_number : varchar(50)
+  status : enum('pending','confirmed','processing','shipped','delivered','cancelled','refunded')
+  subtotal : decimal(12,2)
+  shipping_fee : decimal(12,2)
+  tax_amount : decimal(12,2)
+  discount_amount : decimal(12,2)
+  total_amount : decimal(12,2)
+  currency : varchar(3)
+  note : text
+  cancelled_at : timestamp
+  cancelled_reason : text
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity order_items {
+  * PK id : bigint
+  --
+  FK order_id : bigint
+  FK variant_id : bigint
+  FK seller_id : bigint
+  NN quantity : int
+  NN unit_price : decimal(12,2)
+  NN subtotal : decimal(12,2)
+  discount_amount : decimal(12,2)
+  tax_amount : decimal(12,2)
+  product_snapshot : json
+  status : enum('pending','confirmed','shipped','delivered','cancelled','refunded')
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity order_status_history {
+  * PK id : bigint
+  --
+  FK order_id : bigint
+  NN from_status : varchar(50)
+  NN to_status : varchar(50)
+  note : text
+  changed_by : bigint
+  created_at : timestamp
+}
+
+entity payments {
+  * PK id : bigint
+  --
+  FK order_id : bigint
+  NN payment_number : varchar(50)
+  NN method : varchar(50)
+  NN amount : decimal(12,2)
+  currency : varchar(3)
+  status : enum('pending','authorized','captured','failed','cancelled','refunded')
+  gateway : varchar(50)
+  gateway_transaction_id : varchar(255)
+  gateway_response : json
+  paid_at : timestamp
+  failed_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity refunds {
+  * PK id : bigint
+  --
+  FK payment_id : bigint
+  FK order_id : bigint
+  NN refund_number : varchar(50)
+  NN amount : decimal(12,2)
+  reason : varchar(255)
+  status : enum('pending','approved','rejected','completed')
+  gateway_refund_id : varchar(255)
+  approved_by : bigint
+  approved_at : timestamp
+  completed_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity shipping_carriers {
+  * PK id : bigint
+  --
+  NN name : varchar(100)
+  code : varchar(20)
+  tracking_url_template : varchar(512)
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity shipping_methods {
+  * PK id : bigint
+  --
+  FK carrier_id : bigint
+  NN name : varchar(100)
+  code : varchar(50)
+  description : varchar(500)
+  estimated_days_min : int
+  estimated_days_max : int
+  base_fee : decimal(10,2)
+  free_threshold : decimal(12,2)
+  max_weight_g : int
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity shipments {
+  * PK id : bigint
+  --
+  FK order_id : bigint
+  FK carrier_id : bigint
+  FK method_id : bigint
+  FK warehouse_id : bigint
+  NN tracking_number : varchar(100)
+  status : enum('preparing','shipped','in_transit','out_for_delivery','delivered','failed','returned')
+  shipped_at : timestamp
+  estimated_delivery_at : timestamp
+  delivered_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity shipment_items {
+  * PK id : bigint
+  --
+  FK shipment_id : bigint
+  FK order_item_id : bigint
+  NN quantity : int
+}
+
+entity tracking_events {
+  * PK id : bigint
+  --
+  FK shipment_id : bigint
+  NN status : varchar(100)
+  description : text
+  location : varchar(255)
+  occurred_at : timestamp
+  created_at : timestamp
+}
+
+entity reviews {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  FK product_id : bigint
+  FK order_item_id : bigint
+  NN rating : tinyint
+  title : varchar(255)
+  body : text
+  is_verified_purchase : boolean
+  is_published : boolean
+  helpful_count : int
+  not_helpful_count : int
+  reply_body : text
+  replied_at : timestamp
+  published_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity review_images {
+  * PK id : bigint
+  --
+  FK review_id : bigint
+  NN image_url : varchar(512)
+  sort_order : int
+  created_at : timestamp
+}
+
+entity review_votes {
+  * PK id : bigint
+  --
+  FK review_id : bigint
+  FK user_id : bigint
+  NN vote : enum('helpful','not_helpful')
+  created_at : timestamp
+}
+
+entity coupons {
+  * PK id : bigint
+  --
+  NN code : varchar(50)
+  description : varchar(500)
+  discount_type : enum('fixed','percentage','free_shipping')
+  discount_value : decimal(12,2)
+  minimum_order_amount : decimal(12,2)
+  maximum_discount_amount : decimal(12,2)
+  usage_limit : int
+  usage_limit_per_user : int
+  used_count : int
+  starts_at : timestamp
+  expires_at : timestamp
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity coupon_usages {
+  * PK id : bigint
+  --
+  FK coupon_id : bigint
+  FK user_id : bigint
+  FK order_id : bigint
+  NN discount_applied : decimal(12,2)
+  used_at : timestamp
+}
+
+entity promotions {
+  * PK id : bigint
+  --
+  NN name : varchar(255)
+  description : text
+  type : enum('sale','bundle','quantity','loyalty')
+  discount_type : enum('fixed','percentage')
+  discount_value : decimal(12,2)
+  priority : int
+  starts_at : timestamp
+  expires_at : timestamp
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity promotion_conditions {
+  * PK id : bigint
+  --
+  FK promotion_id : bigint
+  condition_type : enum('category','product','brand','cart_amount','quantity','user_group')
+  operator : varchar(20)
+  value : varchar(255)
+  created_at : timestamp
+}
+
+entity promotion_targets {
+  * PK id : bigint
+  --
+  FK promotion_id : bigint
+  target_type : enum('category','product','variant','shipping')
+  target_id : bigint
+  created_at : timestamp
+}
+
+entity tags {
+  * PK id : bigint
+  --
+  NN name : varchar(100)
+  slug : varchar(100)
+  created_at : timestamp
+}
+
+entity product_tags {
+  * PK id : bigint
+  --
+  FK product_id : bigint
+  FK tag_id : bigint
+}
+
+entity tax_classes {
+  * PK id : bigint
+  --
+  NN name : varchar(100)
+  description : varchar(500)
+  is_default : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity tax_rates {
+  * PK id : bigint
+  --
+  FK tax_class_id : bigint
+  NN name : varchar(100)
+  country : varchar(2)
+  prefecture : varchar(50)
+  NN rate : decimal(6,4)
+  starts_at : timestamp
+  expires_at : timestamp
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity notifications {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  NN type : varchar(50)
+  title : varchar(255)
+  body : text
+  data : json
+  read_at : timestamp
+  created_at : timestamp
+}
+
+entity email_logs {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  NN template_key : varchar(100)
+  NN to_address : varchar(255)
+  subject : varchar(500)
+  status : enum('queued','sent','failed','bounced')
+  sent_at : timestamp
+  failed_reason : text
+  created_at : timestamp
+}
+
+entity audit_logs {
+  * PK id : bigint
+  --
+  FK user_id : bigint
+  NN action : varchar(100)
+  NN entity_type : varchar(100)
+  entity_id : bigint
+  old_values : json
+  new_values : json
+  ip_address : varchar(45)
+  user_agent : text
+  created_at : timestamp
+}
+
+' Relations
+users ||--o{ user_addresses : ""
+users ||--o{ user_sessions : ""
+users ||--o| sellers : ""
+users ||--o{ carts : ""
+users ||--o{ wishlists : ""
+users ||--o{ orders : ""
+users ||--o{ reviews : ""
+users ||--o{ review_votes : ""
+users ||--o{ coupon_usages : ""
+users ||--o{ notifications : ""
+users ||--o{ email_logs : ""
+users ||--o{ audit_logs : ""
+
+sellers ||--o{ products : ""
+sellers ||--o{ warehouses : ""
+sellers ||--o{ order_items : ""
+
+brands ||--o{ products : ""
+categories ||--o{ products : ""
+categories ||--o{ categories : "parent"
+categories ||--o{ product_attribute_groups : ""
+
+products ||--o{ product_images : ""
+products ||--o{ product_variants : ""
+products ||--o{ product_attribute_values : ""
+products ||--o{ product_tags : ""
+products ||--o{ wishlist_items : ""
+products ||--o{ reviews : ""
+
+product_attribute_groups ||--o{ product_attributes : ""
+product_attributes ||--o{ product_attribute_values : ""
+product_attributes ||--o{ variant_attribute_values : ""
+
+product_variants ||--o{ variant_attribute_values : ""
+product_variants ||--o{ cart_items : ""
+product_variants ||--o{ order_items : ""
+product_variants ||--o{ inventory : ""
+product_variants ||--o{ wishlist_items : ""
+product_variants }o--o{ product_images : ""
+
+warehouses ||--o{ inventory : ""
+warehouses ||--o{ shipments : ""
+inventory ||--o{ inventory_transactions : ""
+
+carts ||--o{ cart_items : ""
+wishlists ||--o{ wishlist_items : ""
+
+orders ||--o{ order_items : ""
+orders ||--o{ order_status_history : ""
+orders ||--o{ payments : ""
+orders ||--o{ shipments : ""
+orders ||--o{ refunds : ""
+orders ||--o{ coupon_usages : ""
+order_items ||--o{ shipment_items : ""
+order_items ||--o| reviews : ""
+
+payments ||--o{ refunds : ""
+
+shipping_carriers ||--o{ shipping_methods : ""
+shipping_carriers ||--o{ shipments : ""
+shipping_methods ||--o{ shipments : ""
+shipments ||--o{ shipment_items : ""
+shipments ||--o{ tracking_events : ""
+
+reviews ||--o{ review_images : ""
+reviews ||--o{ review_votes : ""
+
+coupons ||--o{ coupon_usages : ""
+promotions ||--o{ promotion_conditions : ""
+promotions ||--o{ promotion_targets : ""
+
+tags ||--o{ product_tags : ""
+
+tax_classes ||--o{ tax_rates : ""
+
+user_addresses }o--o{ orders : ""
+
+@enduml
