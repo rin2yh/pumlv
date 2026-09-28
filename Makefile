@@ -66,6 +66,7 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 	@touch $@
 
 credits:
+	go mod download
 	$(GOCREDITS) . > credits/go.txt
 
 prerelease_for_tagpr: credits
