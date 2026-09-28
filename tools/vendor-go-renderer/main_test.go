@@ -2,14 +2,11 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-var update = flag.Bool("update", false, "update renderer asset golden files")
 
 func setupInput(t *testing.T) (string, string, string) {
 	t.Helper()
@@ -17,7 +14,19 @@ func setupInput(t *testing.T) (string, string, string) {
 	if err := os.CopyFS(root, os.DirFS(filepath.Join("testdata", "input"))); err != nil {
 		t.Fatal(err)
 	}
-	return root, filepath.Join(root, "frontend"), filepath.Join(root, "assets")
+	frontend := filepath.Join(root, "frontend")
+	plantumlPath := filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js")
+	if err := os.MkdirAll(filepath.Dir(plantumlPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	plantuml, err := os.ReadFile(filepath.Join("testdata", "plantuml-input.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(plantumlPath, plantuml, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return root, frontend, filepath.Join(root, "assets")
 }
 
 func TestRun(t *testing.T) {
@@ -32,17 +41,12 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 		}
 		path := filepath.Join("testdata", name)
-		if *update {
-			if err := os.WriteFile(path, got, 0o644); err != nil {
-				t.Fatal(err)
-			}
-		}
 		want, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !bytes.Equal(got, want) {
-			t.Errorf("%s differs from %s; regenerate with go test ./tools/vendor-go-renderer -run TestRun -update", name, path)
+			t.Errorf("%s differs from %s", name, path)
 		}
 	}
 }
