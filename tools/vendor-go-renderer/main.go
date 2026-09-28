@@ -10,15 +10,13 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	if err := run(filepath.Join("internal", "frontend"), filepath.Join("internal", "render", "assets")); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	frontend := filepath.Join("internal", "frontend")
-	assets := filepath.Join("internal", "render", "assets")
+func run(frontend, assets string) error {
 	plantuml, err := os.ReadFile(filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"))
 	if err != nil {
 		return err
