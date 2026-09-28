@@ -10,7 +10,7 @@ require (
 	github.com/muesli/termenv v0.16.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/image v0.21.0
+	golang.org/x/image v0.45.0
 )
 
 require (
@@ -27,5 +27,5 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/tetratelabs/wazero v1.10.1 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 )
