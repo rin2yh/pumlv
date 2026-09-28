@@ -9,6 +9,8 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
+//go:generate go -C ../.. run ./tools/vendor-go-renderer
+
 func main() {
 	if err := run(filepath.Join("internal", "frontend"), filepath.Join("internal", "render", "assets")); err != nil {
 		fmt.Fprintln(os.Stderr, err)
