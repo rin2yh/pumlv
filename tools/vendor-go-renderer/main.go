@@ -26,6 +26,9 @@ func run(frontend, assets string) error {
 		return fmt.Errorf("PlantUML exports changed; review the integration")
 	}
 	plantuml = append(bytes.TrimSuffix(plantuml, []byte(exports)), []byte("globalThis.renderToString=D;")...)
+	if err := os.MkdirAll(assets, 0o755); err != nil {
+		return err
+	}
 	if err := os.WriteFile(filepath.Join(assets, "plantuml.js"), plantuml, 0o644); err != nil {
 		return err
 	}

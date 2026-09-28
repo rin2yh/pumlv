@@ -21,9 +21,6 @@ func TestRun(t *testing.T) {
 	root := t.TempDir()
 	frontend := filepath.Join(root, "frontend")
 	assets := filepath.Join(root, "assets")
-	if err := os.Mkdir(assets, 0o755); err != nil {
-		t.Fatal(err)
-	}
 	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
 		"const D=()=>{};export{C as render,D as renderToString};")
 	writeFixture(t, filepath.Join(root, "js", "buffer.mjs"),
@@ -64,9 +61,6 @@ func TestRunReportsBundleErrors(t *testing.T) {
 	root := t.TempDir()
 	frontend := filepath.Join(root, "frontend")
 	assets := filepath.Join(root, "assets")
-	if err := os.Mkdir(assets, 0o755); err != nil {
-		t.Fatal(err)
-	}
 	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
 		"export{C as render,D as renderToString};")
 	writeFixture(t, filepath.Join(root, "js", "buffer.mjs"),

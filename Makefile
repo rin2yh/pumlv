@@ -7,7 +7,7 @@ default: test
 
 ci: generate lint test
 
-generate:
+generate: vendor-renderer
 	go generate ./...
 
 vendor-renderer: $(FRONTEND)/node_modules
