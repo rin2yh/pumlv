@@ -3,10 +3,7 @@ package render
 import (
 	"context"
 	"encoding/xml"
-	"io"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -26,15 +23,8 @@ func TestRender(t *testing.T) {
 			if !strings.HasPrefix(svg, "<svg") || !strings.Contains(svg, tc.want) || strings.Contains(svg, "has crashed") {
 				t.Fatalf("unexpected SVG: %.300s", svg)
 			}
-			decoder := xml.NewDecoder(strings.NewReader(svg))
-			for {
-				_, err := decoder.Token()
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					t.Fatalf("invalid SVG XML: %v", err)
-				}
+			if err := xml.Unmarshal([]byte(svg), new(struct{})); err != nil {
+				t.Fatalf("invalid SVG XML: %v", err)
 			}
 		})
 	}
@@ -54,25 +44,14 @@ func TestLargeER(t *testing.T) {
 	if strings.Contains(svg, "has crashed") {
 		t.Fatal("PlantUML returned a crash diagram")
 	}
-	decoder := xml.NewDecoder(strings.NewReader(svg))
-	for {
-		_, err := decoder.Token()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("invalid large SVG XML: %v", err)
-		}
+	var dimensions struct {
+		Width  int `xml:"width,attr"`
+		Height int `xml:"height,attr"`
 	}
-	match := regexp.MustCompile(`(?:width|height)="(\d+)"`).FindAllStringSubmatch(svg[:min(len(svg), 250)], -1)
-	large := false
-	for _, m := range match {
-		n, _ := strconv.Atoi(m[1])
-		if n > 4096 {
-			large = true
-		}
+	if err := xml.Unmarshal([]byte(svg), &dimensions); err != nil {
+		t.Fatalf("invalid large SVG XML: %v", err)
 	}
-	if !large {
+	if dimensions.Width <= 4096 && dimensions.Height <= 4096 {
 		t.Fatalf("expected axis greater than 4096px: %.200s", svg)
 	}
 }
