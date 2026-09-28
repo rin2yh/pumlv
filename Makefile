@@ -10,6 +10,9 @@ ci: generate lint test
 generate:
 	go generate ./...
 
+vendor-renderer: $(FRONTEND)/node_modules
+	go run ./tools/vendor-go-renderer
+
 build: generate
 	go build -trimpath -o $(APP) .
 
@@ -81,7 +84,7 @@ clean:
 	rm -rf images
 	rm -rf dist
 
-.PHONY: default ci generate build dev \
+.PHONY: default ci generate vendor-renderer build dev \
 	test test-frontend test-frontend-unit test-frontend-integration test-backend \
 	e2e screenshot \
 	lint lint-frontend lint-backend \

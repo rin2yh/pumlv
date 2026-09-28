@@ -3,6 +3,7 @@ module github.com/rin2yh/pumlv
 go 1.26.2
 
 require (
+	github.com/evanw/esbuild v0.28.2
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/goccy/go-graphviz v0.2.10
 	github.com/goccy/go-spidermonkey v0.5.0

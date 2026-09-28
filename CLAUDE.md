@@ -33,7 +33,7 @@ Go module: `github.com/rin2yh/pumlv`
 
 - `internal/render/render.go` — server-side SVG generation via SpiderMonkey, PlantUML, and go-graphviz
 - `internal/frontend/src/plantuml/renderer.ts` — calls `/api/render` and wraps returned SVG as a data URL
-- `internal/frontend/scripts/vendor-go-renderer.mjs` — regenerates the embedded PlantUML and DOM JS assets after dependency updates
+- `tools/vendor-go-renderer` — regenerates the embedded PlantUML and DOM JS assets after dependency updates
 - `internal/frontend/scripts/generate-frontend-credits.mjs` — generates `credits/frontend.txt` from the SPA's production npm dependencies
 - `internal/static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
 
