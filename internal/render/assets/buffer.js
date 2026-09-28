@@ -1806,7 +1806,7 @@
     }
   });
 
-  // internal/frontend/scripts/render/buffer.mjs
+  // internal/render/js/buffer.mjs
   var import_buffer = __toESM(require_buffer(), 1);
   globalThis.Buffer = import_buffer.Buffer;
 })();

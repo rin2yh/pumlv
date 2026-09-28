@@ -12127,7 +12127,7 @@
   }
   setPrototypeOf(Document4, Document2).prototype = Document2.prototype;
 
-  // internal/frontend/scripts/render/dom.mjs
+  // internal/render/js/dom.mjs
   var { document } = parseHTML("<html><head></head><body></body></html>");
   globalThis.document = document;
   globalThis.window = globalThis;

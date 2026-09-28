@@ -31,11 +31,13 @@ func run(frontend, assets string) error {
 	}
 	for _, name := range []string{"buffer", "dom"} {
 		result := api.Build(api.BuildOptions{
-			EntryPoints: []string{filepath.Join(frontend, "scripts", "render", name+".mjs")},
+			EntryPoints: []string{filepath.Join(filepath.Dir(assets), "js", name+".mjs")},
 			Outfile:     filepath.Join(assets, name+".js"),
+			NodePaths:   []string{filepath.Join(frontend, "node_modules")},
 			Bundle:      true,
 			Platform:    api.PlatformBrowser,
 			Format:      api.FormatIIFE,
+			Banner:      map[string]string{"js": `"use strict";`},
 			Write:       true,
 		})
 		if len(result.Errors) > 0 {

@@ -26,11 +26,11 @@ func TestRun(t *testing.T) {
 	}
 	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
 		"const D=()=>{};export{C as render,D as renderToString};")
-	writeFixture(t, filepath.Join(frontend, "scripts", "render", "buffer.mjs"),
+	writeFixture(t, filepath.Join(root, "js", "buffer.mjs"),
 		"globalThis.bufferReady = true;")
-	writeFixture(t, filepath.Join(frontend, "scripts", "render", "shared.mjs"),
+	writeFixture(t, filepath.Join(root, "js", "shared.mjs"),
 		"export const value = 42;")
-	writeFixture(t, filepath.Join(frontend, "scripts", "render", "dom.mjs"),
+	writeFixture(t, filepath.Join(root, "js", "dom.mjs"),
 		"import { value } from './shared.mjs'; globalThis.domReady = value;")
 
 	if err := run(frontend, assets); err != nil {
@@ -69,7 +69,7 @@ func TestRunReportsBundleErrors(t *testing.T) {
 	}
 	writeFixture(t, filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
 		"export{C as render,D as renderToString};")
-	writeFixture(t, filepath.Join(frontend, "scripts", "render", "buffer.mjs"),
+	writeFixture(t, filepath.Join(root, "js", "buffer.mjs"),
 		"import './missing.mjs';")
 	if err := run(frontend, assets); err == nil || !strings.Contains(err.Error(), "bundle buffer.js") {
 		t.Fatalf("expected bundle error, got %v", err)
