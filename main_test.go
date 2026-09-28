@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestMainCredits(t *testing.T) {
@@ -27,13 +29,16 @@ func TestMainCredits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	credits := string(data)
-	previous := -1
-	for _, name := range []string{"@shikijs/core", "Go (the standard library)", "PlantUML (bundled as plantuml.js)"} {
-		index := strings.Index(credits, name)
-		if index <= previous {
-			t.Fatalf("missing or out-of-order credit %q", name)
+	var want strings.Builder
+	for _, name := range []string{"frontend.txt", "go.txt", "vendored.txt"} {
+		part, err := os.ReadFile(filepath.Join("credits", name))
+		if err != nil {
+			t.Fatal(err)
 		}
-		previous = index
+		want.Write(part)
+		want.WriteByte('\n')
+	}
+	if diff := cmp.Diff(want.String(), string(data)); diff != "" {
+		t.Errorf("credits output mismatch (-want +got):\n%s", diff)
 	}
 }

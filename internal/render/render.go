@@ -43,60 +43,92 @@ func (r *Renderer) Close() {
 func (r *Renderer) Render(ctx context.Context, source string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.js == nil {
-		js, err := r.newInterpreter(ctx)
-		if err != nil {
-			return "", err
-		}
-		r.js = js
+	if err := r.initInterpreter(ctx); err != nil {
+		return "", err
 	}
-	js := r.js
 	r.currentCtx = ctx
 	// A cancelled evaluation may leave a suspended TeaVM thread behind.
 	defer func() {
 		if ctx.Err() != nil {
-			js.Close()
+			r.js.Close()
 			r.js = nil
 		}
 	}()
+
+	if err := r.startRender(ctx, source); err != nil {
+		return "", err
+	}
+	return r.waitForSVG(ctx)
+}
+
+func (r *Renderer) initInterpreter(ctx context.Context) error {
+	if r.js != nil {
+		return nil
+	}
+	js, err := r.newInterpreter(ctx)
+	if err != nil {
+		return err
+	}
+	r.js = js
+	return nil
+}
+
+func (r *Renderer) startRender(ctx context.Context, source string) error {
 	lines := strings.Split(strings.ReplaceAll(strings.ReplaceAll(source, "\r\n", "\n"), "\r", "\n"), "\n")
 	encoded, err := json.Marshal(lines)
 	if err != nil {
-		return "", err
+		return err
 	}
-	script := fmt.Sprintf("globalThis.__result=null;renderToString(%s,s=>{__result={svg:s}},e=>{__result={error:e}},{maxSvgSize:65536})", encoded)
-	if err := eval(ctx, js, script); err != nil {
-		return "", err
-	}
+	script := fmt.Sprintf(`globalThis.__result = null;
+renderToString(%s,
+  svg => { __result = {svg} },
+  error => { __result = {error} },
+  {maxSvgSize: 65536}
+)`, encoded)
+	return evalScript(ctx, r.js, script)
+}
+
+func (r *Renderer) waitForSVG(ctx context.Context) (string, error) {
 	// Browser setTimeout(0) is replaced by an explicit event queue. Eval drains
 	// Promise jobs, including the Graphviz callback, between queue iterations.
 	for i := 0; i < 10000; i++ {
-		if err := eval(ctx, js, "{const tasks=__timers.splice(0);for(const task of tasks)task()}"); err != nil {
+		if err := evalScript(ctx, r.js, "{const tasks=__timers.splice(0);for(const task of tasks)task()}"); err != nil {
 			return "", err
 		}
-		result, err := js.Eval(ctx, "__result === null ? null : JSON.stringify(__result)")
+		svg, ready, err := r.readSVGResult(ctx)
 		if err != nil {
 			return "", err
 		}
-		if result.Error != nil {
-			return "", result.Error
-		}
-		if result.Value.String() == "null" {
+		if !ready {
 			continue
 		}
-		var value struct {
-			SVG   string `json:"svg"`
-			Error string `json:"error"`
-		}
-		if err := json.Unmarshal([]byte(result.Value.String()), &value); err != nil {
-			return "", err
-		}
-		if value.Error != "" {
-			return "", errors.New(value.Error)
-		}
-		return value.SVG, nil
+		return svg, nil
 	}
 	return "", errors.New("PlantUML render did not complete")
+}
+
+func (r *Renderer) readSVGResult(ctx context.Context) (string, bool, error) {
+	result, err := r.js.Eval(ctx, "__result === null ? null : JSON.stringify(__result)")
+	if err != nil {
+		return "", false, err
+	}
+	if result.Error != nil {
+		return "", false, result.Error
+	}
+	if result.Value.String() == "null" {
+		return "", false, nil
+	}
+	var value struct {
+		SVG   string `json:"svg"`
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(result.Value.String()), &value); err != nil {
+		return "", false, err
+	}
+	if value.Error != "" {
+		return "", false, errors.New(value.Error)
+	}
+	return value.SVG, true, nil
 }
 
 func (r *Renderer) newInterpreter(ctx context.Context) (*spidermonkey.JS, error) {
@@ -104,59 +136,77 @@ func (r *Renderer) newInterpreter(ctx context.Context) (*spidermonkey.JS, error)
 	if err != nil {
 		return nil, err
 	}
-	ok := false
+	initialized := false
 	defer func() {
-		if !ok {
+		if !initialized {
 			js.Close()
 		}
 	}()
-	if err := js.Global().DefineFunc("renderDot", func(_ spidermonkey.Config, args []spidermonkey.Value) (spidermonkey.Value, error) {
-		if len(args) < 1 {
-			return nil, errors.New("expected DOT source")
-		}
-		graph, err := graphviz.ParseBytes([]byte(args[0].String()))
-		if err != nil {
-			return nil, err
-		}
-		defer graph.Close()
-		g, err := graphviz.New(r.currentCtx)
-		if err != nil {
-			return nil, err
-		}
-		defer g.Close()
-		var out bytes.Buffer
-		if err := g.Render(r.currentCtx, graph, graphviz.SVG, &out); err != nil {
-			return nil, err
-		}
-		return spidermonkey.ValueOf(out.String()), nil
-	}); err != nil {
+	if err := r.registerHostFunctions(js); err != nil {
 		return nil, err
 	}
-	if err := js.Global().DefineFunc("hostMeasureText", func(_ spidermonkey.Config, args []spidermonkey.Value) (spidermonkey.Value, error) {
-		if len(args) < 2 {
-			return nil, errors.New("expected text and font")
-		}
-		return spidermonkey.ValueOf(r.measureText(args[0].String(), args[1].String())), nil
-	}); err != nil {
+	if err := loadRendererScripts(ctx, js); err != nil {
 		return nil, err
 	}
-	for _, name := range []string{"buffer.js", "dom.js", "plantuml.js"} {
-		script, err := assets.ReadFile("assets/" + name)
-		if err != nil {
-			return nil, err
-		}
-		if err := eval(ctx, js, string(script)); err != nil {
-			return nil, fmt.Errorf("load %s: %w", name, err)
-		}
-	}
-	if err := eval(ctx, js, `globalThis.console={info(){},log(){},error(){}};globalThis.__timers=[];globalThis.setTimeout=f=>{__timers.push(f);return __timers.length};globalThis.clearTimeout=()=>{};globalThis.Viz={instance:async()=>({renderString:renderDot})};`); err != nil {
-		return nil, err
-	}
-	ok = true
+	initialized = true
 	return js, nil
 }
 
-func eval(ctx context.Context, js *spidermonkey.JS, script string) error {
+func (r *Renderer) registerHostFunctions(js *spidermonkey.JS) error {
+	if err := js.Global().DefineFunc("renderDot", r.renderDot); err != nil {
+		return err
+	}
+	return js.Global().DefineFunc("hostMeasureText", r.hostMeasureText)
+}
+
+func (r *Renderer) renderDot(_ spidermonkey.Config, args []spidermonkey.Value) (spidermonkey.Value, error) {
+	if len(args) < 1 {
+		return nil, errors.New("expected DOT source")
+	}
+	graph, err := graphviz.ParseBytes([]byte(args[0].String()))
+	if err != nil {
+		return nil, err
+	}
+	defer graph.Close()
+	g, err := graphviz.New(r.currentCtx)
+	if err != nil {
+		return nil, err
+	}
+	defer g.Close()
+	var out bytes.Buffer
+	if err := g.Render(r.currentCtx, graph, graphviz.SVG, &out); err != nil {
+		return nil, err
+	}
+	return spidermonkey.ValueOf(out.String()), nil
+}
+
+func (r *Renderer) hostMeasureText(_ spidermonkey.Config, args []spidermonkey.Value) (spidermonkey.Value, error) {
+	if len(args) < 2 {
+		return nil, errors.New("expected text and font")
+	}
+	return spidermonkey.ValueOf(r.measureText(args[0].String(), args[1].String())), nil
+}
+
+func loadRendererScripts(ctx context.Context, js *spidermonkey.JS) error {
+	for _, name := range []string{"buffer.js", "dom.js", "plantuml.js"} {
+		script, err := assets.ReadFile("assets/" + name)
+		if err != nil {
+			return err
+		}
+		if err := evalScript(ctx, js, string(script)); err != nil {
+			return fmt.Errorf("load %s: %w", name, err)
+		}
+	}
+	return evalScript(ctx, js, `
+globalThis.console = {info() {}, log() {}, error() {}};
+globalThis.__timers = [];
+globalThis.setTimeout = callback => { __timers.push(callback); return __timers.length };
+globalThis.clearTimeout = () => {};
+globalThis.Viz = {instance: async () => ({renderString: renderDot})};
+`)
+}
+
+func evalScript(ctx context.Context, js *spidermonkey.JS, script string) error {
 	result, err := js.Eval(ctx, script)
 	if err != nil {
 		return err

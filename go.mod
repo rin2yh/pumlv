@@ -7,6 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/goccy/go-graphviz v0.2.10
 	github.com/goccy/go-spidermonkey v0.5.0
+	github.com/google/go-cmp v0.7.0
 	github.com/k1LoW/donegroup v1.10.3
 	github.com/muesli/termenv v0.16.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
