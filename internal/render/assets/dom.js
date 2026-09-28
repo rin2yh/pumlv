@@ -12134,7 +12134,7 @@
   globalThis.DOMParser = DOMParser;
   globalThis.XMLSerializer = class {
     serializeToString(node) {
-      return node.toString();
+      return node.toString().replace(/<!--\?([\w-]+) (.*?)\?-->/g, "<?$1 $2?>");
     }
   };
   var createElement = document.createElement.bind(document);

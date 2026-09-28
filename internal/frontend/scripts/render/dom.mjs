@@ -8,7 +8,10 @@ globalThis.window = globalThis;
 globalThis.DOMParser = DOMParser;
 globalThis.XMLSerializer = class {
   serializeToString(node) {
-    return node.toString();
+    // linkedom has no processing-instruction node. Our createProcessingInstruction
+    // below uses a comment placeholder; serialize it as a real XML instruction.
+    // PlantUML's encoded source may contain "--", which is illegal in a comment.
+    return node.toString().replace(/<!--\?([\w-]+) (.*?)\?-->/g, "<?$1 $2?>");
   }
 };
 

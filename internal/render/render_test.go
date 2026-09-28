@@ -54,6 +54,16 @@ func TestLargeER(t *testing.T) {
 	if strings.Contains(svg, "has crashed") {
 		t.Fatal("PlantUML returned a crash diagram")
 	}
+	decoder := xml.NewDecoder(strings.NewReader(svg))
+	for {
+		_, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("invalid large SVG XML: %v", err)
+		}
+	}
 	match := regexp.MustCompile(`(?:width|height)="(\d+)"`).FindAllStringSubmatch(svg[:min(len(svg), 250)], -1)
 	large := false
 	for _, m := range match {
