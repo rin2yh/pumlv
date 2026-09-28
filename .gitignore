@@ -33,9 +33,9 @@ go.work.sum
 
 # Project artifacts
 /pumlv
+/internal/static/dist/
 /images/
 /dist/
-/internal/static/dist/
 /internal/frontend/test-results/
 /internal/frontend/playwright-report/
 /internal/frontend/.playwright/
