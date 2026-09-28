@@ -1,0 +1,1 @@
+const D=()=>{};globalThis.renderToString=D;

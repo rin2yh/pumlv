@@ -34,14 +34,15 @@ func run(frontend, assets string) error {
 	}
 	for _, name := range []string{"buffer", "dom"} {
 		result := api.Build(api.BuildOptions{
-			EntryPoints: []string{filepath.Join(filepath.Dir(assets), "js", name+".mjs")},
-			Outfile:     filepath.Join(assets, name+".js"),
-			NodePaths:   []string{filepath.Join(frontend, "node_modules")},
-			Bundle:      true,
-			Platform:    api.PlatformBrowser,
-			Format:      api.FormatIIFE,
-			Banner:      map[string]string{"js": `"use strict";`},
-			Write:       true,
+			EntryPoints:      []string{filepath.Join(filepath.Dir(assets), "js", name+".js")},
+			Outfile:          filepath.Join(assets, name+".js"),
+			NodePaths:        []string{filepath.Join(frontend, "node_modules")},
+			Bundle:           true,
+			MinifyWhitespace: true,
+			Platform:         api.PlatformBrowser,
+			Format:           api.FormatIIFE,
+			Banner:           map[string]string{"js": `"use strict";`},
+			Write:            true,
 		})
 		if len(result.Errors) > 0 {
 			return fmt.Errorf("bundle %s.js: %s", name, result.Errors[0].Text)
