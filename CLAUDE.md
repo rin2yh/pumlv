@@ -4,7 +4,7 @@ This document provides instructions for Claude Code when working with the **puml
 
 ## Project Overview
 
-pumlv is a Go HTTP server with an embedded React SPA, compiled into a single binary. Rendering runs entirely in the browser via plantuml/plantuml's TeaVM build (`plantuml.js` + `viz-global.js`) — no Java, no CheerpJ, no external server required.
+pumlv is a Go HTTP server with an embedded React SPA, compiled into a single binary. Rendering runs in Go via SpiderMonkey, the PlantUML TeaVM build, and go-graphviz — no Java, no CheerpJ, no external server required.
 
 Go module: `github.com/rin2yh/pumlv`
 
@@ -31,8 +31,9 @@ Go module: `github.com/rin2yh/pumlv`
 
 **Frontend (Vite + React 19 + Tailwind v4):**
 
-- `internal/frontend/src/plantuml/renderer.ts` — SVG generation via plantuml.js (TeaVM) + viz-global.js (Graphviz/Viz.js)
-- `internal/frontend/scripts/vendor-plantuml-core.mjs` — copies `plantuml.js` + `viz-global.js` out of the `@plantuml/core` npm package (MIT flavor) and patches the 4096px dimension limit up to 65536px
+- `internal/render/render.go` — server-side SVG generation via SpiderMonkey, PlantUML, and go-graphviz
+- `internal/frontend/src/plantuml/renderer.ts` — calls `/api/render` and wraps returned SVG as a data URL
+- `internal/frontend/scripts/vendor-go-renderer.mjs` — regenerates the embedded PlantUML and DOM JS assets after dependency updates
 - `internal/frontend/scripts/generate-frontend-credits.mjs` — generates `credits/frontend.txt` from the SPA's production npm dependencies
 - `internal/static/embed.go` — `//go:embed all:dist` bundles the frontend into the binary
 
@@ -45,6 +46,7 @@ Internal endpoints (browser ↔ server). `/api/file` enforces a whitelist to pre
 | GET | `/api/files` | List watched files (`[{path, rel, name, source}]`) |
 | GET | `/api/file?path=...` | File source (text/plain) |
 | GET | `/api/events` | SSE stream (`hello` / `changed` / `tree` events) |
+| POST | `/api/render` | Render PlantUML source to SVG (2 MiB request limit) |
 
 ## CI/CD
 

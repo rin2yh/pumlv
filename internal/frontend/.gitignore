@@ -142,8 +142,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# PlantUML TeaVM assets vendored by scripts/vendor-plantuml-core.mjs
-public/plantuml/
 
 # Storybook
 storybook-static/

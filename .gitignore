@@ -33,7 +33,6 @@ go.work.sum
 
 # Project artifacts
 /pumlv
-/internal/static/dist/
 /images/
 /dist/
 /internal/frontend/test-results/

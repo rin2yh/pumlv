@@ -34,7 +34,7 @@ export function useActiveRender(active: string | null): UseActiveRenderResult {
         const src = await fetchFileSource(active, controller.signal);
         if (controller.signal.aborted) return;
         setSource(src);
-        const svg = await renderPlantUML(src);
+        const svg = await renderPlantUML(src, controller.signal);
         if (controller.signal.aborted) return;
         setRender({ kind: "ok", svg });
       } catch (e) {

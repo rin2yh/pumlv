@@ -1,11 +1,6 @@
-import { loadPlantUMLModule } from "./bootstrap";
-import { splitLines } from "../lib/lines";
-
-export async function renderPlantUML(source: string): Promise<string> {
-  const mod = await loadPlantUMLModule();
-  const lines = splitLines(source);
-  const svg = await new Promise<string>((resolve, reject) => {
-    mod.renderToString(lines, resolve, (msg) => reject(new Error(msg)), { maxSvgSize: 65536 });
-  });
+export async function renderPlantUML(source: string, signal?: AbortSignal): Promise<string> {
+  const response = await fetch("/api/render", { method: "POST", body: source, signal });
+  if (!response.ok) throw new Error((await response.text()).trim());
+  const svg = await response.text();
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }

@@ -1,13 +1,16 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/rin2yh/pumlv/internal/static"
 )
@@ -15,8 +18,27 @@ import (
 func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/files", s.handleFiles)
 	mux.HandleFunc("/api/file", s.handleFile)
+	mux.HandleFunc("POST /api/render", s.handleRender)
 	mux.HandleFunc("/api/events", s.handleEvents)
 	mux.Handle("/", s.handleStatic())
+}
+
+func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
+	const maxSource = 2 << 20
+	source, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxSource))
+	if err != nil {
+		http.Error(w, "source exceeds 2 MiB", http.StatusRequestEntityTooLarge)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Minute)
+	defer cancel()
+	svg, err := s.renderer.Render(ctx, string(source))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+	_, _ = io.WriteString(w, svg)
 }
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {

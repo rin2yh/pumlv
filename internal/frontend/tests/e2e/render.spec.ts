@@ -72,7 +72,7 @@ test.describe("PlantUML rendering", () => {
     });
   });
 
-  // Guards the maxSvgSize render option renderer.ts passes to plantuml.js (issue #9):
+  // Guards the maxSvgSize render option in the Go renderer (issue #9):
   // without it the engine refuses to render past its default limit, so nothing above
   // 4096px (the limit prior to @plantuml/core 1.2026.8) can appear.
   test("renders a diagram larger than the upstream 4096px limit", async ({ page }) => {
@@ -107,7 +107,7 @@ test.describe("PlantUML rendering", () => {
           .catch(() => "(none)");
         throw new Error(
           `large-er.puml did not render above 4096px — the maxSvgSize render option ` +
-            `(see renderer.ts) may have stopped applying.\n` +
+            `(see internal/render/render.go) may have stopped applying.\n` +
             `Error panel: ${errText}`,
           { cause },
         );

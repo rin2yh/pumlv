@@ -2,7 +2,7 @@
 
 A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the diagram opens in your browser, re-rendering automatically whenever you save the file. No Java, no Docker, no external server required.
 
-- Renders entirely in the browser via PlantUML's TeaVM build — your source never leaves your machine
+- Renders locally in the Go process via PlantUML's TeaVM build — your source never leaves your machine
 - Live re-render over SSE the moment you save
 - Standalone process — works regardless of which editor you use
 
@@ -47,7 +47,7 @@ Existing PlantUML preview options have a few rough edges:
 
 - Most tools are editor plugins (VSCode / IntelliJ / Vim, etc.) that stop working the moment you switch editors. pumlv runs as a standalone process, independent of any editor.
 - Local rendering typically requires installing Java and Graphviz, or running Docker as separate infrastructure. pumlv has no runtime dependencies beyond the binary itself.
-- Web-based tools (e.g. plantuml.com) send your diagram source to an external server. pumlv renders entirely in the browser via PlantUML's TeaVM build; your source never leaves your machine.
+- Web-based tools (e.g. plantuml.com) send your diagram source to an external server. pumlv renders locally in its Go process via PlantUML's TeaVM build; your source never leaves your machine.
 - Editor plugins can only preview the file currently open in that editor. pumlv accepts any file or directory path on the command line, regardless of what you have open.
 
 pumlv aims to remove all of these pain points.
@@ -56,14 +56,16 @@ pumlv aims to remove all of these pain points.
 
 ## About PlantUML rendering
 
-To keep everything in the browser, this project bundles PlantUML's official TeaVM build (`plantuml.js` ~7 MB + `viz-global.js` ~1.4 MB) from the [`@plantuml/core`](https://www.npmjs.com/package/@plantuml/core) npm package. `internal/frontend/scripts/vendor-plantuml-core.mjs` copies the two files into `internal/frontend/public/plantuml/`, Vite copies them into `internal/static/dist/`, and `go:embed` then bundles them into the final binary. PlantUML source is never sent to any external service.
+The Go process runs the MIT-licensed [`@plantuml/core`](https://www.npmjs.com/package/@plantuml/core) TeaVM JavaScript build using `go-spidermonkey`. `go-graphviz` supplies Graphviz layout from embedded WebAssembly. An embedded DOM compatibility layer supplies the small set of browser APIs used by PlantUML. The React frontend sends source to the local `/api/render` endpoint and displays the returned SVG; nothing is sent to an external service. Render requests are serialized within the process.
 
-pumlv modifies `plantuml.js` while vendoring it: the script raises PlantUML's hard-coded diagram dimension limit from 4096 px to 65536 px so that large ER / sequence diagrams render instead of being rejected. See [`credits/vendored.txt`](./credits/vendored.txt) for the full notice.
+The generated JS assets are committed in `internal/render/assets/`. To update them after changing `@plantuml/core` or the compatibility layer, run `pnpm vendor:go-renderer` from `internal/frontend/`. This generation step needs Node.js; normal Go compilation and runtime do not need Node.js, Java, or an external Graphviz installation. PlantUML's dimension limit is set to 65536 px by the `maxSvgSize` render option.
+
+The compiled React frontend is also committed in `internal/static/dist/` so `make build` only invokes Go. After changing frontend source, run `make generate` and commit the updated files in `internal/static/dist/`.
 
 ## License
 
 MIT. See [LICENSE](./LICENSE).
 
-The bundled browser assets are third-party: PlantUML (`plantuml.js`) is MIT, as is Viz.js (`viz-global.js`), which embeds Graphviz under the EPL-2.0.
+The embedded rendering assets include PlantUML (MIT), a DOM compatibility bundle (ISC/MIT/BSD licenses), and Graphviz through `go-graphviz` (EPL-2.0).
 
 Third-party license texts are bundled in [`credits/`](./credits): `go.txt` for the Go dependencies, `frontend.txt` for the npm packages in the SPA bundle (both generated), and `vendored.txt` for the vendored browser engine — PlantUML, Viz.js and Graphviz. Run `pumlv credits` to print them all.

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/k1LoW/donegroup"
+	"github.com/rin2yh/pumlv/internal/render"
 )
 
 // Options configures a Server.
@@ -26,6 +27,7 @@ type Server struct {
 	watcher  *Watcher
 	hub      *Hub
 	httpd    *http.Server
+	renderer render.Renderer
 }
 
 // New constructs the server, but does not start listening yet.
@@ -80,6 +82,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		s.hub.Close()
+		s.renderer.Close()
 		if err := s.httpd.Shutdown(shutdownCtx); err != nil {
 			return err
 		}

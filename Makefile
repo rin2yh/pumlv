@@ -10,7 +10,7 @@ ci: generate lint test
 generate:
 	go generate ./...
 
-build: generate
+build:
 	go build -trimpath -o $(APP) .
 
 dev: generate
