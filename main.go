@@ -10,7 +10,7 @@ import (
 	"github.com/rin2yh/pumlv/cmd"
 )
 
-//go:generate sh -c "go mod download && go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing . > credits/go.txt"
+//go:generate sh -c "go mod download all && go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing . > credits/go.txt"
 
 // go.txt and frontend.txt are generated (from go.sum and from the SPA's npm
 // dependencies); vendored.txt is hand-written because it carries the
