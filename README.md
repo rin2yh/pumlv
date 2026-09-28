@@ -58,9 +58,9 @@ pumlv aims to remove all of these pain points.
 
 The Go process runs the MIT-licensed [`@plantuml/core`](https://www.npmjs.com/package/@plantuml/core) TeaVM JavaScript build using `go-spidermonkey`. `go-graphviz` supplies Graphviz layout from embedded WebAssembly. An embedded DOM compatibility layer supplies the small set of browser APIs used by PlantUML. The React frontend sends source to the local `/api/render` endpoint and displays the returned SVG; nothing is sent to an external service. Render requests are serialized within the process.
 
-The generated JS assets are committed in `internal/render/assets/`. To update them after changing `@plantuml/core` or the compatibility layer, run `pnpm vendor:go-renderer` from `internal/frontend/`. This generation step needs Node.js; normal Go compilation and runtime do not need Node.js, Java, or an external Graphviz installation. PlantUML's dimension limit is set to 65536 px by the `maxSvgSize` render option.
+The generated JS assets are committed in `internal/render/assets/`. To update them after changing `@plantuml/core` or the compatibility layer, run `pnpm vendor:go-renderer` from `internal/frontend/`. Generating the renderer assets and frontend needs Node.js; the compiled binary runs without Node.js, Java, or an external Graphviz installation. PlantUML's dimension limit is set to 65536 px by the `maxSvgSize` render option.
 
-The compiled React frontend is also committed in `internal/static/dist/` so `make build` only invokes Go. After changing frontend source, run `make generate` and commit the updated files in `internal/static/dist/`.
+`make build` generates the React frontend in `internal/static/dist/` before compiling the Go binary. The generated frontend files are ignored by Git.
 
 ## License
 
