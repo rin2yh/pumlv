@@ -63,6 +63,9 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 	cd $(FRONTEND) && pnpm install --frozen-lockfile
 	@touch $@
 
+credits:
+	go generate main.go
+
 prerelease_for_tagpr:
 	go mod download all
 	git add go.sum
@@ -82,4 +85,4 @@ clean:
 	lint lint-frontend lint-backend \
 	fmt fmt-frontend fmt-backend \
 	fmt-check fmt-check-frontend fmt-check-backend \
-	prerelease_for_tagpr release-snapshot clean
+	credits prerelease_for_tagpr release-snapshot clean
