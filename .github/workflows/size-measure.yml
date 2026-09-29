@@ -1,0 +1,46 @@
+name: Temporary binary size measurement
+
+on:
+  push:
+    branches:
+      - feat/go-plantuml-rendering
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - uses: ./.github/actions/setup-frontend
+
+      - name: Build main and PR with release flags
+        shell: bash
+        run: |
+          git worktree add ../pumlv-main origin/main
+          for name in main pr; do
+            if [ "$name" = main ]; then
+              cd ../pumlv-main
+            else
+              cd "$GITHUB_WORKSPACE"
+            fi
+            make generate
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath \
+              -ldflags='-s -w -X github.com/rin2yh/pumlv/version.Version=0.3.10 -X github.com/rin2yh/pumlv/version.Revision=abcdefg' \
+              -o "$RUNNER_TEMP/pumlv-$name" .
+          done
+          for name in main pr; do
+            printf '%s executable bytes: ' "$name"
+            stat -c%s "$RUNNER_TEMP/pumlv-$name"
+            printf '%s gzip bytes: ' "$name"
+            gzip -n -9 -c "$RUNNER_TEMP/pumlv-$name" | wc -c
+          done
