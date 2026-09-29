@@ -12,14 +12,20 @@ import (
 //go:generate go -C ../.. run ./tools/vendor-go-renderer
 
 func main() {
-	if err := run(filepath.Join("internal", "frontend"), filepath.Join("internal", "render", "assets")); err != nil {
+	frontend := filepath.Join("internal", "frontend")
+	if err := run(
+		filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"),
+		filepath.Join("internal", "render", "js"),
+		filepath.Join(frontend, "node_modules"),
+		filepath.Join("internal", "render", "assets"),
+	); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(frontend, assets string) error {
-	plantuml, err := os.ReadFile(filepath.Join(frontend, "node_modules", "@plantuml", "core", "plantuml.js"))
+func run(plantumlPath, jsDir, nodeModules, assets string) error {
+	plantuml, err := os.ReadFile(plantumlPath)
 	if err != nil {
 		return err
 	}
@@ -36,9 +42,9 @@ func run(frontend, assets string) error {
 	}
 	for _, name := range []string{"buffer", "dom"} {
 		result := api.Build(api.BuildOptions{
-			EntryPoints:      []string{filepath.Join(filepath.Dir(assets), "js", name+".js")},
+			EntryPoints:      []string{filepath.Join(jsDir, name+".js")},
 			Outfile:          filepath.Join(assets, name+".js"),
-			NodePaths:        []string{filepath.Join(frontend, "node_modules")},
+			NodePaths:        []string{nodeModules},
 			Bundle:           true,
 			MinifyWhitespace: true,
 			Platform:         api.PlatformBrowser,
