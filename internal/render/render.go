@@ -18,6 +18,10 @@ import (
 //go:embed assets/*.js
 var assets embed.FS
 
+// maxRenderEventLoopIterations bounds recursively scheduled zero-delay timers.
+// The context controls elapsed time; this is a safety limit on queue drain cycles.
+const maxRenderEventLoopIterations = 10_000
+
 // Renderer owns one JavaScript interpreter. A render is serialized so that
 // TeaVM's timers and callbacks cannot leak into the next diagram.
 type Renderer struct {
@@ -91,7 +95,7 @@ renderToString(%s,
 func (r *Renderer) waitForSVG(ctx context.Context) (string, error) {
 	// Browser setTimeout(0) is replaced by an explicit event queue. Eval drains
 	// Promise jobs, including the Graphviz callback, between queue iterations.
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < maxRenderEventLoopIterations; i++ {
 		if err := evalScript(ctx, r.js, "{const tasks=__timers.splice(0);for(const task of tasks)task()}"); err != nil {
 			return "", err
 		}

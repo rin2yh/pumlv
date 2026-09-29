@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -19,7 +18,7 @@ func TestNewFillsDefaultHostAndBuildsRegistry(t *testing.T) {
 	if err := os.WriteFile(puml, []byte("@startuml\n@enduml\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := donegroup.WithCancel(context.Background())
+	ctx, cancel := donegroup.WithCancel(t.Context())
 	defer cancel()
 
 	srv, err := New(ctx, Options{Paths: []string{dir}, Exts: []string{".puml"}})
@@ -38,7 +37,7 @@ func TestNewFillsDefaultHostAndBuildsRegistry(t *testing.T) {
 }
 
 func TestNewReturnsErrorForMissingPath(t *testing.T) {
-	ctx, cancel := donegroup.WithCancel(context.Background())
+	ctx, cancel := donegroup.WithCancel(t.Context())
 	defer cancel()
 	_, err := New(ctx, Options{Paths: []string{filepath.Join(t.TempDir(), "nope")}, Exts: []string{".puml"}})
 	if err == nil {
@@ -53,7 +52,7 @@ func TestServerStartAndShutdown(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx, cancel := donegroup.WithCancel(context.Background())
+	ctx, cancel := donegroup.WithCancel(t.Context())
 	srv, err := New(ctx, Options{Paths: []string{dir}, Host: "127.0.0.1", Port: 0, Exts: []string{".puml"}})
 	if err != nil {
 		t.Fatalf("New: %v", err)

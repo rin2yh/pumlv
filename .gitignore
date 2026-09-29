@@ -35,6 +35,8 @@ go.work.sum
 /pumlv
 /internal/static/dist/
 /internal/render/assets/
+/credits/go.txt
+/credits/frontend.txt
 /images/
 /dist/
 /internal/frontend/test-results/

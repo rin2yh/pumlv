@@ -1,7 +1,6 @@
 package render
 
 import (
-	"context"
 	"encoding/xml"
 	"os"
 	"testing"
@@ -24,7 +23,7 @@ func TestRender(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			svg, err := renderer.Render(context.Background(), string(source))
+			svg, err := renderer.Render(t.Context(), string(source))
 			if err != nil {
 				t.Fatal(err)
 			}

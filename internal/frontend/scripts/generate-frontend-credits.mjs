@@ -1,7 +1,7 @@
 // Writes credits/frontend.txt: the license texts of every npm package that ends up in
 // the SPA bundle, which go:embed then ships inside the binary. Mirrors what
 // gocredits does for go.sum, in the same layout, so `pumlv credits` reads as one
-// document. Regenerated on every frontend build; commit the result.
+// document. Regenerated on every frontend build.
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";

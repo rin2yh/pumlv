@@ -21,7 +21,7 @@ func newTestWatcher(t *testing.T, dir string, exts []string) (*Watcher, *Hub, co
 	if err != nil {
 		t.Fatalf("NewWatcher: %v", err)
 	}
-	ctx, cancel := donegroup.WithCancel(context.Background())
+	ctx, cancel := donegroup.WithCancel(t.Context())
 	if err := w.Start(ctx); err != nil {
 		cancel()
 		t.Fatalf("Start: %v", err)
