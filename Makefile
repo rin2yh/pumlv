@@ -1,5 +1,6 @@
 APP      := pumlv
 FRONTEND := internal/frontend
+GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing
 
 default: test
 
@@ -64,7 +65,8 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 	@touch $@
 
 credits:
-	go generate main.go
+	go mod download all
+	$(GOCREDITS) . > credits/go.txt
 
 prerelease_for_tagpr:
 	go mod download all
