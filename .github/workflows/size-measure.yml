@@ -1,9 +1,6 @@
 name: Temporary binary size measurement
 
-on:
-  push:
-    branches:
-      - feat/go-plantuml-rendering
+on: pull_request
 
 permissions:
   contents: read
