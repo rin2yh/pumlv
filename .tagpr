@@ -3,6 +3,5 @@
 	releaseBranch = main
 	release = draft
 	versionFile = version/version.go
-	command = "make prerelease_for_tagpr"
 	majorLabels = "tagpr:major"
 	minorLabels = "tagpr:minor"

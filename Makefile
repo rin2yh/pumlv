@@ -68,10 +68,6 @@ credits:
 	go mod download all
 	$(GOCREDITS) . > credits/go.txt
 
-prerelease_for_tagpr:
-	go mod download all
-	git add go.sum
-
 release-snapshot: generate
 	goreleaser release --snapshot --clean
 
@@ -87,4 +83,4 @@ clean:
 	lint lint-frontend lint-backend \
 	fmt fmt-frontend fmt-backend \
 	fmt-check fmt-check-frontend fmt-check-backend \
-	credits prerelease_for_tagpr release-snapshot clean
+	credits release-snapshot clean
