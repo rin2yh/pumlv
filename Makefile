@@ -1,14 +1,15 @@
 APP      := pumlv
 FRONTEND := internal/frontend
 
-GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing
-
 default: test
 
 ci: generate lint test
 
-generate:
-	go generate ./...
+generate: frontend-assets
+	go generate .
+
+frontend-assets:
+	go generate ./internal/static
 
 build: generate
 	go build -trimpath -o $(APP) .
@@ -65,8 +66,8 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 	cd $(FRONTEND) && pnpm install --frozen-lockfile
 	@touch $@
 
-credits:
-	$(GOCREDITS) . > credits/go.txt
+credits: frontend-assets
+	go generate .
 
 prerelease_for_tagpr: credits
 	git add credits go.sum
@@ -80,7 +81,7 @@ clean:
 	rm -rf images
 	rm -rf dist
 
-.PHONY: default ci generate build dev \
+.PHONY: default ci generate frontend-assets build dev \
 	test test-frontend test-frontend-unit test-frontend-integration test-backend \
 	e2e screenshot \
 	lint lint-frontend lint-backend \
