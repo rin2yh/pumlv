@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/Songmu/gocredits v1.0.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -19,3 +20,5 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 )
+
+tool github.com/Songmu/gocredits/cmd/gocredits
