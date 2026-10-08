@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.3.11](https://github.com/rin2yh/pumlv/compare/v0.3.10...v0.3.11) - 2026-10-08
+
+- docs: document built-in shell completion by @rin2yh in https://github.com/rin2yh/pumlv/pull/187
+- build(deps): bump Songmu/tagpr from 1.20.3 to 1.21.1 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/199
+- build(deps): bump github.com/k1LoW/donegroup from 1.10.3 to 1.10.4 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/198
+- build(deps-dev): bump @storybook/react-vite from 10.5.8 to 10.5.10 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/193
+- build(deps-dev): bump storybook from 10.5.10 to 10.6.1 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/195
+- build(deps-dev): bump @babel/core from 8.0.5 to 8.0.6 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/196
+- build(deps-dev): bump @types/react-dom from 19.2.7 to 19.3.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/194
+- build(deps-dev): bump @rolldown/plugin-babel from 0.2.3 to 0.2.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/197
+- fix: upgrade gocredits to v1 by @rin2yh in https://github.com/rin2yh/pumlv/pull/201
+
 ## [v0.3.10](https://github.com/rin2yh/pumlv/compare/v0.3.9...v0.3.10) - 2026-09-25
 
 - build(deps-dev): bump vite from 8.2.1 to 8.2.2 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/156
