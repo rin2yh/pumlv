@@ -12,9 +12,9 @@ import (
 
 //go:generate sh -c "go run github.com/Songmu/gocredits/cmd/gocredits@v1.0.0 . > credits/go.txt"
 
-// go.txt and frontend.txt are generated (from go.sum and from the SPA's npm
-// dependencies); vendored.txt is hand-written because it carries the
-// modification notice for the patched PlantUML engine.
+// go.txt and frontend.txt are generated from Go package dependencies and the
+// SPA's npm dependencies, respectively. vendored.txt is hand-written because
+// it carries the modification notice for the patched PlantUML engine.
 //
 //go:embed credits
 var creditsFS embed.FS
