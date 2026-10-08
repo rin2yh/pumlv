@@ -1,8 +1,6 @@
 APP      := pumlv
 FRONTEND := internal/frontend
 
-GOCREDITS := go run github.com/Songmu/gocredits/cmd/gocredits@v0.4.0 -skip-missing
-
 default: test
 
 ci: generate lint test
@@ -66,7 +64,7 @@ $(FRONTEND)/node_modules: $(FRONTEND)/pnpm-lock.yaml
 	@touch $@
 
 credits:
-	$(GOCREDITS) . > credits/go.txt
+	go generate .
 
 prerelease_for_tagpr: credits
 	git add credits go.sum
