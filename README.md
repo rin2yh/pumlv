@@ -1,4 +1,5 @@
 # pumlv
+![Downloads](https://img.shields.io/github/downloads/rin2yh/pumlv/total)
 
 A Go-based local preview server for PlantUML. Just run `pumlv <path>` and the diagram opens in your browser, re-rendering automatically whenever you save the file. No Java, no Docker, no external server required.
 
