@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.3.12](https://github.com/rin2yh/pumlv/compare/v0.3.11...v0.3.12) - 2026-10-08
+
 ## [v0.3.11](https://github.com/rin2yh/pumlv/compare/v0.3.10...v0.3.11) - 2026-10-08
 
 - docs: document built-in shell completion by @rin2yh in https://github.com/rin2yh/pumlv/pull/187
