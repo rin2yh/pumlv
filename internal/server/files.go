@@ -146,10 +146,7 @@ func containsPath(root, path string) bool {
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
-// addPath inspects only the created path (and its descendants for a directory).
-// onDir installs watches before reading children, including moved-in subtrees.
-// Registry entries are committed together only after all watch additions succeed.
-// Watches already installed before an error remain active for subsequent events.
+// addPath registers files under path after successfully installing directory watches.
 func (r *Registry) addPath(path string, onDir func(string) error) error {
 	var directorySource bool
 	var relevant bool
