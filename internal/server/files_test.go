@@ -94,16 +94,8 @@ func TestRegistryIncrementalSourceRules(t *testing.T) {
 		input            string
 		wantOtherAllowed bool
 	}{
-		{
-			name:             "directory source",
-			input:            ".",
-			wantOtherAllowed: true,
-		},
-		{
-			name:             "single file source",
-			input:            "diagram.PUML",
-			wantOtherAllowed: false,
-		},
+		{name: "directory source", input: ".", wantOtherAllowed: true},
+		{name: "single file source", input: "diagram.PUML", wantOtherAllowed: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
