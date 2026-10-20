@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/k1LoW/donegroup"
 )
 
@@ -150,4 +151,134 @@ func TestWatcherCloseStopsLoop(t *testing.T) {
 		}
 	}()
 	_ = w.Close()
+}
+
+// An unreported file must stay undiscovered. A full Refresh would pick it up,
+// making this a deterministic regression check rather than a timing assertion.
+func TestWatcherSingleFileEventsDoNotRescanSources(t *testing.T) {
+	tests := []struct {
+		name             string
+		op               fsnotify.Op
+		initiallyPresent bool
+		change           func(*testing.T, string)
+		wantAllowed      bool
+	}{
+		{
+			name:             "create",
+			op:               fsnotify.Create,
+			initiallyPresent: false,
+			change:           writeRegistryFile,
+			wantAllowed:      true,
+		},
+		{
+			name:             "remove",
+			op:               fsnotify.Remove,
+			initiallyPresent: true,
+			change: func(t *testing.T, path string) {
+				t.Helper()
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantAllowed: false,
+		},
+		{
+			name:             "rename",
+			op:               fsnotify.Rename,
+			initiallyPresent: true,
+			change: func(t *testing.T, path string) {
+				t.Helper()
+				if err := os.Rename(path, path+".renamed"); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantAllowed: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			existing := filepath.Join(dir, "existing", "keep.puml")
+			writeRegistryFile(t, existing)
+			target := filepath.Join(dir, "target.puml")
+			if tt.initiallyPresent {
+				writeRegistryFile(t, target)
+			}
+			reg, err := NewRegistry([]string{dir}, []string{".puml"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			w, err := NewWatcher(reg, NewHub())
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				_ = w.Close()
+				w.hub.Close()
+			})
+			sub := w.hub.Subscribe()
+			defer w.hub.Unsubscribe(sub)
+			hidden := filepath.Join(dir, "unreported.puml")
+			writeRegistryFile(t, hidden)
+			tt.change(t, target)
+			w.handleEvent(fsnotify.Event{Name: target, Op: tt.op})
+			if reg.Allowed(hidden) {
+				t.Fatal("event rescanned unrelated files")
+			}
+			if !reg.Allowed(existing) {
+				t.Fatal("unrelated registered file was removed")
+			}
+			if reg.Allowed(target) != tt.wantAllowed {
+				t.Fatal("target membership was not updated")
+			}
+			select {
+			case ev := <-sub:
+				if ev.Name != "tree" {
+					t.Fatalf("expected tree, got %s", ev.Name)
+				}
+			default:
+				t.Fatal("missing tree notification")
+			}
+		})
+	}
+}
+
+func TestWatcherMovedInDirectoryRegistersDescendants(t *testing.T) {
+	dir := t.TempDir()
+	r, err := NewRegistry([]string{dir}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := NewWatcher(r, NewHub())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = w.Close()
+		w.hub.Close()
+	})
+	subtree := filepath.Join(dir, "added")
+	deep := filepath.Join(subtree, "nested", "diagram.puml")
+	writeRegistryFile(t, deep)
+	writeRegistryFile(t, filepath.Join(subtree, "notes.txt"))
+	sibling := filepath.Join(dir, "added-other", "keep.puml")
+	writeRegistryFile(t, sibling)
+	if err := r.addPath(sibling, nil); err != nil {
+		t.Fatal(err)
+	}
+	w.handleEvent(fsnotify.Event{Name: subtree, Op: fsnotify.Create})
+	if !r.Allowed(deep) || len(r.List()) != 2 {
+		t.Fatalf("unexpected files: %v", r.List())
+	}
+	watched := map[string]bool{}
+	for _, path := range w.fsw.WatchList() {
+		watched[path] = true
+	}
+	if !watched[subtree] || !watched[filepath.Dir(deep)] {
+		t.Fatal("missing recursive watches")
+	}
+	w.handleEvent(fsnotify.Event{Name: subtree, Op: fsnotify.Rename})
+	if r.Allowed(deep) || !r.Allowed(sibling) {
+		t.Fatal("subtree removal crossed path boundary")
+	}
 }
