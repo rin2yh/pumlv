@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,14 +24,54 @@ func writeRegistryFile(t *testing.T, path string) {
 // An unreported file must stay undiscovered. A full Refresh would pick it up,
 // making this a deterministic regression check rather than a timing assertion.
 func TestWatcherSingleFileEventsDoNotRescanSources(t *testing.T) {
-	for _, op := range []fsnotify.Op{fsnotify.Create, fsnotify.Remove, fsnotify.Rename} {
-		t.Run(op.String(), func(t *testing.T) {
+	tests := []struct {
+		name             string
+		op               fsnotify.Op
+		initiallyPresent bool
+		change           func(*testing.T, string)
+		wantAllowed      bool
+	}{
+		{
+			name:             "create",
+			op:               fsnotify.Create,
+			initiallyPresent: false,
+			change:           writeRegistryFile,
+			wantAllowed:      true,
+		},
+		{
+			name:             "remove",
+			op:               fsnotify.Remove,
+			initiallyPresent: true,
+			change: func(t *testing.T, path string) {
+				t.Helper()
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantAllowed: false,
+		},
+		{
+			name:             "rename",
+			op:               fsnotify.Rename,
+			initiallyPresent: true,
+			change: func(t *testing.T, path string) {
+				t.Helper()
+				if err := os.Rename(path, path+".renamed"); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantAllowed: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
-			for i := range 1000 {
-				writeRegistryFile(t, filepath.Join(dir, "existing", fmt.Sprintf("%d.puml", i)))
-			}
+			existing := filepath.Join(dir, "existing", "keep.puml")
+			writeRegistryFile(t, existing)
 			target := filepath.Join(dir, "target.puml")
-			writeRegistryFile(t, target)
+			if tt.initiallyPresent {
+				writeRegistryFile(t, target)
+			}
 			reg, err := NewRegistry([]string{dir}, []string{".puml"})
 			if err != nil {
 				t.Fatal(err)
@@ -47,17 +88,15 @@ func TestWatcherSingleFileEventsDoNotRescanSources(t *testing.T) {
 			defer w.hub.Unsubscribe(sub)
 			hidden := filepath.Join(dir, "unreported.puml")
 			writeRegistryFile(t, hidden)
-			if op == fsnotify.Create {
-				target = filepath.Join(dir, "created.puml")
-				writeRegistryFile(t, target)
-			} else if err := os.Remove(target); err != nil {
-				t.Fatal(err)
-			}
-			w.handleEvent(fsnotify.Event{Name: target, Op: op})
+			tt.change(t, target)
+			w.handleEvent(fsnotify.Event{Name: target, Op: tt.op})
 			if reg.Allowed(hidden) {
 				t.Fatal("event rescanned unrelated files")
 			}
-			if reg.Allowed(target) != (op == fsnotify.Create) {
+			if !reg.Allowed(existing) {
+				t.Fatal("unrelated registered file was removed")
+			}
+			if reg.Allowed(target) != tt.wantAllowed {
 				t.Fatal("target membership was not updated")
 			}
 			select {
@@ -150,5 +189,50 @@ func TestWatcherMovedInDirectoryRegistersDescendants(t *testing.T) {
 	w.handleEvent(fsnotify.Event{Name: subtree, Op: fsnotify.Rename})
 	if r.Allowed(deep) || !r.Allowed(sibling) {
 		t.Fatal("subtree removal crossed path boundary")
+	}
+}
+
+// A late watch failure must not publish files visited earlier in the walk.
+func TestRegistryDirectoryAddCommitsOnlyOnSuccess(t *testing.T) {
+	dir := t.TempDir()
+	existing := filepath.Join(dir, "existing.puml")
+	writeRegistryFile(t, existing)
+	r, err := NewRegistry([]string{dir}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := r.List()
+	subtree := filepath.Join(dir, "added")
+	first := filepath.Join(subtree, "a.puml")
+	last := filepath.Join(subtree, "z-nested", "b.puml")
+	writeRegistryFile(t, first)
+	writeRegistryFile(t, last)
+	watchErr := errors.New("watch registration failed")
+	var visited []string
+	err = r.addPath(subtree, func(path string) error {
+		visited = append(visited, path)
+		// Readers must see the previous snapshot even after a.puml was visited.
+		if !reflect.DeepEqual(r.List(), before) {
+			t.Fatal("Registry exposed a partial directory update")
+		}
+		if path == filepath.Dir(last) {
+			return watchErr
+		}
+		return nil
+	})
+	if !errors.Is(err, watchErr) {
+		t.Fatalf("expected watch error, got %v", err)
+	}
+	if !reflect.DeepEqual(visited, []string{subtree, filepath.Dir(last)}) {
+		t.Fatalf("unexpected walk order: %v", visited)
+	}
+	if !reflect.DeepEqual(r.List(), before) {
+		t.Fatalf("failed walk changed Registry: %v", r.List())
+	}
+	if err := r.addPath(subtree, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !r.Allowed(first) || !r.Allowed(last) || !r.Allowed(existing) || len(r.List()) != 3 {
+		t.Fatalf("successful retry did not commit all entries: %v", r.List())
 	}
 }

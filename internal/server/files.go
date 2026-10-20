@@ -148,6 +148,8 @@ func containsPath(root, path string) bool {
 
 // addPath inspects only the created path (and its descendants for a directory).
 // onDir installs watches before reading children, including moved-in subtrees.
+// Registry entries are committed together only after all watch additions succeed.
+// Watches already installed before an error remain active for subsequent events.
 func (r *Registry) addPath(path string, onDir func(string) error) error {
 	var directorySource bool
 	var relevant bool
@@ -169,31 +171,47 @@ func (r *Registry) addPath(path string, onDir func(string) error) error {
 	if err != nil {
 		return err
 	}
-	if !info.IsDir() {
-		r.addFile(path)
-		return nil
-	}
-	if !directorySource {
-		return nil
-	}
-	return filepath.WalkDir(path, func(child string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return nil // same unreadable-entry policy as Refresh
+	next := map[string]FileEntry{}
+	collect := func(path string) {
+		if entry, ok := r.fileEntry(path); ok {
+			next[path] = entry
 		}
-		if d.IsDir() {
-			if onDir != nil {
-				return onDir(child)
-			}
+	}
+	if info.IsDir() {
+		if !directorySource {
 			return nil
 		}
-		r.addFile(child)
-		return nil
-	})
+		err := filepath.WalkDir(path, func(child string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil // same unreadable-entry policy as Refresh
+			}
+			if d.IsDir() {
+				if onDir != nil {
+					return onDir(child)
+				}
+				return nil
+			}
+			collect(child)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		collect(path)
+	}
+	r.mu.Lock()
+	for path, entry := range next {
+		r.files[path] = entry
+	}
+	r.mu.Unlock()
+	return nil
 }
 
-func (r *Registry) addFile(path string) {
+// fileEntry resolves eligibility and metadata without mutating the Registry.
+func (r *Registry) fileEntry(path string) (FileEntry, bool) {
 	if !r.matchExt(path) {
-		return
+		return FileEntry{}, false
 	}
 	var entry FileEntry
 	found := false
@@ -207,11 +225,7 @@ func (r *Registry) addFile(path string) {
 			found = true
 		}
 	}
-	if found {
-		r.mu.Lock()
-		r.files[path] = entry
-		r.mu.Unlock()
-	}
+	return entry, found
 }
 
 // removePath needs no filesystem access: rename/remove events name the old path.
