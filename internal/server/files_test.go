@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -90,15 +89,28 @@ func writeRegistryFile(t *testing.T, path string) {
 }
 
 func TestRegistryIncrementalSourceRules(t *testing.T) {
-	for _, single := range []bool{false, true} {
-		t.Run(fmt.Sprintf("single=%v", single), func(t *testing.T) {
+	tests := []struct {
+		name             string
+		input            string
+		wantOtherAllowed bool
+	}{
+		{
+			name:             "directory source",
+			input:            ".",
+			wantOtherAllowed: true,
+		},
+		{
+			name:             "single file source",
+			input:            "diagram.PUML",
+			wantOtherAllowed: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			file := filepath.Join(dir, "diagram.PUML")
 			writeRegistryFile(t, file)
-			source := dir
-			if single {
-				source = file
-			}
+			source := filepath.Join(dir, tt.input)
 			r, err := NewRegistry([]string{source}, []string{"puml"})
 			if err != nil {
 				t.Fatal(err)
@@ -123,8 +135,14 @@ func TestRegistryIncrementalSourceRules(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if r.Allowed(other) == single || r.Allowed(ignored) || r.Allowed(outside) {
-				t.Fatal("source or extension filter violated")
+			if got := r.Allowed(other); got != tt.wantOtherAllowed {
+				t.Errorf("sibling file Allowed(%q) = %v, want %v", other, got, tt.wantOtherAllowed)
+			}
+			if r.Allowed(ignored) {
+				t.Errorf("file with unmatched extension was allowed: %q", ignored)
+			}
+			if r.Allowed(outside) {
+				t.Errorf("file outside source root was allowed: %q", outside)
 			}
 		})
 	}
