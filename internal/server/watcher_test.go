@@ -153,93 +153,91 @@ func TestWatcherCloseStopsLoop(t *testing.T) {
 	_ = w.Close()
 }
 
-// An unreported file must stay undiscovered. A full Refresh would pick it up,
-// making this a deterministic regression check rather than a timing assertion.
-func TestWatcherSingleFileEventsDoNotRescanSources(t *testing.T) {
-	tests := []struct {
-		name             string
-		op               fsnotify.Op
-		initiallyPresent bool
-		change           func(*testing.T, string)
-		wantAllowed      bool
-	}{
-		{
-			name:             "create",
-			op:               fsnotify.Create,
-			initiallyPresent: false,
-			change:           writeRegistryFile,
-			wantAllowed:      true,
-		},
-		{
-			name:             "remove",
-			op:               fsnotify.Remove,
-			initiallyPresent: true,
-			change: func(t *testing.T, path string) {
-				t.Helper()
-				if err := os.Remove(path); err != nil {
-					t.Fatal(err)
-				}
-			},
-			wantAllowed: false,
-		},
-		{
-			name:             "rename",
-			op:               fsnotify.Rename,
-			initiallyPresent: true,
-			change: func(t *testing.T, path string) {
-				t.Helper()
-				if err := os.Rename(path, path+".renamed"); err != nil {
-					t.Fatal(err)
-				}
-			},
-			wantAllowed: false,
-		},
+func TestWatcherFileCreateDoesNotRescanSources(t *testing.T) {
+	dir := t.TempDir()
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
+
+	if !w.registry.Allowed(target) {
+		t.Fatal("created file was not registered")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir := t.TempDir()
-			existing := filepath.Join(dir, "existing", "keep.puml")
-			writeRegistryFile(t, existing)
-			target := filepath.Join(dir, "target.puml")
-			if tt.initiallyPresent {
-				writeRegistryFile(t, target)
-			}
-			reg, err := NewRegistry([]string{dir}, []string{".puml"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			w, err := NewWatcher(reg, NewHub())
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() {
-				_ = w.Close()
-				w.hub.Close()
-			})
-			sub := w.hub.Subscribe()
-			defer w.hub.Unsubscribe(sub)
-			hidden := filepath.Join(dir, "unreported.puml")
-			writeRegistryFile(t, hidden)
-			tt.change(t, target)
-			w.handleEvent(fsnotify.Event{Name: target, Op: tt.op})
-			if reg.Allowed(hidden) {
-				t.Fatal("event rescanned unrelated files")
-			}
-			if !reg.Allowed(existing) {
-				t.Fatal("unrelated registered file was removed")
-			}
-			if reg.Allowed(target) != tt.wantAllowed {
-				t.Fatal("target membership was not updated")
-			}
-			select {
-			case ev := <-sub:
-				if ev.Name != "tree" {
-					t.Fatalf("expected tree, got %s", ev.Name)
-				}
-			default:
-				t.Fatal("missing tree notification")
-			}
-		})
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
+}
+
+func TestWatcherFileRemoveDoesNotRescanSources(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	if err := os.Remove(target); err != nil {
+		t.Fatal(err)
+	}
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Remove})
+
+	if w.registry.Allowed(target) {
+		t.Fatal("removed file is still registered")
+	}
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
+}
+
+func TestWatcherFileRenameDoesNotRescanSources(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	if err := os.Rename(target, target+".renamed"); err != nil {
+		t.Fatal(err)
+	}
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Rename})
+
+	if w.registry.Allowed(target) {
+		t.Fatal("renamed file is still registered at its old path")
+	}
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
+}
+
+func newTestWatcherForFileEvent(t *testing.T, dir string) (*Watcher, chan Event) {
+	t.Helper()
+	writeRegistryFile(t, filepath.Join(dir, "existing", "keep.puml"))
+	reg, err := NewRegistry([]string{dir}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := NewWatcher(reg, NewHub())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sub := w.hub.Subscribe()
+	t.Cleanup(func() {
+		_ = w.Close()
+		w.hub.Unsubscribe(sub)
+		w.hub.Close()
+	})
+	writeRegistryFile(t, filepath.Join(dir, "unreported.puml"))
+	return w, sub
+}
+
+// An unreported file must stay undiscovered; Refresh would pick it up.
+func assertWatcherDidNotRescanSources(t *testing.T, w *Watcher, sub chan Event, dir string) {
+	t.Helper()
+	if w.registry.Allowed(filepath.Join(dir, "unreported.puml")) {
+		t.Error("event rescanned unrelated files")
+	}
+	if !w.registry.Allowed(filepath.Join(dir, "existing", "keep.puml")) {
+		t.Error("unrelated registered file was removed")
+	}
+	select {
+	case ev := <-sub:
+		if ev.Name != "tree" {
+			t.Errorf("expected tree, got %s", ev.Name)
+		}
+	default:
+		t.Error("missing tree notification")
 	}
 }
 
