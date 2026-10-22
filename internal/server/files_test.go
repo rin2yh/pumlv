@@ -108,12 +108,20 @@ func TestRegistryIncrementalSourceRules(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := r.List()
-			r.removePath(file)
+			if !r.removePath(file) {
+				t.Fatal("removing a registered file reported no change")
+			}
+			if r.removePath(file) {
+				t.Fatal("duplicate removal reported a change")
+			}
 			if r.Allowed(file) {
 				t.Fatal("file still allowed after removal")
 			}
-			if err := r.addPath(file, nil); err != nil {
-				t.Fatal(err)
+			if changed, err := r.addPath(file, nil); err != nil || !changed {
+				t.Fatalf("re-registering file: changed=%v, err=%v", changed, err)
+			}
+			if changed, err := r.addPath(file, nil); err != nil || changed {
+				t.Fatalf("duplicate addition: changed=%v, err=%v", changed, err)
 			}
 			if !reflect.DeepEqual(r.List(), want) {
 				t.Fatalf("metadata changed: %v", r.List())
@@ -123,7 +131,7 @@ func TestRegistryIncrementalSourceRules(t *testing.T) {
 			outside := filepath.Join(t.TempDir(), "outside.puml")
 			for _, path := range []string{other, ignored, outside} {
 				writeRegistryFile(t, path)
-				if err := r.addPath(path, nil); err != nil {
+				if _, err := r.addPath(path, nil); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -157,7 +165,7 @@ func TestRegistryDirectoryAddCommitsOnlyOnSuccess(t *testing.T) {
 	writeRegistryFile(t, last)
 	watchErr := errors.New("watch registration failed")
 	var visited []string
-	err = r.addPath(subtree, func(path string) error {
+	changed, err := r.addPath(subtree, func(path string) error {
 		visited = append(visited, path)
 		// Readers must see the previous snapshot even after a.puml was visited.
 		if !reflect.DeepEqual(r.List(), before) {
@@ -168,6 +176,9 @@ func TestRegistryDirectoryAddCommitsOnlyOnSuccess(t *testing.T) {
 		}
 		return nil
 	})
+	if changed {
+		t.Fatal("failed walk reported a Registry change")
+	}
 	if !errors.Is(err, watchErr) {
 		t.Fatalf("expected watch error, got %v", err)
 	}
@@ -177,7 +188,7 @@ func TestRegistryDirectoryAddCommitsOnlyOnSuccess(t *testing.T) {
 	if !reflect.DeepEqual(r.List(), before) {
 		t.Fatalf("failed walk changed Registry: %v", r.List())
 	}
-	if err := r.addPath(subtree, nil); err != nil {
+	if _, err := r.addPath(subtree, nil); err != nil {
 		t.Fatal(err)
 	}
 	if !r.Allowed(first) || !r.Allowed(last) || !r.Allowed(existing) || len(r.List()) != 3 {

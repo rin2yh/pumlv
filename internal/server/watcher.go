@@ -88,17 +88,17 @@ func (w *Watcher) loop(ctx context.Context) {
 }
 
 func (w *Watcher) handleEvent(event fsnotify.Event) {
+	changed := false
 	if event.Op&(fsnotify.Remove|fsnotify.Rename) != 0 {
-		w.registry.removePath(event.Name)
+		changed = w.registry.removePath(event.Name)
 	}
-	var err error
 	if event.Op&fsnotify.Create != 0 {
-		err = w.registry.addPath(event.Name, w.fsw.Add)
-	}
-	if event.Op&(fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
-		if err == nil {
-			w.hub.Broadcast(Event{Name: "tree", Data: map[string]any{}})
+		if added, err := w.registry.addPath(event.Name, w.fsw.Add); err == nil {
+			changed = changed || added
 		}
+	}
+	if changed {
+		w.hub.Broadcast(Event{Name: "tree", Data: map[string]any{}})
 	}
 
 	if w.registry.matchExt(event.Name) && event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Rename) != 0 {

@@ -147,7 +147,7 @@ func containsPath(root, path string) bool {
 }
 
 // addPath registers files under path after successfully installing directory watches.
-func (r *Registry) addPath(path string, onDir func(string) error) error {
+func (r *Registry) addPath(path string, onDir func(string) error) (bool, error) {
 	var directorySource bool
 	var relevant bool
 	for _, s := range r.sources {
@@ -159,14 +159,14 @@ func (r *Registry) addPath(path string, onDir func(string) error) error {
 		}
 	}
 	if !relevant {
-		return nil
+		return false, nil
 	}
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		return nil // a later remove event will handle a short-lived creation
+		return false, nil // a later remove event will handle a short-lived creation
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	next := map[string]FileEntry{}
 	collect := func(path string) {
@@ -176,7 +176,7 @@ func (r *Registry) addPath(path string, onDir func(string) error) error {
 	}
 	if info.IsDir() {
 		if !directorySource {
-			return nil
+			return false, nil
 		}
 		err := filepath.WalkDir(path, func(child string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -192,17 +192,21 @@ func (r *Registry) addPath(path string, onDir func(string) error) error {
 			return nil
 		})
 		if err != nil {
-			return err
+			return false, err
 		}
 	} else {
 		collect(path)
 	}
+	changed := false
 	r.mu.Lock()
 	for path, entry := range next {
-		r.files[path] = entry
+		if old, ok := r.files[path]; !ok || old != entry {
+			r.files[path] = entry
+			changed = true
+		}
 	}
 	r.mu.Unlock()
-	return nil
+	return changed, nil
 }
 
 // fileEntry resolves eligibility and metadata without mutating the Registry.
@@ -226,16 +230,19 @@ func (r *Registry) fileEntry(path string) (FileEntry, bool) {
 }
 
 // removePath needs no filesystem access: rename/remove events name the old path.
-func (r *Registry) removePath(path string) {
+func (r *Registry) removePath(path string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.files[path]; ok {
 		delete(r.files, path)
-		return
+		return true
 	}
+	changed := false
 	for child := range r.files {
 		if containsPath(path, child) {
 			delete(r.files, child)
+			changed = true
 		}
 	}
+	return changed
 }
