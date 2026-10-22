@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.13](https://github.com/rin2yh/pumlv/compare/v0.3.12...v0.3.13) - 2026-10-22
+
+- chore: update Go to 1.26.10 for security fixes by @rin2yh in https://github.com/rin2yh/pumlv/pull/225
+
 ## [v0.3.12](https://github.com/rin2yh/pumlv/compare/v0.3.11...v0.3.12) - 2026-10-22
 
 - build(deps-dev): bump vite from 8.3.0 to 8.3.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/203
