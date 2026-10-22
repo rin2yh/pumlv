@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.3.12](https://github.com/rin2yh/pumlv/compare/v0.3.11...v0.3.12) - 2026-10-22
+
+- build(deps-dev): bump vite from 8.3.0 to 8.3.4 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/203
+- build(deps): bump actions/upload-artifact from 7.0.1 to 7.0.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/204
+- build(deps): bump Songmu/tagpr from 1.21.1 to 1.21.2 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/205
+- chore: octocovのカバレッジ下限を60%に変更 by @rin2yh in https://github.com/rin2yh/pumlv/pull/216
+- build(deps): bump shiki from 4.4.3 to 4.5.0 in /internal/frontend by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/206
+- build(deps): bump goreleaser/goreleaser-action from 7.2.3 to 7.3.0 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/217
+- build(deps): bump Songmu/tagpr from 1.21.2 to 1.21.3 by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/218
+- chore: Dependabot の更新 PR をグループ化する by @rin2yh in https://github.com/rin2yh/pumlv/pull/222
+- build(deps): bump the npm-dependencies group in /internal/frontend with 17 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/223
+- perf: ファイル監視イベントで Registry を差分更新する by @rin2yh in https://github.com/rin2yh/pumlv/pull/215
+
 ## [v0.3.11](https://github.com/rin2yh/pumlv/compare/v0.3.10...v0.3.11) - 2026-10-08
 
 - docs: document built-in shell completion by @rin2yh in https://github.com/rin2yh/pumlv/pull/187
