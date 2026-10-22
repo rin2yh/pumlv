@@ -1,6 +1,6 @@
 module github.com/rin2yh/pumlv
 
-go 1.26.2
+go 1.26.10
 
 require (
 	github.com/fsnotify/fsnotify v1.10.1
