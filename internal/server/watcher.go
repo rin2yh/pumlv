@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -89,17 +88,17 @@ func (w *Watcher) loop(ctx context.Context) {
 }
 
 func (w *Watcher) handleEvent(event fsnotify.Event) {
-	// New directory under a watched dir: register it so deeper changes are reported.
+	changed := false
+	if event.Op&(fsnotify.Remove|fsnotify.Rename) != 0 {
+		changed = w.registry.removePath(event.Name)
+	}
 	if event.Op&fsnotify.Create != 0 {
-		if fi, err := os.Stat(event.Name); err == nil && fi.IsDir() {
-			_ = w.fsw.Add(event.Name)
+		if added, err := w.registry.addPath(event.Name, w.fsw.Add); err == nil {
+			changed = changed || added
 		}
 	}
-
-	if event.Op&(fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
-		if err := w.registry.Refresh(); err == nil {
-			w.hub.Broadcast(Event{Name: "tree", Data: map[string]any{}})
-		}
+	if changed {
+		w.hub.Broadcast(Event{Name: "tree", Data: map[string]any{}})
 	}
 
 	if w.registry.matchExt(event.Name) && event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Rename) != 0 {

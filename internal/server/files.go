@@ -139,3 +139,110 @@ func (r *Registry) matchExt(path string) bool {
 	_, ok := r.exts[ext]
 	return ok
 }
+
+// containsPath compares path components, so sibling prefixes do not match.
+func containsPath(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// addPath registers files under path after successfully installing directory watches.
+func (r *Registry) addPath(path string, onDir func(string) error) (bool, error) {
+	var directorySource bool
+	var relevant bool
+	for _, s := range r.sources {
+		if s.isDir && containsPath(s.path, path) {
+			directorySource = true
+			relevant = true
+		} else if !s.isDir && s.path == path {
+			relevant = true
+		}
+	}
+	if !relevant {
+		return false, nil
+	}
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false, nil // a later remove event will handle a short-lived creation
+	}
+	if err != nil {
+		return false, err
+	}
+	next := map[string]FileEntry{}
+	collect := func(path string) {
+		if entry, ok := r.fileEntry(path); ok {
+			next[path] = entry
+		}
+	}
+	if info.IsDir() {
+		if !directorySource {
+			return false, nil
+		}
+		err := filepath.WalkDir(path, func(child string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil // same unreadable-entry policy as Refresh
+			}
+			if d.IsDir() {
+				if onDir != nil {
+					return onDir(child)
+				}
+				return nil
+			}
+			collect(child)
+			return nil
+		})
+		if err != nil {
+			return false, err
+		}
+	} else {
+		collect(path)
+	}
+	changed := false
+	r.mu.Lock()
+	for path, entry := range next {
+		if old, ok := r.files[path]; !ok || old != entry {
+			r.files[path] = entry
+			changed = true
+		}
+	}
+	r.mu.Unlock()
+	return changed, nil
+}
+
+// fileEntry resolves eligibility and metadata without mutating the Registry.
+func (r *Registry) fileEntry(path string) (FileEntry, bool) {
+	if !r.matchExt(path) {
+		return FileEntry{}, false
+	}
+	var entry FileEntry
+	found := false
+	for _, s := range r.sources {
+		if s.isDir && containsPath(s.path, path) {
+			rel, _ := filepath.Rel(s.path, path)
+			entry = FileEntry{Path: path, Rel: rel, Name: filepath.Base(path), Source: s.path}
+			found = true
+		} else if !s.isDir && s.path == path {
+			entry = FileEntry{Path: path, Rel: filepath.Base(path), Name: filepath.Base(path), Source: filepath.Dir(path)}
+			found = true
+		}
+	}
+	return entry, found
+}
+
+// removePath needs no filesystem access: rename/remove events name the old path.
+func (r *Registry) removePath(path string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.files[path]; ok {
+		delete(r.files, path)
+		return true
+	}
+	changed := false
+	for child := range r.files {
+		if containsPath(path, child) {
+			delete(r.files, child)
+			changed = true
+		}
+	}
+	return changed
+}

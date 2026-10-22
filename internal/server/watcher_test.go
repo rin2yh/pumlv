@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/k1LoW/donegroup"
 )
 
@@ -150,4 +151,240 @@ func TestWatcherCloseStopsLoop(t *testing.T) {
 		}
 	}()
 	_ = w.Close()
+}
+
+func TestWatcherFileCreateDoesNotRescanSources(t *testing.T) {
+	dir := t.TempDir()
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
+
+	if !w.registry.Allowed(target) {
+		t.Fatal("created file was not registered")
+	}
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
+	assertNoTreeEvent(t, sub)
+}
+
+func TestWatcherFileRemoveDoesNotRescanSources(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	if err := os.Remove(target); err != nil {
+		t.Fatal(err)
+	}
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Remove})
+
+	if w.registry.Allowed(target) {
+		t.Fatal("removed file is still registered")
+	}
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Remove})
+	assertNoTreeEvent(t, sub)
+}
+
+func TestWatcherFileRenameDoesNotRescanSources(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	if err := os.Rename(target, target+".renamed"); err != nil {
+		t.Fatal(err)
+	}
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Rename})
+
+	if w.registry.Allowed(target) {
+		t.Fatal("renamed file is still registered at its old path")
+	}
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Rename})
+	assertNoTreeEvent(t, sub)
+}
+
+func newTestWatcherForFileEvent(t *testing.T, dir string) (*Watcher, chan Event) {
+	t.Helper()
+	writeRegistryFile(t, filepath.Join(dir, "existing", "keep.puml"))
+	reg, err := NewRegistry([]string{dir}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := NewWatcher(reg, NewHub())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sub := w.hub.Subscribe()
+	t.Cleanup(func() {
+		_ = w.Close()
+		w.hub.Unsubscribe(sub)
+		w.hub.Close()
+	})
+	writeRegistryFile(t, filepath.Join(dir, "unreported.puml"))
+	return w, sub
+}
+
+// An unreported file must stay undiscovered; Refresh would pick it up.
+func assertWatcherDidNotRescanSources(t *testing.T, w *Watcher, sub chan Event, dir string) {
+	t.Helper()
+	if w.registry.Allowed(filepath.Join(dir, "unreported.puml")) {
+		t.Error("event rescanned unrelated files")
+	}
+	if !w.registry.Allowed(filepath.Join(dir, "existing", "keep.puml")) {
+		t.Error("unrelated registered file was removed")
+	}
+	select {
+	case ev := <-sub:
+		if ev.Name != "tree" {
+			t.Errorf("expected tree, got %s", ev.Name)
+		}
+	default:
+		t.Error("missing tree notification")
+	}
+}
+
+func TestWatcherMovedInDirectoryRegistersDescendants(t *testing.T) {
+	dir := t.TempDir()
+	r, err := NewRegistry([]string{dir}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := NewWatcher(r, NewHub())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = w.Close()
+		w.hub.Close()
+	})
+	subtree := filepath.Join(dir, "added")
+	deep := filepath.Join(subtree, "nested", "diagram.puml")
+	writeRegistryFile(t, deep)
+	writeRegistryFile(t, filepath.Join(subtree, "notes.txt"))
+	sibling := filepath.Join(dir, "added-other", "keep.puml")
+	writeRegistryFile(t, sibling)
+	if _, err := r.addPath(sibling, nil); err != nil {
+		t.Fatal(err)
+	}
+	w.handleEvent(fsnotify.Event{Name: subtree, Op: fsnotify.Create})
+	if !r.Allowed(deep) || len(r.List()) != 2 {
+		t.Fatalf("unexpected files: %v", r.List())
+	}
+	watched := map[string]bool{}
+	for _, path := range w.fsw.WatchList() {
+		watched[path] = true
+	}
+	if !watched[subtree] || !watched[filepath.Dir(deep)] {
+		t.Fatal("missing recursive watches")
+	}
+	w.handleEvent(fsnotify.Event{Name: subtree, Op: fsnotify.Rename})
+	if r.Allowed(deep) || !r.Allowed(sibling) {
+		t.Fatal("subtree removal crossed path boundary")
+	}
+}
+
+func assertNoTreeEvent(t *testing.T, sub chan Event) {
+	t.Helper()
+	for {
+		select {
+		case ev, ok := <-sub:
+			if !ok {
+				return
+			}
+			if ev.Name == "tree" {
+				t.Fatal("unexpected tree notification without a Registry change")
+			}
+		default:
+			return
+		}
+	}
+}
+
+func TestWatcherExistingFileCreateDoesNotEmitTree(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+	w, sub := newTestWatcherForFileEvent(t, dir)
+
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
+	assertNoTreeEvent(t, sub)
+
+	if _, ok := recv(t, sub, "changed", 2*time.Second); !ok {
+		t.Fatal("expected changed notification for existing file")
+	}
+	assertNoTreeEvent(t, sub)
+}
+
+func TestWatcherUnmatchedFileEventsDoNotEmitTree(t *testing.T) {
+	dir := t.TempDir()
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	target := filepath.Join(dir, "notes.txt")
+	writeRegistryFile(t, target)
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
+	assertNoTreeEvent(t, sub)
+
+	if err := os.Remove(target); err != nil {
+		t.Fatal(err)
+	}
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Remove})
+	assertNoTreeEvent(t, sub)
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Rename})
+	assertNoTreeEvent(t, sub)
+}
+
+func TestWatcherSingleFileSourceIgnoresSiblingEvents(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.puml")
+	writeRegistryFile(t, target)
+	r, err := NewRegistry([]string{target}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := NewWatcher(r, NewHub())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sub := w.hub.Subscribe()
+	t.Cleanup(func() {
+		_ = w.Close()
+		w.hub.Unsubscribe(sub)
+		w.hub.Close()
+	})
+	sibling := filepath.Join(dir, "other.puml")
+	writeRegistryFile(t, sibling)
+	for _, op := range []fsnotify.Op{fsnotify.Create, fsnotify.Remove, fsnotify.Rename} {
+		w.handleEvent(fsnotify.Event{Name: sibling, Op: op})
+		assertNoTreeEvent(t, sub)
+	}
+}
+
+func TestWatcherEmptyDirectoryWatchesWithoutTreeNotification(t *testing.T) {
+	dir := t.TempDir()
+	w, sub := newTestWatcherForFileEvent(t, dir)
+	subtree := filepath.Join(dir, "empty")
+	if err := os.Mkdir(subtree, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	w.handleEvent(fsnotify.Event{Name: subtree, Op: fsnotify.Create})
+	assertNoTreeEvent(t, sub)
+	watched := false
+	for _, path := range w.fsw.WatchList() {
+		if path == subtree {
+			watched = true
+		}
+	}
+	if !watched {
+		t.Fatal("empty directory was not watched")
+	}
+	target := filepath.Join(subtree, "new.puml")
+	writeRegistryFile(t, target)
+	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
+	if !w.registry.Allowed(target) {
+		t.Fatal("file in new directory was not registered")
+	}
+	assertWatcherDidNotRescanSources(t, w, sub, dir)
 }

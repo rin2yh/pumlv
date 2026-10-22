@@ -1,8 +1,10 @@
 package server
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -73,5 +75,123 @@ func TestRegistryRefreshPicksUpNewFiles(t *testing.T) {
 	}
 	if got := len(r.List()); got != 1 {
 		t.Fatalf("expected 1, got %d", got)
+	}
+}
+
+func writeRegistryFile(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("@startuml\n@enduml\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRegistryIncrementalSourceRules(t *testing.T) {
+	tests := []struct {
+		name             string
+		input            string
+		wantOtherAllowed bool
+	}{
+		{name: "directory source", input: ".", wantOtherAllowed: true},
+		{name: "single file source", input: "diagram.PUML", wantOtherAllowed: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			file := filepath.Join(dir, "diagram.PUML")
+			writeRegistryFile(t, file)
+			source := filepath.Join(dir, tt.input)
+			r, err := NewRegistry([]string{source}, []string{"puml"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := r.List()
+			if !r.removePath(file) {
+				t.Fatal("removing a registered file reported no change")
+			}
+			if r.removePath(file) {
+				t.Fatal("duplicate removal reported a change")
+			}
+			if r.Allowed(file) {
+				t.Fatal("file still allowed after removal")
+			}
+			if changed, err := r.addPath(file, nil); err != nil || !changed {
+				t.Fatalf("re-registering file: changed=%v, err=%v", changed, err)
+			}
+			if changed, err := r.addPath(file, nil); err != nil || changed {
+				t.Fatalf("duplicate addition: changed=%v, err=%v", changed, err)
+			}
+			if !reflect.DeepEqual(r.List(), want) {
+				t.Fatalf("metadata changed: %v", r.List())
+			}
+			other := filepath.Join(dir, "other.puml")
+			ignored := filepath.Join(dir, "notes.txt")
+			outside := filepath.Join(t.TempDir(), "outside.puml")
+			for _, path := range []string{other, ignored, outside} {
+				writeRegistryFile(t, path)
+				if _, err := r.addPath(path, nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if got := r.Allowed(other); got != tt.wantOtherAllowed {
+				t.Errorf("sibling file Allowed(%q) = %v, want %v", other, got, tt.wantOtherAllowed)
+			}
+			if r.Allowed(ignored) {
+				t.Errorf("file with unmatched extension was allowed: %q", ignored)
+			}
+			if r.Allowed(outside) {
+				t.Errorf("file outside source root was allowed: %q", outside)
+			}
+		})
+	}
+}
+
+// A late watch failure must not publish files visited earlier in the walk.
+func TestRegistryDirectoryAddCommitsOnlyOnSuccess(t *testing.T) {
+	dir := t.TempDir()
+	existing := filepath.Join(dir, "existing.puml")
+	writeRegistryFile(t, existing)
+	r, err := NewRegistry([]string{dir}, []string{".puml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := r.List()
+	subtree := filepath.Join(dir, "added")
+	first := filepath.Join(subtree, "a.puml")
+	last := filepath.Join(subtree, "z-nested", "b.puml")
+	writeRegistryFile(t, first)
+	writeRegistryFile(t, last)
+	watchErr := errors.New("watch registration failed")
+	var visited []string
+	changed, err := r.addPath(subtree, func(path string) error {
+		visited = append(visited, path)
+		// Readers must see the previous snapshot even after a.puml was visited.
+		if !reflect.DeepEqual(r.List(), before) {
+			t.Fatal("Registry exposed a partial directory update")
+		}
+		if path == filepath.Dir(last) {
+			return watchErr
+		}
+		return nil
+	})
+	if changed {
+		t.Fatal("failed walk reported a Registry change")
+	}
+	if !errors.Is(err, watchErr) {
+		t.Fatalf("expected watch error, got %v", err)
+	}
+	if !reflect.DeepEqual(visited, []string{subtree, filepath.Dir(last)}) {
+		t.Fatalf("unexpected walk order: %v", visited)
+	}
+	if !reflect.DeepEqual(r.List(), before) {
+		t.Fatalf("failed walk changed Registry: %v", r.List())
+	}
+	if _, err := r.addPath(subtree, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !r.Allowed(first) || !r.Allowed(last) || !r.Allowed(existing) || len(r.List()) != 3 {
+		t.Fatalf("successful retry did not commit all entries: %v", r.List())
 	}
 }
