@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -229,5 +230,25 @@ func TestHandleStaticSpaFallback(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 (SPA fallback), got %d", resp.StatusCode)
+	}
+}
+
+func TestHandleFileServesExtractedMarkdownDiagram(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "diagram.MD")
+	if err := os.WriteFile(path, []byte("# Diagram\n```puml\nAlice -> Bob\n```\n```wsd\nBob -> Alice\n```\nprose"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, ts := newTestServer(t, []string{path}, []string{".md"})
+	resp, err := http.Get(ts.URL + "/api/file?path=" + url.QueryEscape(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK || string(data) != "@startuml\nAlice -> Bob\n@enduml\n" {
+		t.Fatalf("status %d, body %q", resp.StatusCode, data)
 	}
 }
