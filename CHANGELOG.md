@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.3.14](https://github.com/rin2yh/pumlv/compare/v0.3.13...v0.3.14) - 2026-10-27
+
+- build(deps): bump Songmu/tagpr from 1.21.3 to 1.21.4 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/227
+- build(deps-dev): bump the npm-dependencies group in /internal/frontend with 7 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/228
+
 ## [v0.3.13](https://github.com/rin2yh/pumlv/compare/v0.3.12...v0.3.13) - 2026-10-22
 
 - chore: update Go to 1.26.10 for security fixes by @rin2yh in https://github.com/rin2yh/pumlv/pull/225
