@@ -369,7 +369,7 @@ func TestRegistryUpdatePreservesEntriesOnReadError(t *testing.T) {
 	}
 }
 
-func TestRegistryRefreshReadFailureKeepsSnapshot(t *testing.T) {
+func TestRegistryRefreshReadFailureSkipsUnreadableFile(t *testing.T) {
 	for _, tt := range []struct {
 		name, input string
 		want        error
@@ -387,7 +387,6 @@ func TestRegistryRefreshReadFailureKeepsSnapshot(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			before := reg.List()
 			added := filepath.Join(dir, "a-new.md")
 			if err := os.WriteFile(added, []byte("```puml\nBob -> Alice\n```"), 0o600); err != nil {
 				t.Fatal(err)
@@ -398,19 +397,21 @@ func TestRegistryRefreshReadFailureKeepsSnapshot(t *testing.T) {
 				}
 				return os.ReadFile(name)
 			}
-			err = reg.Refresh()
-			if !errors.Is(err, tt.want) || !strings.Contains(err.Error(), path) {
-				t.Fatalf("Refresh error = %v, want cause and path %s", err, path)
+			if err := reg.Refresh(); err != nil {
+				t.Fatalf("Refresh: %v", err)
 			}
-			if got := reg.List(); !reflect.DeepEqual(got, before) {
-				t.Fatalf("failed refresh published a partial snapshot: %v", got)
+			if reg.Allowed(path) {
+				t.Fatal("unreadable file was registered")
+			}
+			if !reg.Allowed(added) {
+				t.Fatal("refresh did not continue with readable file")
 			}
 			reg.readFile = os.ReadFile
 			if err := reg.Refresh(); err != nil {
 				t.Fatal(err)
 			}
-			if !reg.Allowed(path) {
-				t.Fatal("existing diagram missing after recovery")
+			if !reg.Allowed(path) || !reg.Allowed(added) {
+				t.Fatal("readable files missing after recovery")
 			}
 		})
 	}

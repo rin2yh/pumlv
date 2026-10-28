@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -81,14 +82,16 @@ func (r *Registry) Refresh() error {
 		if s.isDir {
 			err := filepath.WalkDir(s.path, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
-					return fmt.Errorf("scan %q: %w", path, err)
+					log.Printf("skip unreadable path %q during registry refresh: %v", path, err)
+					return nil
 				}
 				if d.IsDir() {
 					return nil
 				}
 				entry, ok, err := r.getFileEntry(path)
 				if err != nil {
-					return err
+					log.Printf("skip unreadable file %q during registry refresh: %v", path, err)
+					return nil
 				}
 				if ok {
 					next[path] = entry
@@ -101,7 +104,8 @@ func (r *Registry) Refresh() error {
 		} else {
 			entry, ok, err := r.getFileEntry(s.path)
 			if err != nil {
-				return err
+				log.Printf("skip unreadable file %q during registry refresh: %v", s.path, err)
+				continue
 			}
 			if ok {
 				next[s.path] = entry
