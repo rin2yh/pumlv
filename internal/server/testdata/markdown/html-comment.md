@@ -1,0 +1,5 @@
+<!--
+```puml
+Alice -> Bob: hello
+```
+-->

@@ -1,0 +1,2 @@
+```puml
+Alice -> Bob: hello

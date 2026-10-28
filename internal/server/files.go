@@ -1,12 +1,17 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/rin2yh/pumlv/internal/fileformat"
 )
 
 // FileEntry represents a discoverable PlantUML file.
@@ -19,10 +24,13 @@ type FileEntry struct {
 
 // Registry holds the set of files served and lets the watcher refresh it.
 type Registry struct {
-	mu      sync.RWMutex
-	sources []sourceRoot // resolved input arguments
-	exts    map[string]struct{}
-	files   map[string]FileEntry // key: absolute path
+	filesMu        sync.RWMutex // protects files and revision
+	updateSerialMu sync.Mutex   // serializes updates; not held during recovery directory scans
+	revision       uint64       // invalidates directory candidates when a concurrent update occurs
+	sources        []sourceRoot // resolved input arguments
+	exts           map[string]struct{}
+	files          map[string]FileEntry // key: absolute path
+	readFile       func(string) ([]byte, error)
 }
 
 type sourceRoot struct {
@@ -44,8 +52,9 @@ func NewRegistry(inputs []string, exts []string) (*Registry, error) {
 	}
 
 	r := &Registry{
-		exts:  extMap,
-		files: map[string]FileEntry{},
+		exts:     extMap,
+		files:    map[string]FileEntry{},
+		readFile: os.ReadFile,
 	}
 	for _, in := range inputs {
 		abs, err := filepath.Abs(in)
@@ -64,27 +73,28 @@ func NewRegistry(inputs []string, exts []string) (*Registry, error) {
 	return r, nil
 }
 
-// Refresh rescans every source root and rebuilds the file map.
+// Refresh replaces the snapshot only after every source was read successfully.
 func (r *Registry) Refresh() error {
+	r.updateSerialMu.Lock()
+	defer r.updateSerialMu.Unlock()
 	next := map[string]FileEntry{}
 	for _, s := range r.sources {
 		if s.isDir {
 			err := filepath.WalkDir(s.path, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
-					return nil // skip unreadable entries instead of aborting
+					log.Printf("skip unreadable path %q during registry refresh: %v", path, err)
+					return nil
 				}
 				if d.IsDir() {
 					return nil
 				}
-				if !r.matchExt(path) {
+				entry, ok, err := r.getFileEntry(path)
+				if err != nil {
+					log.Printf("skip unreadable file %q during registry refresh: %v", path, err)
 					return nil
 				}
-				rel, _ := filepath.Rel(s.path, path)
-				next[path] = FileEntry{
-					Path:   path,
-					Rel:    rel,
-					Name:   filepath.Base(path),
-					Source: s.path,
+				if ok {
+					next[path] = entry
 				}
 				return nil
 			})
@@ -92,27 +102,27 @@ func (r *Registry) Refresh() error {
 				return err
 			}
 		} else {
-			if !r.matchExt(s.path) {
+			entry, ok, err := r.getFileEntry(s.path)
+			if err != nil {
+				log.Printf("skip unreadable file %q during registry refresh: %v", s.path, err)
 				continue
 			}
-			next[s.path] = FileEntry{
-				Path:   s.path,
-				Rel:    filepath.Base(s.path),
-				Name:   filepath.Base(s.path),
-				Source: filepath.Dir(s.path),
+			if ok {
+				next[s.path] = entry
 			}
 		}
 	}
-	r.mu.Lock()
+	r.filesMu.Lock()
 	r.files = next
-	r.mu.Unlock()
+	r.revision++
+	r.filesMu.Unlock()
 	return nil
 }
 
 // List returns a sorted snapshot of the current file entries.
 func (r *Registry) List() []FileEntry {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.filesMu.RLock()
+	defer r.filesMu.RUnlock()
 	out := make([]FileEntry, 0, len(r.files))
 	for _, f := range r.files {
 		out = append(out, f)
@@ -128,8 +138,8 @@ func (r *Registry) List() []FileEntry {
 
 // Allowed reports whether the absolute path is in the served set.
 func (r *Registry) Allowed(path string) bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.filesMu.RLock()
+	defer r.filesMu.RUnlock()
 	_, ok := r.files[path]
 	return ok
 }
@@ -140,14 +150,70 @@ func (r *Registry) matchExt(path string) bool {
 	return ok
 }
 
+func (r *Registry) isDiscoverable(path string) (bool, error) {
+	if !r.matchExt(path) {
+		return false, nil
+	}
+	if !fileformat.IsMarkdown(path) {
+		return true, nil
+	}
+	data, err := r.readFile(path)
+	if err != nil {
+		return false, fmt.Errorf("read Markdown %q: %w", path, err)
+	}
+	return len(extractMarkdownPlantUML(data)) > 0, nil
+}
+
+// Update rechecks only path and reports whether its tree entry changed.
+// Source order matches Refresh: the last matching source determines the entry.
+// Read errors leave the previous entry intact; removal events handle missing paths.
+func (r *Registry) Update(path string) (bool, error) {
+	return r.updatePath(context.Background(), path)
+}
+
+func (r *Registry) updatePath(ctx context.Context, path string) (bool, error) {
+	r.updateSerialMu.Lock()
+	defer r.updateSerialMu.Unlock()
+
+	entry, isAllowed, err := r.getFileEntry(path)
+	if err != nil {
+		return false, err
+	}
+	r.filesMu.Lock()
+	defer r.filesMu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	r.revision++
+	previous, wasAllowed := r.files[path]
+	if !isAllowed {
+		delete(r.files, path)
+		return wasAllowed, nil
+	}
+	r.files[path] = entry
+	return !wasAllowed || previous != entry, nil
+}
+
+func createFileEntry(path, source string) FileEntry {
+	rel, _ := filepath.Rel(source, path)
+	return FileEntry{Path: path, Rel: rel, Name: filepath.Base(path), Source: source}
+}
+
 // containsPath compares path components, so sibling prefixes do not match.
 func containsPath(root, path string) bool {
 	rel, err := filepath.Rel(root, path)
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
-// addPath registers files under path after successfully installing directory watches.
+// addPath commits files under path only after all reads and watch registrations succeed.
 func (r *Registry) addPath(path string, onDir func(string) error) (bool, error) {
+	return r.addPathContext(context.Background(), path, onDir)
+}
+
+func (r *Registry) addPathContext(ctx context.Context, path string, onDir func(string) error) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
 	var directorySource bool
 	var relevant bool
 	for _, s := range r.sources {
@@ -168,71 +234,97 @@ func (r *Registry) addPath(path string, onDir func(string) error) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	next := map[string]FileEntry{}
-	collect := func(path string) {
-		if entry, ok := r.fileEntry(path); ok {
-			next[path] = entry
-		}
+	if !info.IsDir() {
+		return r.updatePath(ctx, path)
 	}
-	if info.IsDir() {
-		if !directorySource {
-			return false, nil
+	if !directorySource {
+		return false, nil
+	}
+
+	// Scan without holding updateSerialMu so recovery cannot stall ordinary events.
+	// Reject candidates if an update (even removal of an unregistered file) ran
+	// during the scan, rather than publishing stale eligibility or metadata.
+	r.filesMu.RLock()
+	revision := r.revision
+	r.filesMu.RUnlock()
+	next := map[string]FileEntry{}
+	err = filepath.WalkDir(path, func(child string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
-		err := filepath.WalkDir(path, func(child string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return nil // same unreadable-entry policy as Refresh
-			}
-			if d.IsDir() {
-				if onDir != nil {
-					return onDir(child)
-				}
-				return nil
-			}
-			collect(child)
-			return nil
-		})
 		if err != nil {
-			return false, err
+			return fmt.Errorf("scan %q: %w", child, err)
 		}
-	} else {
-		collect(path)
+		if d.IsDir() {
+			if onDir != nil {
+				if err := onDir(child); err != nil {
+					return fmt.Errorf("watch directory %q: %w", child, err)
+				}
+			}
+			return nil
+		}
+		entry, ok, err := r.getFileEntry(child)
+		if err != nil {
+			return err
+		}
+		if ok {
+			next[child] = entry
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	r.updateSerialMu.Lock()
+	defer r.updateSerialMu.Unlock()
+	r.filesMu.Lock()
+	defer r.filesMu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	if revision != r.revision {
+		return false, fmt.Errorf("registry changed while scanning %q; retry required", path)
 	}
 	changed := false
-	r.mu.Lock()
 	for path, entry := range next {
 		if old, ok := r.files[path]; !ok || old != entry {
 			r.files[path] = entry
 			changed = true
 		}
 	}
-	r.mu.Unlock()
+	if changed {
+		r.revision++
+	}
 	return changed, nil
 }
 
-// fileEntry resolves eligibility and metadata without mutating the Registry.
-func (r *Registry) fileEntry(path string) (FileEntry, bool) {
-	if !r.matchExt(path) {
-		return FileEntry{}, false
-	}
+// getFileEntry resolves eligibility and metadata without mutating the Registry.
+func (r *Registry) getFileEntry(path string) (FileEntry, bool, error) {
 	var entry FileEntry
 	found := false
 	for _, s := range r.sources {
 		if s.isDir && containsPath(s.path, path) {
-			rel, _ := filepath.Rel(s.path, path)
-			entry = FileEntry{Path: path, Rel: rel, Name: filepath.Base(path), Source: s.path}
+			entry = createFileEntry(path, s.path)
 			found = true
 		} else if !s.isDir && s.path == path {
-			entry = FileEntry{Path: path, Rel: filepath.Base(path), Name: filepath.Base(path), Source: filepath.Dir(path)}
+			entry = createFileEntry(path, filepath.Dir(path))
 			found = true
 		}
 	}
-	return entry, found
+	if !found {
+		return FileEntry{}, false, nil
+	}
+	allowed, err := r.isDiscoverable(path)
+	return entry, allowed, err
 }
 
 // removePath needs no filesystem access: rename/remove events name the old path.
 func (r *Registry) removePath(path string) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.updateSerialMu.Lock()
+	defer r.updateSerialMu.Unlock()
+	r.filesMu.Lock()
+	defer r.filesMu.Unlock()
+	r.revision++
 	if _, ok := r.files[path]; ok {
 		delete(r.files, path)
 		return true

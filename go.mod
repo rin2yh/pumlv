@@ -8,6 +8,7 @@ require (
 	github.com/muesli/termenv v0.16.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/spf13/cobra v1.10.2
+	github.com/yuin/goldmark v1.8.6
 )
 
 require (
