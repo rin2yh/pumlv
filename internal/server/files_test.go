@@ -371,24 +371,31 @@ func TestRegistryUpdatePreservesEntriesOnReadError(t *testing.T) {
 
 func TestRegistryRefreshReadFailureSkipsUnreadableFile(t *testing.T) {
 	for _, tt := range []struct {
-		name, input string
-		want        error
+		name   string
+		inputs []string
+		want   error
 	}{
-		{"directory source", ".", os.ErrPermission},
-		{"single file source", "diagram.md", os.ErrPermission},
+		{"directory source", []string{"."}, os.ErrPermission},
+		{"single file sources", []string{"diagram.md", "a-new.md"}, os.ErrPermission},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			path := filepath.Join(dir, "diagram.md")
-			if err := os.WriteFile(path, []byte("```puml\nAlice -> Bob\n```"), 0o600); err != nil {
-				t.Fatal(err)
-			}
-			reg, err := NewRegistry([]string{filepath.Join(dir, tt.input)}, []string{".md"})
-			if err != nil {
-				t.Fatal(err)
-			}
 			added := filepath.Join(dir, "a-new.md")
-			if err := os.WriteFile(added, []byte("```puml\nBob -> Alice\n```"), 0o600); err != nil {
+			for file, source := range map[string]string{
+				path:  "```puml\nAlice -> Bob\n```",
+				added: "```puml\nBob -> Alice\n```",
+			} {
+				if err := os.WriteFile(file, []byte(source), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var inputs []string
+			for _, input := range tt.inputs {
+				inputs = append(inputs, filepath.Join(dir, input))
+			}
+			reg, err := NewRegistry(inputs, []string{".md"})
+			if err != nil {
 				t.Fatal(err)
 			}
 			reg.readFile = func(name string) ([]byte, error) {
@@ -416,7 +423,6 @@ func TestRegistryRefreshReadFailureSkipsUnreadableFile(t *testing.T) {
 		})
 	}
 }
-
 func TestRegistryDirectoryReadFailureDoesNotCommitCandidates(t *testing.T) {
 	dir := t.TempDir()
 	subtree := filepath.Join(dir, "added")
