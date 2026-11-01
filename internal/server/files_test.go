@@ -423,6 +423,7 @@ func TestRegistryRefreshReadFailureSkipsUnreadableFile(t *testing.T) {
 		})
 	}
 }
+
 func TestRegistryDirectoryReadFailureDoesNotCommitCandidates(t *testing.T) {
 	dir := t.TempDir()
 	subtree := filepath.Join(dir, "added")
