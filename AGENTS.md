@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This document provides instructions for Claude Code when working with the **pumlv** project — a CLI tool that opens PlantUML files in a browser with live-reload.
+This document provides project guidance for AI coding agents working with **pumlv**, a CLI tool that opens PlantUML files in a browser with live-reload.
 
 ## Project Overview
 
