@@ -1,15 +1,17 @@
-# ADR 0001: Skip unreadable Markdown files during Registry scans
+# ADR 0001: 読み取り不能なMarkdownファイルをRegistryから除外する
 
-## Context
+## Context（背景）
 
-PR #213 adds Markdown files to the Registry only when they contain a supported PlantUML code block. Determining that requires reading and parsing the file. A read error can occur while scanning a directory or when rechecking one changed file. A Registry entry also controls whether a file is listed and served.
+PR #213 では、対応するPlantUMLコードブロックを含むMarkdownファイルだけをRegistryに登録する。その判定にはファイルの読み取りと解析が必要となる。ディレクトリの全件走査中や、変更されたファイルの再判定時に読み取りエラーが発生しうる。Registryの登録内容は、ファイルの一覧表示と配信可否を決める。
 
-## Decision
+## Decision（決定）
 
-Register Markdown only when a successful read finds a supported PlantUML block; if a full scan cannot read a file, skip and log it while continuing the scan. This keeps files whose preview eligibility could not be established out of a rebuilt Registry. During a single-file update, return the read error and keep that path's existing entry unchanged, so a failed read is not treated as a confirmed removal. A directory-add scan that encounters a read error does not publish partial candidate entries; the watcher retries the path with increasing delays, capped at five seconds.
+全件更新では、読み取れないMarkdownファイルをログに記録して除外し、走査を続け、見つかった登録内容でRegistryを置き換える。読み取りに成功し、対応するPlantUMLコードブロックが確認できた場合にのみ登録する。全件更新では、プレビュー対象か確認できないファイルを登録しない。
 
-## Consequences
+単一ファイルの更新では、読み取りエラーを返し、そのパスの既存登録を維持する。読み取り失敗を、ファイルからコードブロックが削除されたことと誤認しないためである。ディレクトリ追加時の走査で読み取りエラーが起きた場合は、途中までの候補を登録せず、Watcherが最大5秒まで間隔を延ばしながら再試行する。
 
-An unreadable Markdown file is absent after a full refresh, while other readable files can still be registered. A later successful refresh can register it if it contains a supported PlantUML block. For a single-file update, the previous entry remains until a later successful update; a successful read showing no supported block removes it. If a directory-add scan fails, its previous Registry state remains until retry succeeds. Read and watch failures are logged with the affected path and cause.
+## Consequences（影響）
 
-This means the Registry can temporarily omit a valid diagram after a full refresh, or retain a prior entry after a failed single-file update. Non-Markdown files are not read to determine Registry eligibility, so this read policy applies to Markdown discovery.
+全件更新時に読めないMarkdownファイルはRegistryから外れるが、他の読み取り可能なファイルの走査と登録は続く。その後の全件更新で読み取りに成功し、PlantUMLコードブロックがあれば再登録される。単一ファイル更新では、後続の更新に成功するまで既存登録が残り、読み取り後にコードブロックがないと判明した時点で登録が解除される。ディレクトリ追加の走査に失敗した場合は、再試行が成功するまで既存のRegistryが保たれる。読み取りや監視登録の失敗は、対象パスと原因を含めてログに記録される。
+
+このため、全件更新後は有効な図を含むファイルが一時的に一覧から消えることがあり、単一ファイル更新後は古い登録が一時的に残ることがある。PlantUMLファイルなどMarkdown以外のファイルは、Registry登録の判定時に内容を読み取らないため、この読み取り方針の対象外である。
