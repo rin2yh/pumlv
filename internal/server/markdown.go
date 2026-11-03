@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"strings"
 
 	"github.com/rin2yh/pumlv/internal/fileformat"
@@ -9,11 +10,26 @@ import (
 	"github.com/yuin/goldmark/text"
 )
 
-// extractMarkdownPlantUML extracts supported fenced code blocks in document order.
-// Markdown syntax is handled by goldmark; only PlantUML normalization happens here.
+// MarkdownDiagram identifies one fenced diagram by its opening fence line.
+type MarkdownDiagram struct {
+	Line   int    `json:"line"`
+	Title  string `json:"title,omitempty"`
+	Source []byte `json:"-"`
+}
+
+// extractMarkdownPlantUML extracts normalized sources in document order.
 func extractMarkdownPlantUML(data []byte) [][]byte {
+	var sources [][]byte
+	for _, diagram := range markdownDiagrams(data) {
+		sources = append(sources, diagram.Source)
+	}
+	return sources
+}
+
+// markdownDiagrams uses goldmark for Markdown syntax and normalizes PlantUML.
+func markdownDiagrams(data []byte) []MarkdownDiagram {
 	document := goldmark.DefaultParser().Parse(text.NewReader(data))
-	var diagrams [][]byte
+	var diagrams []MarkdownDiagram
 	_ = ast.Walk(document, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		block, ok := node.(*ast.FencedCodeBlock)
 		if !entering || !ok {
@@ -31,8 +47,24 @@ func extractMarkdownPlantUML(data []byte) [][]byte {
 		if strings.TrimSpace(sourceLines[len(sourceLines)-1]) != "@enduml" {
 			source += "\n@enduml"
 		}
-		diagrams = append(diagrams, []byte(source+"\n"))
+		line := bytes.Count(data[:block.Info.Segment.Start], []byte("\n")) + 1
+		diagrams = append(diagrams, MarkdownDiagram{Line: line, Title: diagramTitle(source), Source: []byte(source + "\n")})
 		return ast.WalkContinue, nil
 	})
 	return diagrams
+}
+
+// Only a single-line title is suitable for the compact tree label.
+func diagramTitle(source string) string {
+	var title string
+	for line := range strings.SplitSeq(source, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "title" {
+			return ""
+		}
+		if strings.HasPrefix(line, "title ") || strings.HasPrefix(line, "title\t") || strings.HasPrefix(line, "title:") {
+			title = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(strings.TrimPrefix(line, "title")), ":"))
+		}
+	}
+	return title
 }

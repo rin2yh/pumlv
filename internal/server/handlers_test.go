@@ -252,3 +252,50 @@ func TestHandleFileServesExtractedMarkdownDiagram(t *testing.T) {
 		t.Fatalf("status %d, body %q", resp.StatusCode, data)
 	}
 }
+
+func TestMarkdownDiagramAPI(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "diagrams.md")
+	if err := os.WriteFile(path, []byte("```puml\ntitle First\nAlice -> Bob: First\n```\n\n```puml\nBob -> Alice: Second\n```\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, ts := newTestServer(t, []string{path}, []string{".md"})
+	resp, err := http.Get(ts.URL + "/api/files")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var files []struct {
+		Diagrams []MarkdownDiagram `json:"diagrams"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&files); err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || len(files[0].Diagrams) != 2 {
+		t.Fatalf("files=%+v", files)
+	}
+	if files[0].Diagrams[0].Line != 1 || files[0].Diagrams[0].Title != "First" || files[0].Diagrams[1].Line != 6 {
+		t.Fatalf("diagrams=%+v", files[0].Diagrams)
+	}
+	for _, tt := range []struct {
+		query    string
+		status   int
+		contains string
+	}{
+		{"", 200, "First"}, {"&line=1", 200, "First"}, {"&line=6", 200, "Second"}, {"&line=2", 404, ""}, {"&line=-1", 400, ""}, {"&line=no", 400, ""}, {"&line=", 400, ""},
+	} {
+		t.Run(tt.query, func(t *testing.T) {
+			resp, err := http.Get(ts.URL + "/api/file?path=" + url.QueryEscape(path) + tt.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			data, _ := io.ReadAll(resp.Body)
+			if resp.StatusCode != tt.status || !strings.Contains(string(data), tt.contains) {
+				t.Fatalf("status=%d body=%q", resp.StatusCode, data)
+			}
+			if tt.status == 200 && strings.Contains(string(data), "First") && strings.Contains(string(data), "Second") {
+				t.Fatal("returned multiple diagrams")
+			}
+		})
+	}
+}

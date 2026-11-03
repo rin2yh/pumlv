@@ -1,8 +1,8 @@
-import type { FileEntry } from "../../api/files";
+import { diagramKey, type FileEntry } from "../../api/files";
 
 export type Node =
   | { kind: "dir"; key: string; name: string; children: Node[] }
-  | { kind: "file"; key: string; name: string; entry: FileEntry };
+  | { kind: "file"; key: string; name: string; entry: FileEntry; children?: Node[] };
 
 export type DirNode = Extract<Node, { kind: "dir" }>;
 
@@ -31,7 +31,22 @@ export function buildTree(files: FileEntry[]): DirNode[] {
     for (let i = 0; i < segments.length - 1; i++) {
       directory = ensureChildDir(directory, `${directory.key}/${segments[i]}`, segments[i]!);
     }
-    directory.children.push({ kind: "file", key: file.path, name: file.name, entry: file });
+    directory.children.push({
+      kind: "file",
+      key: file.path,
+      name: file.name,
+      entry: file,
+      children: file.diagrams?.map((diagram) => {
+        const key = diagramKey(file.path, diagram.line);
+        const name = `L${diagram.line}${diagram.title ? `: ${diagram.title}` : ""}`;
+        return {
+          kind: "file",
+          key,
+          name,
+          entry: { ...file, path: key, name, rel: `${file.rel}: ${name}`, diagrams: undefined },
+        };
+      }),
+    });
   }
   sourceRoots.forEach(sortDirectory);
   return [...sourceRoots.values()];
@@ -41,8 +56,8 @@ export function flatten(tree: DirNode[], collapsed: Set<string>): TreeRow[] {
   const rows: TreeRow[] = [];
   const visit = (node: Node, depth: number): void => {
     rows.push({ node, depth });
-    if (node.kind === "dir" && !collapsed.has(node.key)) {
-      for (const child of node.children) visit(child, depth + 1);
+    if ((node.kind === "dir" || node.children) && !collapsed.has(node.key)) {
+      for (const child of node.children ?? []) visit(child, depth + 1);
     }
   };
   for (const root of tree) visit(root, 0);

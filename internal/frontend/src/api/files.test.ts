@@ -197,3 +197,14 @@ describe("sameFilePaths", () => {
     expect(sameFilePaths(a, b)).toBe(want);
   });
 });
+
+it("requests an individual Markdown block with an encoded filename", async () => {
+  const { diagramKey } = await import("./files");
+  const mock = vi.fn().mockResolvedValue({ ok: true, text: async () => "second" });
+  globalThis.fetch = mock;
+  expect(await fetchFileSource(diagramKey("/tmp/a # 日本語.md", 12))).toBe("second");
+  expect(mock).toHaveBeenCalledWith(
+    `/api/file?path=${encodeURIComponent("/tmp/a # 日本語.md")}&line=12`,
+    { signal: undefined },
+  );
+});

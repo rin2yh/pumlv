@@ -136,3 +136,27 @@ func TestExtractMarkdownPlantUMLPreservesBlockOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestMarkdownDiagramLabels(t *testing.T) {
+	for _, tt := range []struct {
+		name, input string
+		lines       []int
+		titles      []string
+	}{
+		{"ordered titles", "# 図\n\n```plantuml\ntitle 認証フロー\nAlice -> Bob\n```\n\n~~~puml\nBob -> Alice\n~~~", []int{3, 8}, []string{"認証フロー", ""}},
+		{"nested CRLF and empty", "> ```puml\r\n> title: Nested\r\n> Alice -> Bob\r\n> ```\r\n\r\n- ```puml\r\n  ```\r\n", []int{1, 6}, []string{"Nested", ""}},
+		{"multiline", "```puml\ntitle\nLong\nend title\nAlice -> Bob\n```", []int{1}, []string{""}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := markdownDiagrams([]byte(tt.input))
+			if len(got) != len(tt.lines) {
+				t.Fatalf("got %d diagrams", len(got))
+			}
+			for i, d := range got {
+				if d.Line != tt.lines[i] || d.Title != tt.titles[i] {
+					t.Errorf("diagram %d: line=%d title=%q", i, d.Line, d.Title)
+				}
+			}
+		})
+	}
+}

@@ -35,7 +35,7 @@ pumlv ./docs ./design/seq.puml    # multiple arguments are allowed
 | `--no-open` | `false` | Do not launch the browser automatically |
 | `--ext` | `.puml,.plantuml,.iuml,.wsd,.md` | File extensions to watch |
 
-Markdown files containing a fenced `puml`, `plantuml`, `iuml`, or `wsd` block are also previewed. Backtick and tilde fences (three or more characters) are supported, and `@startuml` / `@enduml` may be omitted. The first matching block is previewed; Markdown files without one are hidden.
+Markdown files containing a fenced `puml`, `plantuml`, `iuml`, or `wsd` block are also previewed. Backtick and tilde fences (three or more characters) are supported, and `@startuml` / `@enduml` may be omitted. Each matching block appears under its Markdown file in document order, labeled with its opening fence line (for example, `L12: Authentication` when it has a single-line `title`, or `L32` otherwise). Select a block to preview it individually. Edits, additions, and removals update the tree and preview automatically; Markdown files without a supported block are hidden.
 
 On startup pumlv prints `pumlv listening on http://127.0.0.1:<port>` and opens the URL in your default browser. Press `Ctrl+C` for a graceful shutdown.
 

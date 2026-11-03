@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/rin2yh/pumlv/internal/fileformat"
@@ -22,7 +23,22 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(s.registry.List()); err != nil {
+	type listedFile struct {
+		FileEntry
+		Diagrams []MarkdownDiagram `json:"diagrams,omitempty"`
+	}
+	files := s.registry.List()
+	list := make([]listedFile, 0, len(files))
+	for _, file := range files {
+		entry := listedFile{FileEntry: file}
+		if fileformat.IsMarkdown(file.Path) {
+			if data, err := os.ReadFile(file.Path); err == nil {
+				entry.Diagrams = markdownDiagrams(data)
+			}
+		}
+		list = append(list, entry)
+	}
+	if err := json.NewEncoder(w).Encode(list); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -48,12 +64,31 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if fileformat.IsMarkdown(abs) {
-		diagrams := extractMarkdownPlantUML(data)
+		diagrams := markdownDiagrams(data)
 		if len(diagrams) == 0 {
 			http.Error(w, "no PlantUML block", http.StatusNotFound)
 			return
 		}
-		data = diagrams[0]
+		selected := 0
+		if value, present := r.URL.Query()["line"]; present {
+			line, err := strconv.Atoi(value[0])
+			if err != nil || line < 1 {
+				http.Error(w, "invalid diagram line", http.StatusBadRequest)
+				return
+			}
+			selected = -1
+			for i, diagram := range diagrams {
+				if diagram.Line == line {
+					selected = i
+					break
+				}
+			}
+			if selected < 0 {
+				http.Error(w, "PlantUML block not found", http.StatusNotFound)
+				return
+			}
+		}
+		data = diagrams[selected].Source
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write(data)

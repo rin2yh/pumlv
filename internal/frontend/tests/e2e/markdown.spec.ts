@@ -42,3 +42,45 @@ test("previews a Markdown diagram through edits, removal, and restoration", asyn
     await expect(pumlv.preview).toHaveAttribute("src", /MarkdownRestored/);
   });
 });
+
+test("selects every Markdown diagram and follows edits, additions, and deletions", async ({
+  pumlv, markdownFile, request,
+}) => {
+  const block = (title: string, label: string) => `~~~puml\n${title ? `title ${title}\n` : ""}Alice -> Bob: ${label}\n~~~\n`;
+  const first = block("First", "MultiFirst");
+  const second = block("", "MultiSecond");
+  const third = block("Third", "MultiThird");
+  await writeFile(markdownFile.path, first + "\n" + second);
+  await expect.poll(async () => {
+    const files = await (await request.get("/api/files")).json();
+    return files.find((f: {name: string}) => f.name === markdownFile.name)?.diagrams?.length;
+  }).toBe(2);
+  await pumlv.open();
+  await pumlv.selectFile(markdownFile.name);
+  await expect(pumlv.getFileButton("L1: First")).toBeVisible();
+  await expect(pumlv.getFileButton("L6")).toBeVisible();
+  await pumlv.selectFile("L1: First");
+  await expect(pumlv.preview).toHaveAttribute("src", /MultiFirst/);
+  await pumlv.selectFile("L6");
+  await expect(pumlv.preview).toHaveAttribute("src", /MultiSecond/);
+
+  await writeFile(markdownFile.path, first + "\n" + block("Updated", "MultiUpdated"));
+  await expect(pumlv.getFileButton("L6: Updated")).toBeVisible();
+  await expect(pumlv.getFileButton("L6")).toHaveCount(0);
+  await expect(pumlv.preview).toHaveAttribute("src", /MultiUpdated/);
+
+  await writeFile(markdownFile.path, first + "\n" + block("Updated", "MultiUpdated") + "\n" + third);
+  await pumlv.selectFile("L11: Third");
+  await expect(pumlv.preview).toHaveAttribute("src", /MultiThird/);
+
+  // Removing the selected diagram falls back to the first remaining diagram.
+  await writeFile(markdownFile.path, first + "\n" + second);
+  await expect(pumlv.getFileButton("L11: Third")).toHaveCount(0);
+  await expect(pumlv.preview).toHaveAttribute("src", /MultiFirst/);
+
+  // Removing an earlier block updates the remaining block's fence line number.
+  await writeFile(markdownFile.path, second);
+  await expect(pumlv.getFileButton("L6")).toHaveCount(0);
+  await expect(pumlv.getFileButton("L1")).toBeVisible();
+  await expect(pumlv.preview).toHaveAttribute("src", /MultiSecond/);
+});

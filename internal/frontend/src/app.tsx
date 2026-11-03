@@ -1,4 +1,5 @@
 import { useState, type JSX } from "react";
+import { parseSelection } from "./api/files";
 import { FileTree } from "./components/file-tree";
 import { Preview } from "./components/preview";
 import { SourceView } from "./components/source-view";
@@ -15,11 +16,13 @@ export default function App(): JSX.Element {
   useServerEvents({
     onTree: reloadFiles,
     onChanged: (path) => {
-      if (path === active) reloadActive();
+      reloadFiles();
+      if (active && path === parseSelection(active).path) reloadActive();
     },
   });
 
-  const activeName = files.find((f) => f.path === active)?.rel ?? "";
+  const activeName =
+    files.find((f) => f.path === (active ? parseSelection(active).path : null))?.rel ?? "";
   const toggleLabel = sourceOpen ? SOURCE_TOGGLE_LABEL.open : SOURCE_TOGGLE_LABEL.closed;
 
   return (
