@@ -1,0 +1,15 @@
+goos: linux
+goarch: amd64
+pkg: github.com/rin2yh/pumlv/internal/server
+cpu: AMD EPYC 9V74 80-Core Processor
+BenchmarkMarkdownDiagrams/diagrams=100-2         	    5727	    184608 ns/op	  68.91 MB/s	  241378 B/op	    2225 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=100-2         	    6392	    210272 ns/op	  60.50 MB/s	  241377 B/op	    2225 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=100-2         	    5532	    214006 ns/op	  59.45 MB/s	  241377 B/op	    2225 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=1000-2        	     495	   2139941 ns/op	  59.36 MB/s	 2212688 B/op	   21128 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=1000-2        	     627	   1944373 ns/op	  65.33 MB/s	 2212688 B/op	   21128 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=1000-2        	     610	   2184291 ns/op	  58.15 MB/s	 2212688 B/op	   21128 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=10000-2       	      56	  22268803 ns/op	  57.03 MB/s	23064336 B/op	  210136 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=10000-2       	      51	  26593507 ns/op	  47.76 MB/s	23064342 B/op	  210136 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=10000-2       	      40	  29067676 ns/op	  43.69 MB/s	23064341 B/op	  210136 allocs/op
+PASS
+ok  	github.com/rin2yh/pumlv/internal/server	11.082s

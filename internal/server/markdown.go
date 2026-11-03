@@ -30,6 +30,7 @@ func extractMarkdownPlantUML(data []byte) [][]byte {
 func markdownDiagrams(data []byte) []MarkdownDiagram {
 	document := goldmark.DefaultParser().Parse(text.NewReader(data))
 	var diagrams []MarkdownDiagram
+	line, scanned := 1, 0
 	_ = ast.Walk(document, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		block, ok := node.(*ast.FencedCodeBlock)
 		if !entering || !ok {
@@ -47,7 +48,11 @@ func markdownDiagrams(data []byte) []MarkdownDiagram {
 		if strings.TrimSpace(sourceLines[len(sourceLines)-1]) != "@enduml" {
 			source += "\n@enduml"
 		}
-		line := bytes.Count(data[:block.Info.Segment.Start], []byte("\n")) + 1
+		// Fenced blocks are visited in document order, including inside lists
+		// and blockquotes. Count each byte at most once, even across skipped blocks.
+		start := block.Info.Segment.Start
+		line += bytes.Count(data[scanned:start], []byte("\n"))
+		scanned = start
 		diagrams = append(diagrams, MarkdownDiagram{Line: line, Title: diagramTitle(source), Source: []byte(source + "\n")})
 		return ast.WalkContinue, nil
 	})

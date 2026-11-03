@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -156,6 +158,31 @@ func TestMarkdownDiagramLabels(t *testing.T) {
 				if d.Line != tt.lines[i] || d.Title != tt.titles[i] {
 					t.Errorf("diagram %d: line=%d title=%q", i, d.Line, d.Title)
 				}
+			}
+		})
+	}
+}
+
+func TestMarkdownDiagramsIncrementalLinesAcrossMixedBlocks(t *testing.T) {
+	// Hand-numbered opening fences cover several successive counting intervals.
+	lines := []string{
+		"# 図", "", "```text", "```puml", "title Hidden", "```", "",
+		"> ~~~plantuml", "> title Quoted", "> Alice -> Bob", "> ~~~", "",
+		"- ```puml", "  ```", "", "```javascript", "console.log('hi')", "```", "",
+		"~~~iuml", "title", "Multiline", "end title", "Bob -> Alice", "~~~", "",
+		"```wsd", // An empty, unclosed block at EOF still has an opening-fence line.
+	}
+	want := []MarkdownDiagram{
+		{Line: 8, Title: "Quoted", Source: []byte("@startuml\ntitle Quoted\nAlice -> Bob\n@enduml\n")},
+		{Line: 13, Source: []byte("@startuml\n\n@enduml\n")},
+		{Line: 20, Source: []byte("@startuml\ntitle\nMultiline\nend title\nBob -> Alice\n@enduml\n")},
+		{Line: 27, Source: []byte("@startuml\n\n@enduml\n")},
+	}
+	for _, tt := range []struct{ name, newline string }{{"LF", "\n"}, {"CRLF", "\r\n"}} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := markdownDiagrams([]byte(strings.Join(lines, tt.newline)))
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("diagrams = %#v, want %#v", got, want)
 			}
 		})
 	}
