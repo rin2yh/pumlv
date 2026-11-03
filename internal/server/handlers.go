@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/rin2yh/pumlv/internal/fileformat"
 	"github.com/rin2yh/pumlv/internal/static"
 )
 
@@ -45,6 +46,14 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
+	}
+	if fileformat.IsMarkdown(abs) {
+		diagrams := extractMarkdownPlantUML(data)
+		if len(diagrams) == 0 {
+			http.Error(w, "no PlantUML block", http.StatusNotFound)
+			return
+		}
+		data = diagrams[0]
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write(data)

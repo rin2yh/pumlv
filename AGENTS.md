@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This document provides instructions for Claude Code when working with the **pumlv** project — a CLI tool that opens PlantUML files in a browser with live-reload.
+This document provides project guidance for AI coding agents working with **pumlv**, a CLI tool that opens PlantUML files in a browser with live-reload.
 
 ## Project Overview
 
@@ -49,6 +49,10 @@ Internal endpoints (browser ↔ server). `/api/file` enforces a whitelist to pre
 ## CI/CD
 
 Uses **octocov** for coverage reporting. Releases automated via **tagpr** and **goreleaser**. `credits/` holds the bundled third-party license texts: `go.txt` and `frontend.txt` are generated, `vendored.txt` is hand-written.
+
+## Architecture Decision Records
+
+Store ADRs in `docs/adr/`. Record important future design decisions there using a concise Context / Decision / Consequences structure.
 
 ## Pull Requests
 

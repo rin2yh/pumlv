@@ -33,7 +33,9 @@ pumlv ./docs ./design/seq.puml    # multiple arguments are allowed
 | `--port` | `0` (pick a free port) | TCP port |
 | `--host` | `127.0.0.1` | Bind host |
 | `--no-open` | `false` | Do not launch the browser automatically |
-| `--ext` | `.puml,.plantuml,.iuml,.wsd` | File extensions to watch |
+| `--ext` | `.puml,.plantuml,.iuml,.wsd,.md` | File extensions to watch |
+
+Markdown files containing a fenced `puml`, `plantuml`, `iuml`, or `wsd` block are also previewed. Backtick and tilde fences (three or more characters) are supported, and `@startuml` / `@enduml` may be omitted. The first matching block is previewed; Markdown files without one are hidden.
 
 On startup pumlv prints `pumlv listening on http://127.0.0.1:<port>` and opens the URL in your default browser. Press `Ctrl+C` for a graceful shutdown.
 

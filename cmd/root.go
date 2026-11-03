@@ -10,6 +10,7 @@ import (
 	"github.com/k1LoW/donegroup"
 	"github.com/muesli/termenv"
 	"github.com/pkg/browser"
+	"github.com/rin2yh/pumlv/internal/fileformat"
 	"github.com/rin2yh/pumlv/internal/server"
 	"github.com/rin2yh/pumlv/version"
 	"github.com/spf13/cobra"
@@ -89,7 +90,9 @@ func init() {
 	rootCmd.Flags().IntVar(&flagPort, "port", 0, "TCP port to listen on (0 = pick a free port)")
 	rootCmd.Flags().StringVar(&flagHost, "host", "127.0.0.1", "Host to bind")
 	rootCmd.Flags().BoolVar(&flagNoOpen, "no-open", false, "Do not open the browser automatically")
-	rootCmd.Flags().StringSliceVar(&flagExt, "ext", []string{".puml", ".plantuml", ".iuml", ".wsd"}, "File extensions to watch")
+	defaultExts := fileformat.GetPlantUMLExtensions()
+	defaultExts = append(defaultExts, fileformat.MarkdownExtension)
+	rootCmd.Flags().StringSliceVar(&flagExt, "ext", defaultExts, "File extensions to watch")
 	rootCmd.AddCommand(creditsCmd)
 }
 

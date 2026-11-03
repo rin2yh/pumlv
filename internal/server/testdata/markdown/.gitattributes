@@ -1,0 +1,2 @@
+# Preserve the parser fixture's intentional CRLF and trailing whitespace.
+indented-crlf.md -text -whitespace
