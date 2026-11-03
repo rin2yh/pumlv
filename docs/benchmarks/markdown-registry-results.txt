@@ -1,0 +1,33 @@
+goos: linux
+goarch: amd64
+pkg: github.com/rin2yh/pumlv/internal/server
+cpu: AMD EPYC 9V74 80-Core Processor
+BenchmarkRegistryUpdate/files=100/diagrams=10-2         	   36537	     33217 ns/op	   42616 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=100/diagrams=10-2         	   32242	     37315 ns/op	   42616 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=100/diagrams=10-2         	   28404	     38213 ns/op	   42616 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=1000/diagrams=10-2        	   35098	     33226 ns/op	   42632 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=1000/diagrams=10-2        	   34063	     37951 ns/op	   42632 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=1000/diagrams=10-2        	   38511	     33246 ns/op	   42632 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=10000/diagrams=10-2       	   34789	     32974 ns/op	   42632 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=10000/diagrams=10-2       	   33064	     34858 ns/op	   42632 B/op	     337 allocs/op
+BenchmarkRegistryUpdate/files=10000/diagrams=10-2       	   36855	     31951 ns/op	   42632 B/op	     337 allocs/op
+BenchmarkRegistryList/files=100/diagrams=10-2           	   43771	     27038 ns/op	   57640 B/op	     104 allocs/op
+BenchmarkRegistryList/files=100/diagrams=10-2           	   45699	     26597 ns/op	   57640 B/op	     104 allocs/op
+BenchmarkRegistryList/files=100/diagrams=10-2           	   34734	     33505 ns/op	   57640 B/op	     104 allocs/op
+BenchmarkRegistryList/files=1000/diagrams=10-2          	    2527	    450622 ns/op	  570280 B/op	    1004 allocs/op
+BenchmarkRegistryList/files=1000/diagrams=10-2          	    3111	    416752 ns/op	  570280 B/op	    1004 allocs/op
+BenchmarkRegistryList/files=1000/diagrams=10-2          	    3141	    452649 ns/op	  570280 B/op	    1004 allocs/op
+BenchmarkRegistryList/files=10000/diagrams=10-2         	     224	   5453009 ns/op	 5684904 B/op	   10004 allocs/op
+BenchmarkRegistryList/files=10000/diagrams=10-2         	     218	   5398943 ns/op	 5684904 B/op	   10004 allocs/op
+BenchmarkRegistryList/files=10000/diagrams=10-2         	     228	   5320885 ns/op	 5684904 B/op	   10004 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=100-2                	    5444	    215661 ns/op	  58.99 MB/s	  241377 B/op	    2225 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=100-2                	    5956	    209276 ns/op	  60.79 MB/s	  241377 B/op	    2225 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=100-2                	    5685	    206589 ns/op	  61.58 MB/s	  241377 B/op	    2225 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=1000-2               	     392	   2991658 ns/op	  42.46 MB/s	 2212688 B/op	   21128 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=1000-2               	     400	   2970286 ns/op	  42.76 MB/s	 2212688 B/op	   21128 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=1000-2               	     405	   2980556 ns/op	  42.62 MB/s	 2212688 B/op	   21128 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=10000-2              	       8	 132631239 ns/op	   9.58 MB/s	23064336 B/op	  210136 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=10000-2              	       8	 135274868 ns/op	   9.39 MB/s	23064336 B/op	  210136 allocs/op
+BenchmarkMarkdownDiagrams/diagrams=10000-2              	       8	 139287765 ns/op	   9.12 MB/s	23064336 B/op	  210136 allocs/op
+PASS
+ok  	github.com/rin2yh/pumlv/internal/server	36.044s
