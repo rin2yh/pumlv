@@ -23,22 +23,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	type listedFile struct {
-		FileEntry
-		Diagrams []MarkdownDiagram `json:"diagrams,omitempty"`
-	}
-	files := s.registry.List()
-	list := make([]listedFile, 0, len(files))
-	for _, file := range files {
-		entry := listedFile{FileEntry: file}
-		if fileformat.IsMarkdown(file.Path) {
-			if data, err := os.ReadFile(file.Path); err == nil {
-				entry.Diagrams = markdownDiagrams(data)
-			}
-		}
-		list = append(list, entry)
-	}
-	if err := json.NewEncoder(w).Encode(list); err != nil {
+	if err := json.NewEncoder(w).Encode(s.registry.List()); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -54,17 +39,14 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if !s.registry.Allowed(abs) {
+	entry, allowed := s.registry.lookup(abs)
+	if !allowed {
 		http.Error(w, "file not allowed", http.StatusForbidden)
 		return
 	}
-	data, err := os.ReadFile(abs)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+	var data []byte
 	if fileformat.IsMarkdown(abs) {
-		diagrams := markdownDiagrams(data)
+		diagrams := entry.Diagrams
 		if len(diagrams) == 0 {
 			http.Error(w, "no PlantUML block", http.StatusNotFound)
 			return
@@ -89,6 +71,12 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		data = diagrams[selected].Source
+	} else {
+		data, err = os.ReadFile(abs)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write(data)

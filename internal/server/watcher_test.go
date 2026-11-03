@@ -170,6 +170,9 @@ func TestWatcherDebouncesMarkdownUpdates(t *testing.T) {
 		getEvents           func(string) []Event
 		wantAllowed         bool
 	}{
+		{"edit title", diagram, "```puml\ntitle Changed\nAlice -> Bob\n```", func(path string) []Event {
+			return []Event{{Name: "tree", Data: map[string]any{}}, {Name: "changed", Data: map[string]string{"path": path}}}
+		}, true},
 		{"edit diagram", diagram, "```puml\nBob -> Alice\n```", func(path string) []Event { return []Event{{Name: "changed", Data: map[string]string{"path": path}}} }, true},
 		{"add diagram", "# Notes", diagram, func(path string) []Event {
 			return []Event{{Name: "tree", Data: map[string]any{}}, {Name: "changed", Data: map[string]string{"path": path}}}
@@ -247,7 +250,7 @@ func TestWatcherDebouncesMarkdownUpdates(t *testing.T) {
 			}
 			reg.filesMu.RLock()
 			defer reg.filesMu.RUnlock()
-			if reg.files[other] != beforeOther {
+			if !reflect.DeepEqual(reg.files[other], beforeOther) {
 				t.Fatal("other diagram entry changed")
 			}
 			if _, ok := reg.files[hidden]; ok {

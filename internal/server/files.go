@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -16,10 +18,11 @@ import (
 
 // FileEntry represents a discoverable PlantUML file.
 type FileEntry struct {
-	Path   string `json:"path"`   // absolute path
-	Rel    string `json:"rel"`    // relative to its source root
-	Name   string `json:"name"`   // basename
-	Source string `json:"source"` // absolute source root
+	Path     string            `json:"path"`               // absolute path
+	Rel      string            `json:"rel"`                // relative to its source root
+	Name     string            `json:"name"`               // basename
+	Source   string            `json:"source"`             // absolute source root
+	Diagrams []MarkdownDiagram `json:"diagrams,omitempty"` // immutable until the entry is replaced
 }
 
 // Registry holds the set of files served and lets the watcher refresh it.
@@ -125,6 +128,14 @@ func (r *Registry) List() []FileEntry {
 	defer r.filesMu.RUnlock()
 	out := make([]FileEntry, 0, len(r.files))
 	for _, f := range r.files {
+		// List exposes metadata only, without sharing mutable slices with the Registry.
+		diagrams := make([]MarkdownDiagram, len(f.Diagrams))
+		for i, diagram := range f.Diagrams {
+			diagrams[i] = MarkdownDiagram{Line: diagram.Line, Title: diagram.Title}
+		}
+		if len(diagrams) > 0 {
+			f.Diagrams = diagrams
+		}
 		out = append(out, f)
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -150,18 +161,23 @@ func (r *Registry) matchExt(path string) bool {
 	return ok
 }
 
-func (r *Registry) isDiscoverable(path string) (bool, error) {
-	if !r.matchExt(path) {
-		return false, nil
+// lookup returns a private snapshot, including the cached Markdown sources.
+// Eligibility, labels and sources are published together under filesMu.
+func (r *Registry) lookup(path string) (FileEntry, bool) {
+	r.filesMu.RLock()
+	defer r.filesMu.RUnlock()
+	entry, ok := r.files[path]
+	entry.Diagrams = slices.Clone(entry.Diagrams)
+	for i := range entry.Diagrams {
+		entry.Diagrams[i].Source = bytes.Clone(entry.Diagrams[i].Source)
 	}
-	if !fileformat.IsMarkdown(path) {
-		return true, nil
-	}
-	data, err := r.readFile(path)
-	if err != nil {
-		return false, fmt.Errorf("read Markdown %q: %w", path, err)
-	}
-	return len(extractMarkdownPlantUML(data)) > 0, nil
+	return entry, ok
+}
+
+// sameTreeEntry ignores source-only edits: Watcher sends a changed event for those.
+func sameTreeEntry(a, b FileEntry) bool {
+	return a.Path == b.Path && a.Rel == b.Rel && a.Name == b.Name && a.Source == b.Source &&
+		slices.EqualFunc(a.Diagrams, b.Diagrams, func(a, b MarkdownDiagram) bool { return a.Line == b.Line && a.Title == b.Title })
 }
 
 // Update rechecks only path and reports whether its tree entry changed.
@@ -191,7 +207,7 @@ func (r *Registry) updatePath(ctx context.Context, path string) (bool, error) {
 		return wasAllowed, nil
 	}
 	r.files[path] = entry
-	return !wasAllowed || previous != entry, nil
+	return !wasAllowed || !sameTreeEntry(previous, entry), nil
 }
 
 func createFileEntry(path, source string) FileEntry {
@@ -285,14 +301,19 @@ func (r *Registry) addPathContext(ctx context.Context, path string, onDir func(s
 	if revision != r.revision {
 		return false, fmt.Errorf("registry changed while scanning %q; retry required", path)
 	}
-	changed := false
+	changed, published := false, false
 	for path, entry := range next {
-		if old, ok := r.files[path]; !ok || old != entry {
+		old, ok := r.files[path]
+		treeChanged := !ok || !sameTreeEntry(old, entry)
+		changed = changed || treeChanged
+		// Markdown sources may change without changing the tree labels.
+		// Keep non-Markdown publication and revision behavior unchanged.
+		if treeChanged || len(entry.Diagrams) > 0 {
 			r.files[path] = entry
-			changed = true
+			published = true
 		}
 	}
-	if changed {
+	if published {
 		r.revision++
 	}
 	return changed, nil
@@ -314,8 +335,18 @@ func (r *Registry) getFileEntry(path string) (FileEntry, bool, error) {
 	if !found {
 		return FileEntry{}, false, nil
 	}
-	allowed, err := r.isDiscoverable(path)
-	return entry, allowed, err
+	if !r.matchExt(path) {
+		return FileEntry{}, false, nil
+	}
+	if !fileformat.IsMarkdown(path) {
+		return entry, true, nil
+	}
+	data, err := r.readFile(path)
+	if err != nil {
+		return FileEntry{}, false, fmt.Errorf("read Markdown %q: %w", path, err)
+	}
+	entry.Diagrams = markdownDiagrams(data)
+	return entry, len(entry.Diagrams) > 0, nil
 }
 
 // removePath needs no filesystem access: rename/remove events name the old path.

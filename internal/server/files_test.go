@@ -141,7 +141,8 @@ func TestRegistryUpdateUsesOnlyTheChangedFile(t *testing.T) {
 				}
 				if step.allowed {
 					want := FileEntry{Path: path, Rel: filepath.FromSlash(tt.wantRel), Name: "diagram.md", Source: filepath.Join(dir, tt.wantSource)}
-					if got := reg.List(); len(got) != 1 || got[0] != want {
+					want.Diagrams = []MarkdownDiagram{{Line: 1}}
+					if got := reg.List(); len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 						t.Fatalf("entries = %+v, want %+v", got, want)
 					}
 				}
