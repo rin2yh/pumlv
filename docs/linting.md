@@ -7,8 +7,7 @@ running the same Make target.
 The configuration enables `errcheck`, `govet`, `ineffassign`, `staticcheck`,
 and `unused` for error handling and static analysis, plus `gocritic` for common
 implementation improvements. `revive` checks argument counts (at most three),
-error naming, exported symbol comments, receiver naming, and Go initialism
-casing such as `ID` and `HTTP`.
+error naming, receiver naming, and Go initialism casing such as `ID` and `HTTP`.
 
 No standard rule can reliably determine whether an arbitrary function name
 starts with a verb or whether a boolean predicate should start with `Is`. Those

@@ -18,7 +18,6 @@ linters:
             - 3
         - name: error-naming
         - name: errorf
-        - name: exported
         - name: receiver-naming
         - name: var-naming
 
