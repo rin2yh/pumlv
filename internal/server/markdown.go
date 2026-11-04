@@ -20,14 +20,14 @@ type MarkdownDiagram struct {
 // extractMarkdownPlantUML extracts normalized sources in document order.
 func extractMarkdownPlantUML(data []byte) [][]byte {
 	var sources [][]byte
-	for _, diagram := range markdownDiagrams(data) {
+	for _, diagram := range extractMarkdownDiagrams(data) {
 		sources = append(sources, diagram.Source)
 	}
 	return sources
 }
 
-// markdownDiagrams uses goldmark for Markdown syntax and normalizes PlantUML.
-func markdownDiagrams(data []byte) []MarkdownDiagram {
+// extractMarkdownDiagrams uses goldmark for Markdown syntax and normalizes PlantUML.
+func extractMarkdownDiagrams(data []byte) []MarkdownDiagram {
 	document := goldmark.DefaultParser().Parse(text.NewReader(data))
 	var diagrams []MarkdownDiagram
 	line, scanned := 1, 0
@@ -53,14 +53,14 @@ func markdownDiagrams(data []byte) []MarkdownDiagram {
 		start := block.Info.Segment.Start
 		line += bytes.Count(data[scanned:start], []byte("\n"))
 		scanned = start
-		diagrams = append(diagrams, MarkdownDiagram{Line: line, Title: diagramTitle(source), Source: []byte(source + "\n")})
+		diagrams = append(diagrams, MarkdownDiagram{Line: line, Title: extractDiagramTitle(source), Source: []byte(source + "\n")})
 		return ast.WalkContinue, nil
 	})
 	return diagrams
 }
 
-// Only a single-line title is suitable for the compact tree label.
-func diagramTitle(source string) string {
+// extractDiagramTitle returns a single-line title for the compact tree label.
+func extractDiagramTitle(source string) string {
 	var title string
 	for line := range strings.SplitSeq(source, "\n") {
 		line = strings.TrimSpace(line)

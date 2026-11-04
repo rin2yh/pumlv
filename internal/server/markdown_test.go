@@ -150,7 +150,7 @@ func TestMarkdownDiagramLabels(t *testing.T) {
 		{"multiline", "```puml\ntitle\nLong\nend title\nAlice -> Bob\n```", []int{1}, []string{""}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			got := markdownDiagrams([]byte(tt.input))
+			got := extractMarkdownDiagrams([]byte(tt.input))
 			if len(got) != len(tt.lines) {
 				t.Fatalf("got %d diagrams", len(got))
 			}
@@ -180,7 +180,7 @@ func TestMarkdownDiagramsIncrementalLinesAcrossMixedBlocks(t *testing.T) {
 	}
 	for _, tt := range []struct{ name, newline string }{{"LF", "\n"}, {"CRLF", "\r\n"}} {
 		t.Run(tt.name, func(t *testing.T) {
-			got := markdownDiagrams([]byte(strings.Join(lines, tt.newline)))
+			got := extractMarkdownDiagrams([]byte(strings.Join(lines, tt.newline)))
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("diagrams = %#v, want %#v", got, want)
 			}

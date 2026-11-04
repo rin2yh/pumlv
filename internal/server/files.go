@@ -345,7 +345,7 @@ func (r *Registry) getFileEntry(path string) (FileEntry, bool, error) {
 	if err != nil {
 		return FileEntry{}, false, fmt.Errorf("read Markdown %q: %w", path, err)
 	}
-	entry.Diagrams = markdownDiagrams(data)
+	entry.Diagrams = extractMarkdownDiagrams(data)
 	return entry, len(entry.Diagrams) > 0, nil
 }
 
