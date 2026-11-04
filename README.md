@@ -63,6 +63,12 @@ To keep everything in the browser, this project bundles PlantUML's official TeaV
 
 pumlv modifies `plantuml.js` while vendoring it: the script raises PlantUML's hard-coded diagram dimension limit from 4096 px to 65536 px so that large ER / sequence diagrams render instead of being rejected. See [`credits/vendored.txt`](./credits/vendored.txt) for the full notice.
 
+## Go linting
+
+Run `make lint-backend` to check formatting and Go code quality. The enabled
+rules and naming conventions that require manual review are described in
+[docs/linting.md](docs/linting.md).
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).

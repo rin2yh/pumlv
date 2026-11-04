@@ -1,0 +1,23 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - gocritic
+    - govet
+    - ineffassign
+    - revive
+    - staticcheck
+    - unused
+  settings:
+    revive:
+      rules:
+        - name: argument-limit
+          arguments:
+            - 3
+        - name: error-naming
+        - name: errorf
+        - name: exported
+        - name: receiver-naming
+        - name: var-naming
