@@ -8,6 +8,7 @@ workflows:
     '.github/workflows/ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-go@v7.0.0'
+        - 'golangci/golangci-lint-action@v9.3.0'
         - 'k1LoW/octocov-action@v1.5.2'
         - 'actions/upload-artifact@v7.0.2'
     '.github/workflows/tagpr.yml':
@@ -91,6 +92,11 @@ dependencies:
         commit: 'sha1-a4f02ab5355a589de60d917a659ce617ed19b3de'
         owner_id: 24697112
         repo_id: 209873006
+    'golangci/golangci-lint-action@v9.3.0':
+        ref: 'v9.3.0'
+        commit: 'sha1-ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a'
+        owner_id: 35628013
+        repo_id: 232539879
     'k1LoW/gh-setup@5fb38d34ea857e5a942b6fe10f1723e55055f6c0':
         ref: 'v1.11.9'
         commit: 'sha1-5fb38d34ea857e5a942b6fe10f1723e55055f6c0'
