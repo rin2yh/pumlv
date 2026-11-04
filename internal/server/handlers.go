@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/rin2yh/pumlv/internal/fileformat"
@@ -38,22 +39,44 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if !s.registry.Allowed(abs) {
+	entry, allowed := s.registry.lookup(abs)
+	if !allowed {
 		http.Error(w, "file not allowed", http.StatusForbidden)
 		return
 	}
-	data, err := os.ReadFile(abs)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+	var data []byte
 	if fileformat.IsMarkdown(abs) {
-		diagrams := extractMarkdownPlantUML(data)
+		diagrams := entry.Diagrams
 		if len(diagrams) == 0 {
 			http.Error(w, "no PlantUML block", http.StatusNotFound)
 			return
 		}
-		data = diagrams[0]
+		selected := 0
+		if value, present := r.URL.Query()["line"]; present {
+			line, err := strconv.Atoi(value[0])
+			if err != nil || line < 1 {
+				http.Error(w, "invalid diagram line", http.StatusBadRequest)
+				return
+			}
+			selected = -1
+			for i, diagram := range diagrams {
+				if diagram.Line == line {
+					selected = i
+					break
+				}
+			}
+			if selected < 0 {
+				http.Error(w, "PlantUML block not found", http.StatusNotFound)
+				return
+			}
+		}
+		data = diagrams[selected].Source
+	} else {
+		data, err = os.ReadFile(abs)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write(data)

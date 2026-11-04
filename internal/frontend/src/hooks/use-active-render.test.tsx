@@ -155,3 +155,23 @@ describe("useActiveRender", () => {
     expect(mockedFetchFileSource).toHaveBeenCalledTimes(2);
   });
 });
+
+it("recovers from a Markdown diagram render error when a sibling is selected", async () => {
+  mockedFetchFileSource
+    .mockResolvedValueOnce("broken")
+    .mockResolvedValueOnce("healthy")
+    .mockResolvedValueOnce("fixed");
+  mockedRenderPlantUML
+    .mockRejectedValueOnce(new Error("diagram error"))
+    .mockResolvedValueOnce("healthy-svg")
+    .mockResolvedValueOnce("fixed-svg");
+  const { result, rerender } = renderActive("markdown:%2Fdiagrams.md:1");
+  await flush(3);
+  expect(result.current.render).toEqual({ kind: "error", message: "diagram error" });
+  rerender({ active: "markdown:%2Fdiagrams.md:8" });
+  await flush(3);
+  expect(result.current.render).toEqual({ kind: "ok", svg: "healthy-svg" });
+  rerender({ active: "markdown:%2Fdiagrams.md:1" });
+  await flush(3);
+  expect(result.current.render).toEqual({ kind: "ok", svg: "fixed-svg" });
+});

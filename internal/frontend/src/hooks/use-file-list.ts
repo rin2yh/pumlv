@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchFiles, sameFilePaths, type FileEntry } from "../api/files";
+import {
+  fetchFiles,
+  sameFilePaths,
+  firstSelection,
+  selections,
+  parseSelection,
+  type FileEntry,
+} from "../api/files";
 
 export interface UseFileListResult {
   files: FileEntry[];
@@ -14,13 +21,21 @@ export function useFileList(): UseFileListResult {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       const list = await fetchFiles();
+      if (cancelled) return;
       setFiles((prev) => (sameFilePaths(prev, list) ? prev : list));
-      setActive((prev) =>
-        prev && list.some((f) => f.path === prev) ? prev : (list[0]?.path ?? null),
-      );
+      setActive((previous) => {
+        if (previous && selections(list).includes(previous)) return previous;
+        const previousPath = previous ? parseSelection(previous).path : null;
+        const file = list.find((entry) => entry.path === previousPath) ?? list[0];
+        return file ? firstSelection(file) : null;
+      });
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [reloadKey]);
 
   return {

@@ -141,7 +141,8 @@ func TestRegistryUpdateUsesOnlyTheChangedFile(t *testing.T) {
 				}
 				if step.allowed {
 					want := FileEntry{Path: path, Rel: filepath.FromSlash(tt.wantRel), Name: "diagram.md", Source: filepath.Join(dir, tt.wantSource)}
-					if got := reg.List(); len(got) != 1 || got[0] != want {
+					want.Diagrams = []MarkdownDiagram{{Line: 1}}
+					if got := reg.List(); len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 						t.Fatalf("entries = %+v, want %+v", got, want)
 					}
 				}
@@ -527,5 +528,109 @@ func TestRegistryDirectoryScanDiscardsCandidatesAfterConcurrentRemoval(t *testin
 	}
 	if changed, err := reg.addPath(dir, nil); changed || err != nil {
 		t.Fatalf("retry = %v, %v; want false, nil", changed, err)
+	}
+}
+
+func TestRegistryMarkdownSnapshotsDoNotShareMutableData(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "diagram.md")
+	if err := os.WriteFile(path, []byte("```puml\ntitle Original\nAlice -> Bob\n```"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	reg, err := NewRegistry([]string{path}, []string{".md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries := reg.List()
+	if entries[0].Diagrams[0].Source != nil {
+		t.Fatal("List exposes cached sources")
+	}
+	entries[0].Diagrams[0].Title = "mutated"
+	entry, _ := reg.lookup(path)
+	entry.Diagrams[0].Title = "mutated"
+	entry.Diagrams[0].Source[0] = '!'
+	next, _ := reg.lookup(path)
+	if next.Diagrams[0].Title != "Original" || next.Diagrams[0].Source[0] != '@' {
+		t.Fatal("caller mutated Registry snapshot")
+	}
+}
+
+func TestRegistrySubtreeRefreshesSourceOnlyEdits(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "diagram.md")
+	write := func(message string) {
+		t.Helper()
+		if err := os.WriteFile(path, []byte("```puml\nAlice -> Bob: "+message+"\n```"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("Before")
+	reg, err := NewRegistry([]string{dir}, []string{".md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	write("After")
+	if changed, err := reg.addPath(dir, nil); err != nil || changed {
+		t.Fatalf("source-only update changed tree: %v,%v", changed, err)
+	}
+	entry, _ := reg.lookup(path)
+	if !strings.Contains(string(entry.Diagrams[0].Source), "After") {
+		t.Fatal("subtree retained stale source")
+	}
+}
+
+func TestRegistryDirectoryScanDiscardsStaleMarkdownSources(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a-diagram.md")
+	write := func(label string) {
+		t.Helper()
+		if err := os.WriteFile(path, []byte("```puml\nAlice -> Bob: "+label+"\n```"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("Before")
+	pause := filepath.Join(dir, "z-pause")
+	if err := os.Mkdir(pause, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	reg, err := NewRegistry([]string{dir}, []string{".md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	started, release := make(chan struct{}), make(chan struct{})
+	unblock := sync.OnceFunc(func() { close(release) })
+	t.Cleanup(unblock)
+	result := make(chan error, 1)
+	go func() {
+		_, err := reg.addPath(dir, func(child string) error {
+			if child == pause {
+				close(started)
+				<-release
+			}
+			return nil
+		})
+		result <- err
+	}()
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("scan did not pause")
+	}
+	write("After")
+	// The labels are unchanged, but publishing a new source must invalidate the scan.
+	if changed, err := reg.Update(path); err != nil || changed {
+		t.Fatalf("Update=%v,%v", changed, err)
+	}
+	unblock()
+	select {
+	case err := <-result:
+		if err == nil {
+			t.Fatal("stale scan was committed")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("scan did not finish")
+	}
+	entry, _ := reg.lookup(path)
+	if !strings.Contains(string(entry.Diagrams[0].Source), "After") {
+		t.Fatal("stale scan replaced current source")
 	}
 }

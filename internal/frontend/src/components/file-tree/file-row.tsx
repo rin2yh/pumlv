@@ -1,5 +1,5 @@
 import { type JSX } from "react";
-import type { FileEntry } from "../../api/files";
+import { firstSelection, type FileEntry } from "../../api/files";
 import { CHEVRON_INDENT_PX, rowIndentPx } from "./tree";
 
 interface Props {
@@ -15,7 +15,7 @@ export function FileRow({ entry, depth, isSelected, onSelect }: Props): JSX.Elem
   return (
     <button
       type="button"
-      onClick={() => onSelect(entry.path)}
+      onClick={() => onSelect(firstSelection(entry))}
       className={`block w-full truncate py-1.5 pr-4 text-left text-sm hover:bg-slate-100 ${selectionClass}`}
       style={{ paddingLeft: `${rowIndentPx(depth) + CHEVRON_INDENT_PX}px` }}
       title={entry.rel}

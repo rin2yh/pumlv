@@ -69,3 +69,25 @@ describe("flatten", () => {
     });
   });
 });
+
+it("keeps Markdown diagrams nested under their file in document order", () => {
+  const tree = buildTree([
+    {
+      path: "/docs/a.md",
+      rel: "a.md",
+      name: "a.md",
+      source: "/docs",
+      diagrams: [{ line: 3, title: "認証フロー" }, { line: 12 }, { line: 32, title: "Last" }],
+    },
+  ]);
+  const rows = flatten(tree, new Set());
+  expect(rows.map(({ node, depth }) => [node.name, depth])).toEqual([
+    ["/docs", 0],
+    ["a.md", 1],
+    ["L3: 認証フロー", 2],
+    ["L12", 2],
+    ["L32: Last", 2],
+  ]);
+  expect(new Set(rows.map(({ node }) => node.key)).size).toBe(rows.length);
+  expect(flatten(tree, new Set(["/docs"]))).toHaveLength(1);
+});

@@ -103,3 +103,22 @@ describe("useFileList", () => {
     expect(mockedFetchFiles).toHaveBeenCalledTimes(expected);
   });
 });
+
+it("refreshes Markdown labels and falls back within the same file after block removal", async () => {
+  const markdown = {
+    ...file("/diagrams.md"),
+    diagrams: [{ line: 1, title: "First" }, { line: 8 }],
+  };
+  mockedFetchFiles.mockResolvedValueOnce([markdown]);
+  const { result } = renderHook(() => useFileList());
+  await flush();
+  expect(result.current.active).toBe("markdown:%2Fdiagrams.md:1");
+  act(() => result.current.select("markdown:%2Fdiagrams.md:8"));
+  mockedFetchFiles.mockResolvedValueOnce([
+    { ...markdown, diagrams: [{ line: 1, title: "Updated" }] },
+  ]);
+  act(() => result.current.reload());
+  await flush();
+  expect(result.current.files[0]?.diagrams).toEqual([{ line: 1, title: "Updated" }]);
+  expect(result.current.active).toBe("markdown:%2Fdiagrams.md:1");
+});
