@@ -43,16 +43,21 @@ func newTestWatcher(t *testing.T, dir string, exts []string) (*Watcher, *Hub, co
 	return w, hub, cancel
 }
 
-func recv(t *testing.T, ch chan Event, want string, timeout time.Duration) (Event, bool) {
+type watcherEventWait struct {
+	name    string
+	timeout time.Duration
+}
+
+func recv(t *testing.T, ch chan Event, want watcherEventWait) (Event, bool) {
 	t.Helper()
-	deadline := time.After(timeout)
+	deadline := time.After(want.timeout)
 	for {
 		select {
 		case ev, ok := <-ch:
 			if !ok {
 				return Event{}, false
 			}
-			if ev.Name == want {
+			if ev.Name == want.name {
 				return ev, true
 			}
 			// ignore other events while we wait for the named one
@@ -72,7 +77,7 @@ func TestWatcherEmitsTreeOnFileCreate(t *testing.T) {
 	if err := os.WriteFile(puml, []byte("@startuml\n@enduml\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := recv(t, sub, "tree", 2*time.Second); !ok {
+	if _, ok := recv(t, sub, watcherEventWait{name: "tree", timeout: 2 * time.Second}); !ok {
 		t.Fatal("expected tree event for new file")
 	}
 }
@@ -90,7 +95,7 @@ func TestWatcherEmitsChangedOnWrite(t *testing.T) {
 	if err := os.WriteFile(puml, []byte("@startuml\nA -> B\n@enduml\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	ev, ok := recv(t, sub, "changed", 2*time.Second)
+	ev, ok := recv(t, sub, watcherEventWait{name: "changed", timeout: 2 * time.Second})
 	if !ok {
 		t.Fatal("expected changed event after write")
 	}
@@ -137,7 +142,7 @@ func TestWatcherRefreshesOnDelete(t *testing.T) {
 	if err := os.Remove(puml); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := recv(t, sub, "tree", 2*time.Second); !ok {
+	if _, ok := recv(t, sub, watcherEventWait{name: "tree", timeout: 2 * time.Second}); !ok {
 		t.Fatal("expected tree event after deletion")
 	}
 	if w.registry.Allowed(puml) {
@@ -335,7 +340,7 @@ func TestWatcherFileCreateDoesNotRescanSources(t *testing.T) {
 	if !w.registry.Allowed(target) {
 		t.Fatal("created file was not registered")
 	}
-	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	assertWatcherDidNotRescanSources(t, watcherRescanCheck{watcher: w, subscriber: sub, sourceDir: dir})
 	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
 	assertNoTreeEvent(t, sub)
 }
@@ -354,7 +359,7 @@ func TestWatcherFileRemoveDoesNotRescanSources(t *testing.T) {
 	if w.registry.Allowed(target) {
 		t.Fatal("removed file is still registered")
 	}
-	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	assertWatcherDidNotRescanSources(t, watcherRescanCheck{watcher: w, subscriber: sub, sourceDir: dir})
 	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Remove})
 	assertNoTreeEvent(t, sub)
 }
@@ -373,7 +378,7 @@ func TestWatcherFileRenameDoesNotRescanSources(t *testing.T) {
 	if w.registry.Allowed(target) {
 		t.Fatal("renamed file is still registered at its old path")
 	}
-	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	assertWatcherDidNotRescanSources(t, watcherRescanCheck{watcher: w, subscriber: sub, sourceDir: dir})
 	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Rename})
 	assertNoTreeEvent(t, sub)
 }
@@ -400,8 +405,15 @@ func newTestWatcherForFileEvent(t *testing.T, dir string) (*Watcher, chan Event)
 }
 
 // An unreported file must stay undiscovered; Refresh would pick it up.
-func assertWatcherDidNotRescanSources(t *testing.T, w *Watcher, sub chan Event, dir string) {
+type watcherRescanCheck struct {
+	watcher    *Watcher
+	subscriber chan Event
+	sourceDir  string
+}
+
+func assertWatcherDidNotRescanSources(t *testing.T, check watcherRescanCheck) {
 	t.Helper()
+	w, sub, dir := check.watcher, check.subscriber, check.sourceDir
 	if w.registry.Allowed(filepath.Join(dir, "unreported.puml")) {
 		t.Error("event rescanned unrelated files")
 	}
@@ -484,7 +496,7 @@ func TestWatcherExistingFileCreateDoesNotEmitTree(t *testing.T) {
 	w.handleEvent(fsnotify.Event{Name: target, Op: fsnotify.Create})
 	assertNoTreeEvent(t, sub)
 
-	if _, ok := recv(t, sub, "changed", 2*time.Second); !ok {
+	if _, ok := recv(t, sub, watcherEventWait{name: "changed", timeout: 2 * time.Second}); !ok {
 		t.Fatal("expected changed notification for existing file")
 	}
 	assertNoTreeEvent(t, sub)
@@ -557,7 +569,7 @@ func TestWatcherEmptyDirectoryWatchesWithoutTreeNotification(t *testing.T) {
 	if !w.registry.Allowed(target) {
 		t.Fatal("file in new directory was not registered")
 	}
-	assertWatcherDidNotRescanSources(t, w, sub, dir)
+	assertWatcherDidNotRescanSources(t, watcherRescanCheck{watcher: w, subscriber: sub, sourceDir: dir})
 }
 
 func TestWatcherMarkdownWithoutDiagramDoesNotEmitTree(t *testing.T) {
@@ -669,7 +681,7 @@ func TestWatcherDoesNotHoldMutexDuringMarkdownRead(t *testing.T) {
 		t.Fatal("Close blocked on Markdown I/O")
 	}
 	releaseRead()
-	if _, ok := recv(t, sub, "changed", 2*time.Second); !ok {
+	if _, ok := recv(t, sub, watcherEventWait{name: "changed", timeout: 2 * time.Second}); !ok {
 		t.Fatal("in-flight update did not finish after the read was released")
 	}
 }
@@ -1120,8 +1132,8 @@ func TestWatcherCloseWaitsForRecoveryAndDiscardsCandidates(t *testing.T) {
 		t.Fatal("Close did not cancel recovery")
 	}
 	select {
-	case <-closed:
-		t.Fatal("Close returned before its recovery worker finished")
+	case err := <-closed:
+		t.Fatalf("Close returned before its recovery worker finished: %v", err)
 	default:
 	}
 	releaseRead()

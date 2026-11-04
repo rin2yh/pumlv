@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"log"
 	"fmt"
 	"net"
 	"net/http"
@@ -71,8 +72,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	go func() {
 		defer httpDone()
 		if err := s.httpd.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			// Surfacing the error here would require plumbing; the Shutdown path is
-			// the normal exit, so we just log to stderr via the http package's default.
+			log.Printf("HTTP server error: %v", err)
 		}
 	}()
 

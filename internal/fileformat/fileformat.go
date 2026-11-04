@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// MarkdownExtension is the file extension recognized as Markdown.
 const MarkdownExtension = ".md"
 
 var plantUMLExtensions = []string{".puml", ".plantuml", ".iuml", ".wsd"}

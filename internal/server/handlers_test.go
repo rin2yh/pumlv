@@ -17,6 +17,15 @@ import (
 	"time"
 )
 
+func closeResponseBody(t *testing.T, resp *http.Response) {
+	t.Helper()
+	t.Cleanup(func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Errorf("close response body: %v", err)
+		}
+	})
+}
+
 func newTestServer(t *testing.T, paths []string, exts []string) (*Server, *httptest.Server) {
 	t.Helper()
 	reg, err := NewRegistry(paths, exts)
@@ -47,7 +56,7 @@ func TestHandleFilesReturnsRegistryList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/files: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -76,7 +85,7 @@ func TestHandleFileServesAllowedFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/file: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -93,7 +102,7 @@ func TestHandleFileMissingPathReturns400(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
@@ -115,7 +124,7 @@ func TestHandleFileRejectsUnregisteredPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("expected 403, got %d", resp.StatusCode)
 	}
@@ -135,7 +144,7 @@ func TestHandleFileMissingFileReturns404(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("expected 404, got %d", resp.StatusCode)
 	}
@@ -149,13 +158,13 @@ func TestHandleEventsStreamsHelloAndBroadcasts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/events: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "text/event-stream") {
 		t.Errorf("unexpected content-type: %q", ct)
 	}
 
 	br := bufio.NewReader(resp.Body)
-	gotHello := waitForEvent(t, br, "hello", 2*time.Second)
+	gotHello := waitForEvent(t, br, sseEventWait{name: "hello", timeout: 2 * time.Second})
 	if !gotHello {
 		t.Fatal("did not receive hello event")
 	}
@@ -163,21 +172,26 @@ func TestHandleEventsStreamsHelloAndBroadcasts(t *testing.T) {
 	// Give the subscriber a tick to register before broadcasting; the handler
 	// subscribes before writing hello so by here it is already registered.
 	s.hub.Broadcast(Event{Name: "changed", Data: map[string]string{"path": "/x.puml"}})
-	gotChanged := waitForEvent(t, br, "changed", 2*time.Second)
+	gotChanged := waitForEvent(t, br, sseEventWait{name: "changed", timeout: 2 * time.Second})
 	if !gotChanged {
 		t.Fatal("did not receive changed event")
 	}
 }
 
-func waitForEvent(t *testing.T, br *bufio.Reader, name string, timeout time.Duration) bool {
+type sseEventWait struct {
+	name    string
+	timeout time.Duration
+}
+
+func waitForEvent(t *testing.T, br *bufio.Reader, want sseEventWait) bool {
 	t.Helper()
-	deadline := time.Now().Add(timeout)
+	deadline := time.Now().Add(want.timeout)
 	for time.Now().Before(deadline) {
 		line, err := br.ReadString('\n')
 		if err != nil {
 			return false
 		}
-		if strings.TrimSpace(line) == "event: "+name {
+		if strings.TrimSpace(line) == "event: "+want.name {
 			return true
 		}
 	}
@@ -192,7 +206,7 @@ func TestHandleStaticServesIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
@@ -215,7 +229,7 @@ func TestHandleStaticMissingAssetReturns404(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("expected 404 for missing asset, got %d", resp.StatusCode)
 	}
@@ -230,7 +244,7 @@ func TestHandleStaticSpaFallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 (SPA fallback), got %d", resp.StatusCode)
 	}
@@ -246,7 +260,7 @@ func TestHandleFileServesExtractedMarkdownDiagram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -266,7 +280,7 @@ func TestMarkdownDiagramAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	var files []struct {
 		Diagrams []MarkdownDiagram `json:"diagrams"`
 	}
@@ -291,7 +305,7 @@ func TestMarkdownDiagramAPI(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer resp.Body.Close()
+			closeResponseBody(t, resp)
 			data, _ := io.ReadAll(resp.Body)
 			if resp.StatusCode != tt.status || !strings.Contains(string(data), tt.contains) {
 				t.Fatalf("status=%d body=%q", resp.StatusCode, data)
@@ -323,7 +337,7 @@ func TestMarkdownAPIsUseRegistrySnapshotAndOnlyUpdateChangedFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		closeResponseBody(t, resp)
 		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)

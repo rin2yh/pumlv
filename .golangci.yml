@@ -21,3 +21,7 @@ linters:
         - name: exported
         - name: receiver-naming
         - name: var-naming
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
