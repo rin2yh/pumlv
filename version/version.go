@@ -1,5 +1,6 @@
 package version
 
+// Name is the CLI name used in output and help text.
 var Name = "pumlv"
 
 // Version は tagpr がバンプし、GoReleaser が ldflags で上書きする。

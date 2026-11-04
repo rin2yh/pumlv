@@ -44,7 +44,7 @@ lint-frontend: fmt-check-frontend
 	cd $(FRONTEND) && pnpm lint
 
 lint-backend: fmt-check-backend
-	go vet ./...
+	golangci-lint run --timeout=5m
 
 fmt: fmt-frontend fmt-backend
 

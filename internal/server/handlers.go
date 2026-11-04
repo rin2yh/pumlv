@@ -97,7 +97,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	defer s.hub.Unsubscribe(client)
 
 	// Initial hello so the client can flag the connection as open.
-	fmt.Fprintf(w, "event: hello\ndata: {}\n\n")
+	if _, err := fmt.Fprintf(w, "event: hello\ndata: {}\n\n"); err != nil {
+		return
+	}
 	flusher.Flush()
 
 	ctx := r.Context()
@@ -113,7 +115,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				continue
 			}
-			fmt.Fprintf(w, "event: %s\ndata: %s\n\n", ev.Name, payload)
+			if _, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", ev.Name, payload); err != nil {
+				return
+			}
 			flusher.Flush()
 		}
 	}
