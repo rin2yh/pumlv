@@ -72,7 +72,7 @@ func TestServerStartAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /api/files: %v", err)
 	}
-	defer resp.Body.Close()
+	closeResponseBody(t, resp)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("unexpected status: %d", resp.StatusCode)
 	}
