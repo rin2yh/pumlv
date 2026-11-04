@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.4.0](https://github.com/rin2yh/pumlv/compare/v0.3.13...v0.4.0) - 2026-11-04
+
+- build(deps): bump Songmu/tagpr from 1.21.3 to 1.21.4 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/227
+- build(deps-dev): bump the npm-dependencies group in /internal/frontend with 7 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/228
+- feat: Markdown内のPlantUMLコードブロックをプレビューする by @rin2yh in https://github.com/rin2yh/pumlv/pull/213
+- build(deps-dev): bump the npm-dependencies group in /internal/frontend with 8 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/230
+- feat: Markdown内の複数PlantUMLコードブロックをプレビューする by @rin2yh in https://github.com/rin2yh/pumlv/pull/231
+- docs(examples): add Markdown PlantUML sample by @rin2yh in https://github.com/rin2yh/pumlv/pull/235
+- build: golangci-lint v2 で Go lint を強化 by @rin2yh in https://github.com/rin2yh/pumlv/pull/234
+
 ## [v0.3.13](https://github.com/rin2yh/pumlv/compare/v0.3.12...v0.3.13) - 2026-10-22
 
 - chore: update Go to 1.26.10 for security fixes by @rin2yh in https://github.com/rin2yh/pumlv/pull/225

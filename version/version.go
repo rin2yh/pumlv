@@ -4,7 +4,7 @@ package version
 var Name = "pumlv"
 
 // Version は tagpr がバンプし、GoReleaser が ldflags で上書きする。
-var Version = "0.3.13"
+var Version = "0.4.0"
 
 // Revision は GoReleaser が ldflags で埋める短縮 commit hash。
 var Revision = "HEAD"
