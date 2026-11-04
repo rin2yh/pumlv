@@ -174,8 +174,8 @@ func (r *Registry) lookup(path string) (FileEntry, bool) {
 	return entry, ok
 }
 
-// sameTreeEntry ignores source-only edits: Watcher sends a changed event for those.
-func sameTreeEntry(a, b FileEntry) bool {
+// isSameTreeEntry ignores source-only edits: Watcher sends a changed event for those.
+func isSameTreeEntry(a, b FileEntry) bool {
 	return a.Path == b.Path && a.Rel == b.Rel && a.Name == b.Name && a.Source == b.Source &&
 		slices.EqualFunc(a.Diagrams, b.Diagrams, func(a, b MarkdownDiagram) bool { return a.Line == b.Line && a.Title == b.Title })
 }
@@ -207,7 +207,7 @@ func (r *Registry) updatePath(ctx context.Context, path string) (bool, error) {
 		return wasAllowed, nil
 	}
 	r.files[path] = entry
-	return !wasAllowed || !sameTreeEntry(previous, entry), nil
+	return !wasAllowed || !isSameTreeEntry(previous, entry), nil
 }
 
 func createFileEntry(path, source string) FileEntry {
@@ -304,7 +304,7 @@ func (r *Registry) addPathContext(ctx context.Context, path string, onDir func(s
 	changed, published := false, false
 	for path, entry := range next {
 		old, ok := r.files[path]
-		treeChanged := !ok || !sameTreeEntry(old, entry)
+		treeChanged := !ok || !isSameTreeEntry(old, entry)
 		changed = changed || treeChanged
 		// Markdown sources may change without changing the tree labels.
 		// Keep non-Markdown publication and revision behavior unchanged.
