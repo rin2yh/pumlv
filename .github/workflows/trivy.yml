@@ -7,7 +7,7 @@ on:
       - 'go.sum'
       - 'internal/frontend/package.json'
       - 'internal/frontend/pnpm-lock.yaml'
-      - '.github/workflows/trivy.yml'
+      - '.github/workflows/**'
   push:
     branches:
       - main
@@ -16,7 +16,7 @@ on:
       - 'go.sum'
       - 'internal/frontend/package.json'
       - 'internal/frontend/pnpm-lock.yaml'
-      - '.github/workflows/trivy.yml'
+      - '.github/workflows/**'
   schedule:
     - cron: '0 0 * * 1'
 
@@ -33,10 +33,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -46,7 +46,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Trivy license scan
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
