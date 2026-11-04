@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"errors"
-	"log"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
