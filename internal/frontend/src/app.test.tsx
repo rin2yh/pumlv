@@ -116,6 +116,21 @@ describe("App", () => {
       expect(toggleButton().textContent).toBe(SOURCE_TOGGLE_LABEL.open);
       expect(sourcePanel().hasAttribute("hidden")).toBe(false);
     });
+
+    it("updates the source while hidden and shows the latest source when reopened", async () => {
+      render(<App />);
+      await flush(5);
+
+      act(() => toggleButton().click());
+      act(() => fileButton("b.puml").click());
+      await flush(10);
+
+      expect(sourcePanel().hasAttribute("hidden")).toBe(true);
+      expect(sourcePanel().textContent).toContain("actor B");
+
+      act(() => toggleButton().click());
+      expect(sourcePanel().textContent).toContain("actor B");
+    });
   });
 
   it("re-renders the preview and source when a different file is selected", async () => {
