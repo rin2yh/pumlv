@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useDeferredValue, useEffect, useState, type JSX } from "react";
 import { useToggleSet } from "../../hooks/use-toggle-set";
 import { splitLines } from "../../lib/lines";
 import { highlight, type Highlighted, type ShikiToken } from "./highlighter";
@@ -10,31 +10,37 @@ interface Props {
 }
 
 export function SourceView({ source }: Props): JSX.Element {
-  const [highlighted, setHighlighted] = useState<Highlighted | null>(null);
+  const deferredSource = useDeferredValue(source);
+  const [highlighted, setHighlighted] = useState<{
+    source: string;
+    result: Highlighted | null;
+  } | null>(null);
   const [folded, toggle] = useToggleSet<number>();
 
-  const lines = splitLines(source);
-  const ranges = computeFoldRanges(source);
+  const lines = splitLines(deferredSource);
+  const ranges = computeFoldRanges(deferredSource);
   const foldStarts = new Set(ranges.map((r) => r.startLine));
   const depths = computeLineDepths(lines.length, ranges);
 
-  const tokenLines: ShikiToken[][] = highlighted?.tokens ?? lines.map((l) => [{ content: l }]);
+  const currentHighlight = highlighted?.source === deferredSource ? highlighted.result : null;
+  const tokenLines: ShikiToken[][] =
+    currentHighlight?.tokens ?? lines.map((l) => [{ content: l }]);
 
   const hidden = hiddenLines(ranges, folded);
 
   useEffect(() => {
     let cancelled = false;
-    if (!source) {
+    if (!deferredSource) {
       setHighlighted(null);
       return;
     }
-    void highlight(source).then((result) => {
-      if (!cancelled) setHighlighted(result);
+    void highlight(deferredSource).then((result) => {
+      if (!cancelled) setHighlighted({ source: deferredSource, result });
     });
     return () => {
       cancelled = true;
     };
-  }, [source]);
+  }, [deferredSource]);
 
   if (!source) {
     return <p className="px-4 py-3 text-sm text-slate-400">no source</p>;
@@ -44,10 +50,16 @@ export function SourceView({ source }: Props): JSX.Element {
     <pre
       className="m-0 overflow-auto p-3 font-mono text-xs leading-5"
       style={{
-        color: highlighted?.fg || undefined,
-        backgroundColor: highlighted?.bg || undefined,
+        color: currentHighlight?.fg || undefined,
+        backgroundColor: currentHighlight?.bg || undefined,
       }}
+      aria-busy={source !== deferredSource}
     >
+      {source !== deferredSource && (
+        <span role="status" className="mb-2 block font-sans text-slate-500">
+          Updating source…
+        </span>
+      )}
       {tokenLines.map((tokens, i) => {
         if (hidden.has(i)) return null;
         const isFoldStart = foldStarts.has(i);

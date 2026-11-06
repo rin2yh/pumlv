@@ -36,6 +36,20 @@ describe("SourceView", () => {
     expect(document.body.textContent).toContain("no source");
   });
 
+  it("updates the displayed rows and fold controls with the selected source", async () => {
+    render(<SourceView source={"class Old {\n  oldField\n}"} />);
+    await flush(3);
+    expect(document.body.textContent).toContain("oldField");
+
+    render(<SourceView source={"class New {\n  newField\n}"} />);
+    await flush(3);
+
+    expect(document.body.textContent).toContain("newField");
+    expect(document.body.textContent).not.toContain("oldField");
+    expect(document.querySelectorAll(`button[aria-label="${FOLD_LABEL}"]`)).toHaveLength(1);
+    expect(document.querySelector("pre")?.getAttribute("aria-busy")).toBe("false");
+  });
+
   describe("folding", () => {
     const source = ["class A {", "  field1", "  field2", "}", "class B"].join("\n");
 
