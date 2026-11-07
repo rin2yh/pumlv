@@ -5,7 +5,6 @@ package gui
 import (
 	"path"
 	"reflect"
-	"slices"
 	"testing"
 
 	"github.com/rin2yh/pumlv/internal/server"
@@ -35,30 +34,13 @@ func TestBuildRows(t *testing.T) {
 
 func TestBuildRowsSortsDirectoriesBeforeFiles(t *testing.T) {
 	const source = "/project/examples"
-	files := []fileEntry{
-		testFile("/project/examples/zeta/second.puml", "zeta/second.puml", source),
-		testFile("/project/examples/zulu.puml", "zulu.puml", source),
-		testFile("/project/examples/beta/nested.puml", "beta/nested.puml", source),
-		testFile("/project/examples/alpha.puml", "alpha.puml", source),
-		testFile("/project/examples/aardvark/file.puml", "aardvark/file.puml", source),
-		testFile("/project/examples/zeta/first.puml", "zeta/first.puml", source),
-	}
-
-	wantLabels := []string{
-		"examples",
-		"aardvark", "file.puml",
-		"beta", "nested.puml",
-		"zeta", "first.puml", "second.puml",
-		"alpha.puml", "zulu.puml",
-	}
-	reversed := slices.Clone(files)
-	slices.Reverse(reversed)
 	for _, tc := range []struct {
 		name  string
 		files []fileEntry
+		want  []string
 	}{
-		{name: "mixed order", files: files},
-		{name: "reverse order", files: reversed},
+		{name: "mixed order", files: []fileEntry{testFile("/project/examples/zeta/second.puml", "zeta/second.puml", source), testFile("/project/examples/zulu.puml", "zulu.puml", source), testFile("/project/examples/beta/nested.puml", "beta/nested.puml", source), testFile("/project/examples/alpha.puml", "alpha.puml", source), testFile("/project/examples/aardvark/file.puml", "aardvark/file.puml", source), testFile("/project/examples/zeta/first.puml", "zeta/first.puml", source)}, want: []string{"examples", "aardvark", "file.puml", "beta", "nested.puml", "zeta", "first.puml", "second.puml", "alpha.puml", "zulu.puml"}},
+		{name: "reverse order", files: []fileEntry{testFile("/project/examples/zeta/first.puml", "zeta/first.puml", source), testFile("/project/examples/aardvark/file.puml", "aardvark/file.puml", source), testFile("/project/examples/alpha.puml", "alpha.puml", source), testFile("/project/examples/beta/nested.puml", "beta/nested.puml", source), testFile("/project/examples/zulu.puml", "zulu.puml", source), testFile("/project/examples/zeta/second.puml", "zeta/second.puml", source)}, want: []string{"examples", "aardvark", "file.puml", "beta", "nested.puml", "zeta", "first.puml", "second.puml", "alpha.puml", "zulu.puml"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rows := buildRows(tc.files)
@@ -66,8 +48,8 @@ func TestBuildRowsSortsDirectoriesBeforeFiles(t *testing.T) {
 			for i, row := range rows {
 				gotLabels[i] = row.label
 			}
-			if !reflect.DeepEqual(gotLabels, wantLabels) {
-				t.Fatalf("buildRows() labels = %v, want %v", gotLabels, wantLabels)
+			if !reflect.DeepEqual(gotLabels, tc.want) {
+				t.Fatalf("buildRows() labels = %v, want %v", gotLabels, tc.want)
 			}
 		})
 	}
