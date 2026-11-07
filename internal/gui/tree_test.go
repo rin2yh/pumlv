@@ -15,39 +15,13 @@ func TestBuildRows(t *testing.T) {
 	const source = "/project/examples"
 	const nestedFile = "/project/examples/docs/nested/flow.puml"
 	const markdownPath = "/project/examples/sequence diagram #1.md"
-	markdown := testFile(markdownPath, "sequence diagram #1.md", source)
-	markdown.Diagrams = []server.MarkdownDiagram{
-		{Line: 8, Title: "First"},
-		{Line: 24},
-	}
-	firstDiagram := diagramSelection(markdownPath, 8)
-	secondDiagram := diagramSelection(markdownPath, 24)
-
-	nestedFiles := []fileEntry{
-		testFile(nestedFile, "docs/nested/flow.puml", source),
-		testFile("/project/examples/docs/overview.puml", "docs/overview.puml", source),
-	}
-	wantNested := []treeRow{
-		{key: "dir:" + source, label: "examples", depth: 1},
-		{key: "dir:" + source + "/docs", label: "docs", depth: 2},
-		{key: "dir:" + source + "/docs/nested", label: "nested", depth: 3},
-		{key: nestedFile, label: "flow.puml", selection: nestedFile, depth: 4},
-		{key: "/project/examples/docs/overview.puml", label: "overview.puml", selection: "/project/examples/docs/overview.puml", depth: 3},
-	}
-	wantMarkdown := []treeRow{
-		{key: "dir:" + source, label: "examples", depth: 1},
-		{key: markdownPath, label: "sequence diagram #1.md", selection: firstDiagram, depth: 2},
-		{key: firstDiagram, label: "L8: First", selection: firstDiagram, depth: 3},
-		{key: secondDiagram, label: "L24", selection: secondDiagram, depth: 3},
-	}
-
 	cases := []struct {
 		name  string
 		files []fileEntry
 		want  []treeRow
 	}{
-		{name: "nested directories", files: nestedFiles, want: wantNested},
-		{name: "Markdown diagrams", files: []fileEntry{markdown}, want: wantMarkdown},
+		{name: "nested directories", files: []fileEntry{testFile(nestedFile, "docs/nested/flow.puml", source), testFile("/project/examples/docs/overview.puml", "docs/overview.puml", source)}, want: []treeRow{{key: "dir:" + source, label: "examples", depth: 1}, {key: "dir:" + source + "/docs", label: "docs", depth: 2}, {key: "dir:" + source + "/docs/nested", label: "nested", depth: 3}, {key: nestedFile, label: "flow.puml", selection: nestedFile, depth: 4}, {key: "/project/examples/docs/overview.puml", label: "overview.puml", selection: "/project/examples/docs/overview.puml", depth: 3}}},
+		{name: "Markdown diagrams", files: []fileEntry{{Path: markdownPath, Rel: "sequence diagram #1.md", Name: "sequence diagram #1.md", Source: source, Diagrams: []server.MarkdownDiagram{{Line: 8, Title: "First"}, {Line: 24}}}}, want: []treeRow{{key: "dir:" + source, label: "examples", depth: 1}, {key: markdownPath, label: "sequence diagram #1.md", selection: diagramSelection(markdownPath, 8), depth: 2}, {key: diagramSelection(markdownPath, 8), label: "L8: First", selection: diagramSelection(markdownPath, 8), depth: 3}, {key: diagramSelection(markdownPath, 24), label: "L24", selection: diagramSelection(markdownPath, 24), depth: 3}}},
 	}
 
 	for _, tc := range cases {
