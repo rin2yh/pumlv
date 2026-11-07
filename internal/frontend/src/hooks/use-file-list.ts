@@ -7,6 +7,7 @@ import {
   parseSelection,
   type FileEntry,
 } from "../api/files";
+import { subscribeNativeSelection } from "../api/native";
 
 export interface UseFileListResult {
   files: FileEntry[];
@@ -19,6 +20,8 @@ export function useFileList(): UseFileListResult {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => subscribeNativeSelection(setActive), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +44,7 @@ export function useFileList(): UseFileListResult {
   return {
     files,
     active,
-    select: (path) => setActive(path),
-    reload: () => setReloadKey((k) => k + 1),
+    select: (path: string) => setActive(path),
+    reload: () => setReloadKey((key) => key + 1),
   };
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/muesli/termenv"
 	"github.com/pkg/browser"
 	"github.com/rin2yh/pumlv/internal/fileformat"
+	"github.com/rin2yh/pumlv/internal/gui"
 	"github.com/rin2yh/pumlv/internal/server"
 	"github.com/rin2yh/pumlv/version"
 	"github.com/spf13/cobra"
@@ -85,6 +86,36 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+var guiCmd = &cobra.Command{
+	Use:   "gui [paths...]",
+	Short: "Open the native macOS GUI",
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(_ *cobra.Command, args []string) error {
+		sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		ctx, cancel := donegroup.WithCancel(sigCtx)
+		core, err := server.NewCore(args, flagExt)
+		if err != nil {
+			cancel()
+			return err
+		}
+		if err := core.Start(ctx); err != nil {
+			cancel()
+			_ = core.Close()
+			return err
+		}
+		err = gui.Run(ctx, core)
+		cancel()
+		if closeErr := core.Close(); err == nil {
+			err = closeErr
+		}
+		if waitErr := donegroup.Wait(ctx); err == nil {
+			err = waitErr
+		}
+		return err
+	},
+}
+
 func init() {
 	rootCmd.Version = version.Version + " (" + version.Revision + ")"
 	rootCmd.Flags().IntVar(&flagPort, "port", 0, "TCP port to listen on (0 = pick a free port)")
@@ -92,8 +123,8 @@ func init() {
 	rootCmd.Flags().BoolVar(&flagNoOpen, "no-open", false, "Do not open the browser automatically")
 	defaultExts := fileformat.GetPlantUMLExtensions()
 	defaultExts = append(defaultExts, fileformat.MarkdownExtension)
-	rootCmd.Flags().StringSliceVar(&flagExt, "ext", defaultExts, "File extensions to watch")
-	rootCmd.AddCommand(creditsCmd)
+	rootCmd.PersistentFlags().StringSliceVar(&flagExt, "ext", defaultExts, "File extensions to watch")
+	rootCmd.AddCommand(creditsCmd, guiCmd)
 }
 
 // Execute runs the root command.

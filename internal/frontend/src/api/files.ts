@@ -1,3 +1,5 @@
+import { isNativeHost, requestNative } from "./native";
+
 export interface FileEntry {
   path: string;
   rel: string;
@@ -7,6 +9,7 @@ export interface FileEntry {
 }
 
 export async function fetchFiles(): Promise<FileEntry[]> {
+  if (isNativeHost()) return requestNative<FileEntry[]>("files");
   const res = await fetch("/api/files");
   if (!res.ok) {
     throw new Error(`failed to load files: ${res.status}`);
@@ -16,6 +19,9 @@ export async function fetchFiles(): Promise<FileEntry[]> {
 
 export async function fetchFileSource(path: string, signal?: AbortSignal): Promise<string> {
   const target = parseSelection(path);
+  if (isNativeHost()) {
+    return requestNative<string>("file", { path: target.path, line: target.line }, signal);
+  }
   const query = `path=${encodeURIComponent(target.path)}${target.line !== undefined ? `&line=${target.line}` : ""}`;
   const res = await fetch(`/api/file?${query}`, { signal });
   if (!res.ok) {

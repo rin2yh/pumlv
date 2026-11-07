@@ -75,6 +75,19 @@ Store ADRs in `docs/adr/`. Record important future design decisions there using 
 
 Verify every Test plan item yourself before handing the PR off — that includes UI behavior. Use `make test-frontend` / `make test-backend` / `make lint` for unit/lint checks, and the Playwright e2e suite (`make e2e`) or `make screenshot` for browser-level verification. If a feature lacks coverage, add an e2e test that exercises it. Pre-check every Test plan item you've verified; only leave something unchecked when verification is genuinely impossible in this environment, and call that out explicitly. Do not make the user point this out.
 
+### Native macOS GUI E2E
+
+After `make generate`, run `CGO_ENABLED=0 go run ./tools/test native` on macOS. Verify that:
+
+- GUI mode has no HTTP listener and loads the `pumlv:` scheme and native bridge.
+- The tree expands and selects files; selection survives WebView reload; a later Markdown diagram can be selected.
+- File creation, edits and deletion update the tree and preview, and selection falls back when its file is removed.
+- The sidebar resizes between its limits and the window closes cleanly.
+
+The command captures `/tmp/pumlv-gui.png` for visual inspection.
+
+Run `CGO_ENABLED=0 go run ./tools/test browser` for the Playwright browser regression suite.
+
 ## Git
 
 **Always ask for user confirmation before force-pushing** (`git push --force`, `git push --force-with-lease`, or any equivalent), regardless of branch. When integrating upstream changes into a feature branch, prefer `git merge` over `git rebase` so a normal push works and force-push is unnecessary in the first place.

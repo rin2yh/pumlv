@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchFiles, type FileEntry } from "../api/files";
 import { flush } from "../test/flush";
@@ -21,6 +21,11 @@ const file = (path: string): FileEntry => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+afterEach(() => {
+  delete window.webkit;
+  vi.unstubAllGlobals();
 });
 
 describe("useFileList", () => {
@@ -49,6 +54,38 @@ describe("useFileList", () => {
 
     act(() => result.current.select("/b.puml"));
     expect(result.current.active).toBe("/b.puml");
+  });
+
+  it("applies native selections after registering the listener and initializing the bridge", async () => {
+    const files = [file("/a.puml"), file("/b.puml")];
+    mockedFetchFiles.mockResolvedValueOnce(files);
+    const messages: { id?: string; type: string }[] = [];
+    window.webkit = {
+      messageHandlers: {
+        pumlv: {
+          postMessage(message) {
+            const request = JSON.parse(message) as { id?: string; type: string };
+            messages.push(request);
+            if (request.type === "ready") {
+              window.dispatchEvent(new CustomEvent("pumlv:select", { detail: "/b.puml" }));
+            }
+          },
+        },
+      },
+    };
+    vi.stubGlobal("location", { protocol: "pumlv:" } as Location);
+
+    const { result, unmount } = renderHook(() => useFileList());
+    await flush();
+
+    expect(messages.map((message) => message.type)).toEqual(["ready"]);
+    expect(result.current.active).toBe("/b.puml");
+
+    act(() => window.dispatchEvent(new CustomEvent("pumlv:select", { detail: "/a.puml" })));
+    expect(result.current.active).toBe("/a.puml");
+    unmount();
+    act(() => window.dispatchEvent(new CustomEvent("pumlv:select", { detail: "/b.puml" })));
+    expect(result.current.active).toBe("/a.puml");
   });
 
   it.each([

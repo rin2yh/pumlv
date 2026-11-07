@@ -2,15 +2,14 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/rin2yh/pumlv/internal/fileformat"
 	"github.com/rin2yh/pumlv/internal/static"
 )
 
@@ -23,7 +22,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(s.registry.List()); err != nil {
+	if err := json.NewEncoder(w).Encode(s.core.List()); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -34,49 +33,23 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "path is required", http.StatusBadRequest)
 		return
 	}
-	abs, err := filepath.Abs(p)
+	var line *int
+	if value, present := r.URL.Query()["line"]; present {
+		parsed, err := strconv.Atoi(value[0])
+		if err != nil || parsed < 1 {
+			http.Error(w, "invalid diagram line", http.StatusBadRequest)
+			return
+		}
+		line = &parsed
+	}
+	data, err := s.core.ReadFile(p, line)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		status := http.StatusNotFound
+		if errors.Is(err, ErrFileNotAllowed) {
+			status = http.StatusForbidden
+		}
+		http.Error(w, err.Error(), status)
 		return
-	}
-	entry, allowed := s.registry.lookup(abs)
-	if !allowed {
-		http.Error(w, "file not allowed", http.StatusForbidden)
-		return
-	}
-	var data []byte
-	if fileformat.IsMarkdown(abs) {
-		diagrams := entry.Diagrams
-		if len(diagrams) == 0 {
-			http.Error(w, "no PlantUML block", http.StatusNotFound)
-			return
-		}
-		selected := 0
-		if value, present := r.URL.Query()["line"]; present {
-			line, err := strconv.Atoi(value[0])
-			if err != nil || line < 1 {
-				http.Error(w, "invalid diagram line", http.StatusBadRequest)
-				return
-			}
-			selected = -1
-			for i, diagram := range diagrams {
-				if diagram.Line == line {
-					selected = i
-					break
-				}
-			}
-			if selected < 0 {
-				http.Error(w, "PlantUML block not found", http.StatusNotFound)
-				return
-			}
-		}
-		data = diagrams[selected].Source
-	} else {
-		data, err = os.ReadFile(abs)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write(data)
@@ -93,8 +66,8 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 
-	client := s.hub.Subscribe()
-	defer s.hub.Unsubscribe(client)
+	client := s.core.Subscribe()
+	defer s.core.Unsubscribe(client)
 
 	// Initial hello so the client can flag the connection as open.
 	if _, err := fmt.Fprintf(w, "event: hello\ndata: {}\n\n"); err != nil {

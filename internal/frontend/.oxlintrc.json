@@ -4,7 +4,27 @@
     "correctness": "error",
     "suspicious": "warn"
   },
+  "plugins": ["import"],
   "rules": {
-    "no-unused-vars": "warn"
+    "no-unused-vars": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react",
+            "importNames": ["default", "memo", "useCallback", "useMemo"],
+            "message": "Use named React imports and let React Compiler handle memoization."
+          }
+        ]
+      }
+    ],
+    "import/no-namespace": "error",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/*.css"]
+      }
+    ]
   }
 }
