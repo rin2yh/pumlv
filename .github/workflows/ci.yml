@@ -98,6 +98,33 @@ jobs:
       - name: Run octocov
         uses: k1LoW/octocov-action@v1.5.2
 
+  windows:
+    name: Windows
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - uses: $/.github/actions/setup-frontend
+
+      - name: Install frontend dependencies
+        working-directory: internal/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: internal/frontend
+        run: pnpm run build
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: go build -trimpath -o pumlv.exe .
+
   frontend:
     name: Frontend
     runs-on: ubuntu-24.04
