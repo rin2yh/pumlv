@@ -16,6 +16,7 @@ const listed = JSON.parse(
     cwd: resolve(here, ".."),
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
+    shell: process.platform === "win32",
   }),
 );
 
