@@ -23,35 +23,31 @@ func TestBuildRows(t *testing.T) {
 	firstDiagram := diagramSelection(markdownPath, 8)
 	secondDiagram := diagramSelection(markdownPath, 24)
 
+	nestedFiles := []fileEntry{
+		testFile(nestedFile, "docs/nested/flow.puml", source),
+		testFile("/project/examples/docs/overview.puml", "docs/overview.puml", source),
+	}
+	wantNested := []treeRow{
+		{key: "dir:" + source, label: "examples", depth: 1},
+		{key: "dir:" + source + "/docs", label: "docs", depth: 2},
+		{key: "dir:" + source + "/docs/nested", label: "nested", depth: 3},
+		{key: nestedFile, label: "flow.puml", selection: nestedFile, depth: 4},
+		{key: "/project/examples/docs/overview.puml", label: "overview.puml", selection: "/project/examples/docs/overview.puml", depth: 3},
+	}
+	wantMarkdown := []treeRow{
+		{key: "dir:" + source, label: "examples", depth: 1},
+		{key: markdownPath, label: "sequence diagram #1.md", selection: firstDiagram, depth: 2},
+		{key: firstDiagram, label: "L8: First", selection: firstDiagram, depth: 3},
+		{key: secondDiagram, label: "L24", selection: secondDiagram, depth: 3},
+	}
+
 	cases := []struct {
 		name  string
 		files []fileEntry
 		want  []treeRow
 	}{
-		{
-			name: "nested directories",
-			files: []fileEntry{
-				testFile(nestedFile, "docs/nested/flow.puml", source),
-				testFile("/project/examples/docs/overview.puml", "docs/overview.puml", source),
-			},
-			want: []treeRow{
-				{key: "dir:" + source, label: "examples", depth: 1},
-				{key: "dir:" + source + "/docs", label: "docs", depth: 2},
-				{key: "dir:" + source + "/docs/nested", label: "nested", depth: 3},
-				{key: nestedFile, label: "flow.puml", selection: nestedFile, depth: 4},
-				{key: "/project/examples/docs/overview.puml", label: "overview.puml", selection: "/project/examples/docs/overview.puml", depth: 3},
-			},
-		},
-		{
-			name:  "Markdown diagrams",
-			files: []fileEntry{markdown},
-			want: []treeRow{
-				{key: "dir:" + source, label: "examples", depth: 1},
-				{key: markdownPath, label: "sequence diagram #1.md", selection: firstDiagram, depth: 2},
-				{key: firstDiagram, label: "L8: First", selection: firstDiagram, depth: 3},
-				{key: secondDiagram, label: "L24", selection: secondDiagram, depth: 3},
-			},
-		},
+		{name: "nested directories", files: nestedFiles, want: wantNested},
+		{name: "Markdown diagrams", files: []fileEntry{markdown}, want: wantMarkdown},
 	}
 
 	for _, tc := range cases {
