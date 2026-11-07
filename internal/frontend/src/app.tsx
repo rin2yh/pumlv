@@ -1,4 +1,5 @@
 import { useState, type JSX } from "react";
+import { isNativeHost } from "./api/native";
 import { parseSelection } from "./api/files";
 import { FileTree } from "./components/file-tree";
 import { Preview } from "./components/preview";
@@ -9,6 +10,7 @@ import { useServerEvents } from "./hooks/use-server-events";
 import { SOURCE_PANEL_ID, SOURCE_PANEL_NAME, SOURCE_TOGGLE_LABEL } from "./source-panel";
 
 export default function App(): JSX.Element {
+  const nativeHost = isNativeHost();
   const { files, active, select, reload: reloadFiles } = useFileList();
   const { source, render, reload: reloadActive } = useActiveRender(active);
   const [sourceOpen, setSourceOpen] = useState<boolean>(true);
@@ -27,14 +29,16 @@ export default function App(): JSX.Element {
 
   return (
     <div className="flex h-full">
-      <aside className="w-72 shrink-0 overflow-y-auto border-r border-slate-200 bg-white">
-        <div className="border-b border-slate-200 px-4 py-3">
-          <h1 className="font-semibold text-violet-700">pumlv</h1>
-          <p className="text-xs text-slate-500">{files.length} file(s)</p>
-        </div>
+      {!nativeHost && (
+        <aside className="w-72 shrink-0 overflow-y-auto border-r border-slate-200 bg-white">
+          <div className="border-b border-slate-200 px-4 py-3">
+            <h1 className="font-semibold text-violet-700">pumlv</h1>
+            <p className="text-xs text-slate-500">{files.length} file(s)</p>
+          </div>
 
-        <FileTree files={files} active={active} onSelect={select} />
-      </aside>
+          <FileTree files={files} active={active} onSelect={select} />
+        </aside>
+      )}
 
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-2 text-sm text-slate-600">

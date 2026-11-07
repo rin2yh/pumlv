@@ -22,11 +22,9 @@ type Options struct {
 
 // Server is the running pumlv HTTP service.
 type Server struct {
-	opts     Options
-	registry *Registry
-	watcher  *Watcher
-	hub      *Hub
-	httpd    *http.Server
+	opts  Options
+	core  *Core
+	httpd *http.Server
 }
 
 // New constructs the server, but does not start listening yet.
@@ -34,16 +32,11 @@ func New(ctx context.Context, opts Options) (*Server, error) {
 	if opts.Host == "" {
 		opts.Host = "127.0.0.1"
 	}
-	reg, err := NewRegistry(opts.Paths, opts.Exts)
+	core, err := NewCore(opts.Paths, opts.Exts)
 	if err != nil {
 		return nil, err
 	}
-	hub := NewHub()
-	w, err := NewWatcher(reg, hub)
-	if err != nil {
-		return nil, err
-	}
-	s := &Server{opts: opts, registry: reg, watcher: w, hub: hub}
+	s := &Server{opts: opts, core: core}
 	mux := http.NewServeMux()
 	s.registerRoutes(mux)
 	s.httpd = &http.Server{
@@ -63,7 +56,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	}
 	resolved := ln.Addr().String()
 
-	if err := s.watcher.Start(ctx); err != nil {
+	if err := s.core.Start(ctx); err != nil {
 		_ = ln.Close()
 		return "", err
 	}
@@ -79,11 +72,10 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	if err := donegroup.Cleanup(ctx, func() error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		s.hub.Close()
 		if err := s.httpd.Shutdown(shutdownCtx); err != nil {
 			return err
 		}
-		return s.watcher.Close()
+		return s.core.Close()
 	}); err != nil {
 		return "", err
 	}

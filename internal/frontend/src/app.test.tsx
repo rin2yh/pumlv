@@ -130,6 +130,41 @@ describe("App", () => {
     expect(sourcePanel().textContent).toContain("actor B");
   });
 
+  it("updates a selected Markdown diagram and falls back when its file disappears", async () => {
+    const markdown: FileEntry = {
+      ...file("/diagrams.md"),
+      diagrams: [{ line: 1 }, { line: 8 }],
+    };
+    const files = [file("/a.puml"), markdown];
+    mockedFetchFiles
+      .mockResolvedValueOnce(files)
+      .mockResolvedValueOnce(files)
+      .mockResolvedValueOnce([file("/a.puml")]);
+    let markdownSource = "MarkdownInitial";
+    mockedFetchFileSource.mockImplementation(async (selection) =>
+      selection.startsWith("markdown:") ? markdownSource : (SOURCES[selection] ?? ""),
+    );
+    mockedRenderPlantUML.mockImplementation(async (source) =>
+      source.startsWith("Markdown") ? `data:image/svg+xml,${source}` : RENDERED["/a.puml"]!,
+    );
+
+    render(<App />);
+    await flush(5);
+    act(() => fileButton("L8").click());
+    await flush(5);
+    expect(previewImg()?.getAttribute("src")).toBe("data:image/svg+xml,MarkdownInitial");
+
+    markdownSource = "MarkdownUpdated";
+    await act(async () => capturedEventHandler!({ type: "changed", path: "/diagrams.md" }));
+    await flush(5);
+    expect(previewImg()?.getAttribute("src")).toBe("data:image/svg+xml,MarkdownUpdated");
+
+    await act(async () => capturedEventHandler!({ type: "tree" }));
+    await flush(5);
+    expect(document.querySelector("header")?.textContent).toContain("a.puml");
+    expect(previewImg()?.getAttribute("src")).toBe(RENDERED["/a.puml"]);
+  });
+
   it("reloads the active file when a 'changed' event matches it", async () => {
     render(<App />);
     await flush(5);
