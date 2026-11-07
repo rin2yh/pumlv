@@ -189,5 +189,12 @@ func (s *splitter) CursorShape(_ *guigui.Context, _ *guigui.WidgetBounds) (ebite
 }
 
 func (s *splitter) Draw(_ *guigui.Context, _ *guigui.WidgetBounds, dst *ebiten.Image) {
-	dst.Fill(color.RGBA{R: 226, G: 232, B: 240, A: 255})
+	dividerColor := color.RGBA{R: 226, G: 232, B: 240, A: 255}
+	if s.dragging {
+		dst.Fill(dividerColor)
+		return
+	}
+	bounds := dst.Bounds()
+	bounds.Min.X = bounds.Max.X - 1
+	dst.SubImage(bounds).(*ebiten.Image).Fill(dividerColor)
 }
