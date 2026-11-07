@@ -156,3 +156,45 @@ jobs:
             internal/frontend/playwright-report/
             internal/frontend/test-results/
           retention-days: 7
+
+  e2e-windows:
+    name: E2E (Windows)
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - uses: $/.github/actions/setup-frontend
+
+      - name: Install frontend dependencies
+        working-directory: internal/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: internal/frontend
+        run: pnpm run build
+
+      - name: Build Windows binary
+        run: go build -trimpath -o pumlv.exe .
+
+      - name: Install Playwright browsers
+        working-directory: internal/frontend
+        run: pnpm exec playwright install chromium chromium-headless-shell
+
+      - name: E2E tests
+        working-directory: internal/frontend
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            internal/frontend/playwright-report/
+            internal/frontend/test-results/
+          retention-days: 7
