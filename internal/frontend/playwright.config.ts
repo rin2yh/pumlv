@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.PUMLV_E2E_PORT ?? 8766);
+const BINARY = process.platform === "win32" ? "../../pumlv.exe" : "../../pumlv";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -20,7 +21,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `../../pumlv --no-open --host 127.0.0.1 --port ${PORT} ../../examples`,
+    command: `${BINARY} --no-open --host 127.0.0.1 --port ${PORT} ../../examples`,
     url: `http://127.0.0.1:${PORT}/api/files`,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

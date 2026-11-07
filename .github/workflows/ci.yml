@@ -98,33 +98,6 @@ jobs:
       - name: Run octocov
         uses: k1LoW/octocov-action@v1.5.2
 
-  windows:
-    name: Windows
-    runs-on: windows-2025
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7.0.1
-
-      - uses: actions/setup-go@v7.0.0
-        with:
-          go-version-file: go.mod
-
-      - uses: $/.github/actions/setup-frontend
-
-      - name: Install frontend dependencies
-        working-directory: internal/frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Build frontend
-        working-directory: internal/frontend
-        run: pnpm run build
-
-      - name: Test
-        run: go test ./...
-
-      - name: Build
-        run: go build -trimpath -o pumlv.exe .
-
   frontend:
     name: Frontend
     runs-on: ubuntu-24.04
@@ -154,7 +127,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15]
+        os: [ubuntu-24.04, macos-15, windows-2025]
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -164,15 +137,42 @@ jobs:
 
       - uses: $/.github/actions/setup-frontend
 
+      - name: Install frontend dependencies (Windows)
+        if: runner.os == 'Windows'
+        working-directory: internal/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (Windows)
+        if: runner.os == 'Windows'
+        working-directory: internal/frontend
+        run: pnpm run build
+
+      - name: Build Windows binary
+        if: runner.os == 'Windows'
+        run: go build -trimpath -o pumlv.exe .
+
       - name: Build
+        if: runner.os != 'Windows'
         run: make build
 
       - uses: $/.github/actions/setup-playwright
+        if: runner.os != 'Windows'
         with:
           browsers: chromium chromium-headless-shell
 
+      - name: Install Playwright browsers (Windows)
+        if: runner.os == 'Windows'
+        working-directory: internal/frontend
+        run: pnpm exec playwright install chromium chromium-headless-shell
+
       - name: E2E tests
+        if: runner.os != 'Windows'
         run: make e2e
+
+      - name: E2E tests (Windows)
+        if: runner.os == 'Windows'
+        working-directory: internal/frontend
+        run: pnpm exec playwright test
 
       - name: Upload Playwright report
         if: failure()
