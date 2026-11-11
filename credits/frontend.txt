@@ -1214,7 +1214,7 @@ https://github.com/syntax-tree/unist-util-visit#readme
 ----------------------------------------------------------------
 (The MIT License)
 
-Copyright (c) 2015 Titus Wormer <tituswormer@gmail.com>
+Copyright (c) Titus Wormer <tituswormer@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -1242,7 +1242,7 @@ https://github.com/syntax-tree/unist-util-visit-parents#readme
 ----------------------------------------------------------------
 (The MIT License)
 
-Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>
+Copyright (c) Titus Wormer <tituswormer@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
