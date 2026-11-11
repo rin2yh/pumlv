@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.4.1](https://github.com/rin2yh/pumlv/compare/v0.4.0...v0.4.1) - 2026-11-11
+
+- ci: adopt GitHub Actions workflow dependency lockfiles by @rin2yh in https://github.com/rin2yh/pumlv/pull/237
+- ci: regenerate GitHub Actions lockfile by @rin2yh in https://github.com/rin2yh/pumlv/pull/241
+- ci: add Windows E2E coverage by @rin2yh in https://github.com/rin2yh/pumlv/pull/243
+- build(deps): bump Songmu/tagpr from 1.21.4 to 1.22.0 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/245
+- build(deps): bump the npm-dependencies group in /internal/frontend with 17 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/246
+
 ## [v0.4.0](https://github.com/rin2yh/pumlv/compare/v0.3.13...v0.4.0) - 2026-11-04
 
 - build(deps): bump Songmu/tagpr from 1.21.3 to 1.21.4 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/227
