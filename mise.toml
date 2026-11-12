@@ -1,2 +1,12 @@
 [tools]
 "npm:pnpm" = "11.0.8"
+
+[tasks.gui]
+description = "Run the native macOS preview with examples"
+run = "go run . gui ./examples"
+env = { CGO_ENABLED = "0" }
+
+[settings]
+
+[settings.task]
+run_auto_install = false

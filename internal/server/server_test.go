@@ -29,10 +29,10 @@ func TestNewFillsDefaultHostAndBuildsRegistry(t *testing.T) {
 	if srv.opts.Host != "127.0.0.1" {
 		t.Errorf("default host: got %q want 127.0.0.1", srv.opts.Host)
 	}
-	if srv.registry == nil || srv.watcher == nil || srv.hub == nil || srv.httpd == nil {
+	if srv.core == nil || srv.httpd == nil {
 		t.Errorf("expected all internal fields populated")
 	}
-	if got := len(srv.registry.List()); got != 1 {
+	if got := len(srv.core.List()); got != 1 {
 		t.Errorf("expected 1 registered file, got %d", got)
 	}
 }

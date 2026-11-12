@@ -44,6 +44,16 @@ On startup pumlv prints `pumlv listening on http://127.0.0.1:<port>` and opens t
 Run `pumlv completion bash|zsh|fish|powershell` to generate a completion script.
 For setup instructions, run `pumlv completion <shell> --help`.
 
+### Native macOS GUI
+
+Run `pumlv gui ./examples` (or `mise run gui`) on macOS to open the native GUI.
+Support is currently macOS-only.
+
+The GUI uses guigui and WKWebView, supports a resizable file tree, and works
+without a local HTTP server.
+
+![Native macOS preview](docs/images/native-preview.png)
+
 ## Background
 
 Existing PlantUML preview options have a few rough edges:

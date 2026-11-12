@@ -33,7 +33,7 @@ func newTestServer(t *testing.T, paths []string, exts []string) (*Server, *httpt
 		t.Fatalf("NewRegistry: %v", err)
 	}
 	hub := NewHub()
-	s := &Server{registry: reg, hub: hub}
+	s := &Server{core: &Core{registry: reg, hub: hub}}
 	mux := http.NewServeMux()
 	s.registerRoutes(mux)
 	ts := httptest.NewServer(mux)
@@ -171,7 +171,7 @@ func TestHandleEventsStreamsHelloAndBroadcasts(t *testing.T) {
 
 	// Give the subscriber a tick to register before broadcasting; the handler
 	// subscribes before writing hello so by here it is already registered.
-	s.hub.Broadcast(Event{Name: "changed", Data: map[string]string{"path": "/x.puml"}})
+	s.core.hub.Broadcast(Event{Name: "changed", Data: map[string]string{"path": "/x.puml"}})
 	gotChanged := waitForEvent(t, br, sseEventWait{name: "changed", timeout: 2 * time.Second})
 	if !gotChanged {
 		t.Fatal("did not receive changed event")
@@ -330,7 +330,7 @@ func TestMarkdownAPIsUseRegistrySnapshotAndOnlyUpdateChangedFile(t *testing.T) {
 	write(other, "```puml\ntitle Other\nBob -> Alice: Other\n```\n")
 	s, ts := newTestServer(t, []string{dir}, []string{".md"})
 	var reads []string
-	s.registry.readFile = func(path string) ([]byte, error) { reads = append(reads, path); return os.ReadFile(path) }
+	s.core.registry.readFile = func(path string) ([]byte, error) { reads = append(reads, path); return os.ReadFile(path) }
 	get := func(path string, status int) string {
 		t.Helper()
 		resp, err := http.Get(ts.URL + path)
@@ -374,7 +374,7 @@ func TestMarkdownAPIsUseRegistrySnapshotAndOnlyUpdateChangedFile(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("API requests read Markdown: %v", reads)
 	}
-	changed, err := s.registry.Update(first)
+	changed, err := s.core.registry.Update(first)
 	if err != nil || !changed {
 		t.Fatalf("Update=%v,%v", changed, err)
 	}
@@ -397,23 +397,23 @@ func TestMarkdownAPIsUseRegistrySnapshotAndOnlyUpdateChangedFile(t *testing.T) {
 	}
 
 	// A failed update keeps both labels and sources from the previous snapshot.
-	before, _ := s.registry.lookup(first)
-	s.registry.readFile = func(string) ([]byte, error) { return nil, os.ErrPermission }
-	if _, err := s.registry.Update(first); !errors.Is(err, os.ErrPermission) {
+	before, _ := s.core.registry.lookup(first)
+	s.core.registry.readFile = func(string) ([]byte, error) { return nil, os.ErrPermission }
+	if _, err := s.core.registry.Update(first); !errors.Is(err, os.ErrPermission) {
 		t.Fatalf("Update=%v", err)
 	}
-	after, _ := s.registry.lookup(first)
+	after, _ := s.core.registry.lookup(first)
 	if !reflect.DeepEqual(before, after) {
 		t.Fatal("failed update replaced the cached entry")
 	}
 	if list()[0].Diagrams[0].Title != "Updated" || !strings.Contains(source(first, 3), "Updated") {
 		t.Fatal("APIs diverged after read failure")
 	}
-	s.registry.readFile = os.ReadFile
+	s.core.registry.readFile = os.ReadFile
 
 	// Eligibility changes and removal discard the parsed diagrams with the entry.
 	write(first, "# No diagrams\n")
-	if changed, err := s.registry.Update(first); err != nil || !changed {
+	if changed, err := s.core.registry.Update(first); err != nil || !changed {
 		t.Fatalf("Update=%v,%v", changed, err)
 	}
 	if len(list()) != 1 {
@@ -421,13 +421,13 @@ func TestMarkdownAPIsUseRegistrySnapshotAndOnlyUpdateChangedFile(t *testing.T) {
 	}
 	get("/api/file?path="+url.QueryEscape(first), 403)
 	write(first, "```puml\nAlice -> Bob: Restored\n```\n")
-	if changed, err := s.registry.addPath(first, nil); err != nil || !changed {
+	if changed, err := s.core.registry.addPath(first, nil); err != nil || !changed {
 		t.Fatalf("addPath=%v,%v", changed, err)
 	}
 	if len(list()) != 2 || !strings.Contains(source(first, 1), "Restored") {
 		t.Fatal("restored diagrams missing")
 	}
-	s.registry.removePath(first)
+	s.core.registry.removePath(first)
 	get("/api/file?path="+url.QueryEscape(first), 403)
 	if len(list()) != 1 {
 		t.Fatal("deleted file remains listed")
