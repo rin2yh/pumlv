@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.4.1](https://github.com/rin2yh/pumlv/compare/v0.4.0...v0.4.1) - 2026-11-28
+
+- ci: adopt GitHub Actions workflow dependency lockfiles by @rin2yh in https://github.com/rin2yh/pumlv/pull/237
+- ci: regenerate GitHub Actions lockfile by @rin2yh in https://github.com/rin2yh/pumlv/pull/241
+- ci: add Windows E2E coverage by @rin2yh in https://github.com/rin2yh/pumlv/pull/243
+- build(deps): bump Songmu/tagpr from 1.21.4 to 1.22.0 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/245
+- build(deps): bump the npm-dependencies group in /internal/frontend with 17 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/246
+- build(deps): bump github.com/yuin/goldmark from 1.8.6 to 1.8.7 in the go-dependencies group across 1 directory by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/244
+- build(deps-dev): bump the npm-dependencies group in /internal/frontend with 13 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/247
+- build(deps): bump actions/setup-go from 7.0.0 to 7.1.0 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/248
+- build(deps): bump the npm-dependencies group in /internal/frontend with 10 updates by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/249
+- Show circe recommendations on tagpr release PRs by @rin2yh in https://github.com/rin2yh/pumlv/pull/250
+
 ## [v0.4.0](https://github.com/rin2yh/pumlv/compare/v0.3.13...v0.4.0) - 2026-11-04
 
 - build(deps): bump Songmu/tagpr from 1.21.3 to 1.21.4 in the github-actions group by @dependabot[bot] in https://github.com/rin2yh/pumlv/pull/227
