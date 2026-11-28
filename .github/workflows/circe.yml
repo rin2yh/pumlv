@@ -1,25 +1,27 @@
 name: Release recommendation
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    paths:
-      - '.github/workflows/circe.yml'
-      - '.github/workflows/actions.lock'
-  workflow_dispatch:
+    types: [opened, reopened, synchronize, labeled]
 
 permissions:
   contents: read
 
 concurrency:
-  group: circe-${{ github.ref }}
-  cancel-in-progress: true
+  group: circe-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   recommend:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'tagpr-from-') &&
+      contains(github.event.pull_request.labels.*.name, 'tagpr')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -28,3 +30,11 @@ jobs:
       - name: Recommend a release
         id: circe
         uses: rin2yh/circe@main
+      - name: Update recommendation comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CIRCE_REPOSITORY: ${{ github.repository }}
+          CIRCE_PR_NUMBER: ${{ github.event.pull_request.number }}
+          CIRCE_RECOMMENDED: ${{ steps.circe.outputs.recommended }}
+          CIRCE_CHANGES: ${{ steps.circe.outputs.changes }}
+        run: bash .github/scripts/circe-comment.sh
