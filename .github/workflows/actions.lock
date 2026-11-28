@@ -14,6 +14,9 @@ workflows:
         - 'golangci/golangci-lint-action@v9.3.0'
         - 'k1low/octocov-action@v1.5.2'
         - 'pnpm/action-setup@v6.0.8'
+    '.github/workflows/circe.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'rin2yh/circe@main'
     '.github/workflows/tagpr.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-go@v7.1.0'
@@ -114,6 +117,13 @@ dependencies:
         commit: 'sha1-0e279bb959325dab635dd2c09392533439d90093'
         owner_id: 21320719
         repo_id: 262289747
+    'rin2yh/circe@main':
+        ref: 'main'
+        commit: 'sha1-0aa68f48a642b4b262052e3dd3785f89c478f8f3'
+        owner_id: 88963450
+        repo_id: 1475052109
+        uses:
+            - 'actions/setup-go@v7.1.0'
     'songmu/tagpr@v1.22.0':
         ref: 'v1.22.0'
         commit: 'sha1-047aec4b6c0ce166f52958b5a97f5a3d927fd65b'
